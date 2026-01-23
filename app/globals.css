@@ -1,26 +1,95 @@
 @import "tailwindcss";
 
+/* Dark Luxury Motorsport Theme */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-background: #0a0a0a;
+  --color-foreground: #ededed;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  /* F1 Font Variables - mapped from next/font/local */
+  --font-f1-reg: var(--font-f1-reg);
+  --font-f1-bold: var(--font-f1-bold);
+  --font-f1-wide: var(--font-f1-wide);
+
+  /* Speed Delta Colors */
+  --color-speed-faster: #00ff00;
+  --color-speed-slower: #ff0000;
+
+  /* Team Colors - Ferrari */
+  --color-ferrari-primary: #dc0000;
+  --color-ferrari-dark: #8b0000;
+
+  /* Team Colors - Red Bull */
+  --color-redbull-primary: #0600ef;
+  --color-redbull-dark: #000080;
+
+  /* Team Colors - Mercedes */
+  --color-mercedes-primary: #00d2be;
+  --color-mercedes-dark: #006666;
+
+  /* Team Colors - McLaren */
+  --color-mclaren-primary: #ff8700;
+  --color-mclaren-dark: #cc6600;
+
+  /* Team Colors - Aston Martin */
+  --color-astonmartin-primary: #006f62;
+  --color-astonmartin-dark: #003d35;
+
+  /* Team Colors - Alpine */
+  --color-alpine-primary: #0090ff;
+  --color-alpine-dark: #004d8c;
+
+  /* Team Colors - Williams */
+  --color-williams-primary: #005aff;
+  --color-williams-dark: #003380;
+
+  /* Team Colors - Haas */
+  --color-haas-primary: #ffffff;
+  --color-haas-dark: #787878;
+
+  /* Team Colors - Sauber */
+  --color-sauber-primary: #00ff00;
+  --color-sauber-dark: #006600;
+
+  /* Team Colors - RB */
+  --color-rb-primary: #6692ff;
+  --color-rb-dark: #3355aa;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-f1-reg), sans-serif;
+  overflow-x: hidden;
+}
+
+/* Utility Classes */
+.font-f1-reg {
+  font-family: var(--font-f1-reg), sans-serif;
+}
+
+.font-f1-bold {
+  font-family: var(--font-f1-bold), sans-serif;
+}
+
+.font-f1-wide {
+  font-family: var(--font-f1-wide), sans-serif;
+}
+
+/* Scanline Animation for Placeholders */
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+.scanline {
+  animation: scanline 3s linear infinite;
 }
