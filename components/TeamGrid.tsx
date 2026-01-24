@@ -34,8 +34,8 @@ export default function TeamGrid({ onSelectTeam }: TeamGridProps) {
               flex: isHovered ? 3 : isOtherHovered ? 1 : 1,
             }}
             transition={{
-              duration: 0.4,
-              ease: "easeOut",
+              duration: 0.75,
+              ease: [0.65, 0.05, 0, 1], // Premium cubic-bezier easing
             }}
             onHoverStart={() => setHoveredTeam(team.id)}
             onHoverEnd={() => setHoveredTeam(null)}

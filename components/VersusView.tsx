@@ -15,10 +15,16 @@ import SpeedDelta from "./SpeedDelta";
 interface VersusViewProps {
   team: Team;
   onSelectDriver: (driver: Driver) => void;
+  onSelectTeam: (team: Team) => void;
   onBack: () => void;
 }
 
-export default function VersusView({ team, onSelectDriver, onBack }: VersusViewProps) {
+export default function VersusView({
+  team,
+  onSelectDriver,
+  onSelectTeam,
+  onBack,
+}: VersusViewProps) {
   const teamDrivers = getDriversByTeam(team.id);
   const [driverA, driverB] = teamDrivers;
 
@@ -51,9 +57,8 @@ export default function VersusView({ team, onSelectDriver, onBack }: VersusViewP
       opacity: 1,
       x: 0,
       transition: {
-        type: "spring",
-        stiffness: 80,
-        damping: 20,
+        duration: 0.75,
+        ease: [0.65, 0.05, 0, 1], // Premium cubic-bezier easing
       },
     },
   };
@@ -75,7 +80,8 @@ export default function VersusView({ team, onSelectDriver, onBack }: VersusViewP
             <motion.div
               key={t.id}
               layoutId={isSelected ? `logo-${t.id}` : undefined}
-              className={`relative h-10 w-10 flex items-center justify-center transition-all ${
+              onClick={() => !isSelected && onSelectTeam(t)}
+              className={`relative h-10 w-10 flex items-center justify-center transition-all cursor-pointer ${
                 isSelected ? "opacity-100 scale-110" : "opacity-40 grayscale hover:opacity-60"
               }`}
             >
@@ -91,7 +97,7 @@ export default function VersusView({ team, onSelectDriver, onBack }: VersusViewP
 
       {/* Season and filter controls */}
       <div className="absolute top-24 left-0 right-0 z-10 flex flex-col items-center gap-3">
-        <button className="font-f1-reg text-white/90 text-sm tracking-wide flex items-center gap-2 hover:text-white transition-colors">
+        <button className="font-f1-reg text-white/90 text-sm tracking-wide flex items-center gap-2 hover:text-white transition-colors cursor-pointer">
           2025 Season
           <svg
             width="12"
@@ -109,7 +115,7 @@ export default function VersusView({ team, onSelectDriver, onBack }: VersusViewP
             />
           </svg>
         </button>
-        <button className="font-f1-reg text-white/80 text-sm tracking-wide flex items-center gap-2 hover:text-white transition-colors">
+        <button className="font-f1-reg text-white/80 text-sm tracking-wide flex items-center gap-2 hover:text-white transition-colors cursor-pointer">
           Whole Year
           <svg
             width="12"
@@ -132,7 +138,7 @@ export default function VersusView({ team, onSelectDriver, onBack }: VersusViewP
       {/* Back button */}
       <button
         onClick={onBack}
-        className="absolute top-6 left-6 z-30 text-white/60 hover:text-white transition-colors font-f1-reg text-sm tracking-wide"
+        className="absolute top-6 left-6 z-30 text-white/60 hover:text-white transition-colors font-f1-reg text-sm tracking-wide cursor-pointer"
       >
         ← BACK TO TEAMS
       </button>
@@ -146,8 +152,20 @@ export default function VersusView({ team, onSelectDriver, onBack }: VersusViewP
           className="relative flex flex-col items-center justify-end pb-16 cursor-pointer group"
           onClick={() => onSelectDriver(driverA)}
         >
+          {/* Large background driver number */}
+          <div
+            className="absolute top-1/4 font-f1-bold text-[20rem] leading-none select-none pointer-events-none"
+            style={{
+              color: team.secondaryColor || team.gradientStops[1],
+              opacity: 0.15,
+              zIndex: 0,
+            }}
+          >
+            {driverA.number}
+          </div>
+
           {/* Driver photo placeholder */}
-          <div className="relative w-full max-w-md h-[70vh] mb-8">
+          <div className="relative w-full max-w-md h-[70vh] mb-8 z-10">
             {driverA.photoUrl ? (
               <img
                 src={driverA.photoUrl}
@@ -165,10 +183,7 @@ export default function VersusView({ team, onSelectDriver, onBack }: VersusViewP
           </div>
 
           {/* Driver name */}
-          <motion.h2
-            className="font-f1-wide text-white text-5xl md:text-7xl uppercase tracking-wider text-center group-hover:scale-105 transition-transform"
-            style={{ textShadow: "0 4px 20px rgba(0,0,0,0.5)" }}
-          >
+          <motion.h2 className="font-f1-wide text-white text-5xl md:text-7xl uppercase tracking-wider text-center">
             {driverA.name.split(" ")[0]}
             <br />
             <span className="text-6xl md:text-8xl">{driverA.name.split(" ")[1]}</span>
@@ -191,8 +206,20 @@ export default function VersusView({ team, onSelectDriver, onBack }: VersusViewP
           className="relative flex flex-col items-center justify-end pb-16 cursor-pointer group"
           onClick={() => onSelectDriver(driverB)}
         >
+          {/* Large background driver number */}
+          <div
+            className="absolute top-1/4 font-f1-bold text-[20rem] leading-none select-none pointer-events-none"
+            style={{
+              color: team.secondaryColor || team.gradientStops[1],
+              opacity: 0.15,
+              zIndex: 0,
+            }}
+          >
+            {driverB.number}
+          </div>
+
           {/* Driver photo placeholder */}
-          <div className="relative w-full max-w-md h-[70vh] mb-8">
+          <div className="relative w-full max-w-md h-[70vh] mb-8 z-10">
             {driverB.photoUrl ? (
               <img
                 src={driverB.photoUrl}
@@ -210,10 +237,7 @@ export default function VersusView({ team, onSelectDriver, onBack }: VersusViewP
           </div>
 
           {/* Driver name */}
-          <motion.h2
-            className="font-f1-wide text-white text-5xl md:text-7xl uppercase tracking-wider text-center group-hover:scale-105 transition-transform"
-            style={{ textShadow: "0 4px 20px rgba(0,0,0,0.5)" }}
-          >
+          <motion.h2 className="font-f1-wide text-white text-5xl md:text-7xl uppercase tracking-wider text-center">
             {driverB.name.split(" ")[0]}
             <br />
             <span className="text-6xl md:text-8xl">{driverB.name.split(" ")[1]}</span>

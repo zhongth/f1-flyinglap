@@ -50,7 +50,7 @@ export default function DetailView({ driver, onBack }: DetailViewProps) {
         initial={{ opacity: 0, x: -20 }}
         animate={{ opacity: 1, x: 0 }}
         onClick={onBack}
-        className="fixed top-8 left-8 z-30 flex items-center gap-2 text-white/80 hover:text-white transition-colors font-f1-reg text-sm tracking-wide group"
+        className="fixed top-8 left-8 z-30 flex items-center gap-2 text-white/80 hover:text-white transition-colors font-f1-reg text-sm tracking-wide group cursor-pointer"
       >
         <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         BACK TO COMPARISON
@@ -133,7 +133,7 @@ export default function DetailView({ driver, onBack }: DetailViewProps) {
             {/* Career Wins */}
             <motion.div
               variants={statItemVariants}
-              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 hover:bg-white/10 transition-colors"
+              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 hover:bg-white/10 transition-colors cursor-default"
             >
               <div className="font-f1-reg text-white/60 text-sm tracking-wider uppercase mb-2">
                 Career Wins
@@ -144,7 +144,7 @@ export default function DetailView({ driver, onBack }: DetailViewProps) {
             {/* Pole Positions */}
             <motion.div
               variants={statItemVariants}
-              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 hover:bg-white/10 transition-colors"
+              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 hover:bg-white/10 transition-colors cursor-default"
             >
               <div className="font-f1-reg text-white/60 text-sm tracking-wider uppercase mb-2">
                 Pole Positions
@@ -155,7 +155,7 @@ export default function DetailView({ driver, onBack }: DetailViewProps) {
             {/* DNFs */}
             <motion.div
               variants={statItemVariants}
-              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 hover:bg-white/10 transition-colors"
+              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 hover:bg-white/10 transition-colors cursor-default"
             >
               <div className="font-f1-reg text-white/60 text-sm tracking-wider uppercase mb-2">
                 DNFs
@@ -166,7 +166,7 @@ export default function DetailView({ driver, onBack }: DetailViewProps) {
             {/* Best Qualifying */}
             <motion.div
               variants={statItemVariants}
-              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 hover:bg-white/10 transition-colors"
+              className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-lg p-6 hover:bg-white/10 transition-colors cursor-default"
             >
               <div className="font-f1-reg text-white/60 text-sm tracking-wider uppercase mb-2">
                 Best Qualifying

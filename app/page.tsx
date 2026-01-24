@@ -46,6 +46,7 @@ export default function Home() {
             key="versus"
             team={selectedTeam}
             onSelectDriver={handleDriverSelect}
+            onSelectTeam={handleTeamSelect}
             onBack={handleBackToGrid}
           />
         )}
