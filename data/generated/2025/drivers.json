@@ -1,0 +1,362 @@
+[
+  {
+    "id": "max_verstappen",
+    "firstName": "Max",
+    "lastName": "Verstappen",
+    "abbreviation": "VER",
+    "number": 1,
+    "teamId": "red_bull",
+    "nationality": "Netherlands",
+    "portraitPath": "/f1_2025_driver_portraits/max_verstappen.webp",
+    "heightCm": 181,
+    "careerStats": {
+      "polePositions": 40,
+      "wins": 62,
+      "podiums": 111,
+      "fastestLaps": 32,
+      "championships": 4
+    }
+  },
+  {
+    "id": "lando_norris",
+    "firstName": "Lando",
+    "lastName": "Norris",
+    "abbreviation": "NOR",
+    "number": 4,
+    "teamId": "mclaren",
+    "nationality": "United Kingdom",
+    "portraitPath": "/f1_2025_driver_portraits/lando_norris.webp",
+    "heightCm": 170,
+    "careerStats": {
+      "polePositions": 8,
+      "wins": 4,
+      "podiums": 26,
+      "fastestLaps": 9,
+      "championships": 0
+    }
+  },
+  {
+    "id": "oscar_piastri",
+    "firstName": "Oscar",
+    "lastName": "Piastri",
+    "abbreviation": "PIA",
+    "number": 81,
+    "teamId": "mclaren",
+    "nationality": "Australia",
+    "portraitPath": "/f1_2025_driver_portraits/oscar_piastri.webp",
+    "heightCm": 178,
+    "careerStats": {
+      "polePositions": 3,
+      "wins": 2,
+      "podiums": 14,
+      "fastestLaps": 2,
+      "championships": 0
+    }
+  },
+  {
+    "id": "george_russell",
+    "firstName": "George",
+    "lastName": "Russell",
+    "abbreviation": "RUS",
+    "number": 63,
+    "teamId": "mercedes",
+    "nationality": "United Kingdom",
+    "portraitPath": "/f1_2025_driver_portraits/george_russell.webp",
+    "heightCm": 185,
+    "careerStats": {
+      "polePositions": 5,
+      "wins": 3,
+      "podiums": 16,
+      "fastestLaps": 7,
+      "championships": 0
+    }
+  },
+  {
+    "id": "charles_leclerc",
+    "firstName": "Charles",
+    "lastName": "Leclerc",
+    "abbreviation": "LEC",
+    "number": 16,
+    "teamId": "ferrari",
+    "nationality": "Monaco",
+    "portraitPath": "/f1_2025_driver_portraits/charles_leclerc.webp",
+    "heightCm": 180,
+    "careerStats": {
+      "polePositions": 26,
+      "wins": 8,
+      "podiums": 40,
+      "fastestLaps": 10,
+      "championships": 0
+    }
+  },
+  {
+    "id": "fernando_alonso",
+    "firstName": "Fernando",
+    "lastName": "Alonso",
+    "abbreviation": "ALO",
+    "number": 14,
+    "teamId": "aston_martin",
+    "nationality": "Spain",
+    "portraitPath": "/f1_2025_driver_portraits/fernando_alonso.webp",
+    "heightCm": 171,
+    "careerStats": {
+      "polePositions": 22,
+      "wins": 32,
+      "podiums": 106,
+      "fastestLaps": 24,
+      "championships": 2
+    }
+  },
+  {
+    "id": "gabriel_bortoleto",
+    "firstName": "Gabriel",
+    "lastName": "Bortoleto",
+    "abbreviation": "BOR",
+    "number": 5,
+    "teamId": "sauber",
+    "nationality": "Brazil",
+    "portraitPath": "/f1_2025_driver_portraits/gabriel_bortoleto.webp",
+    "heightCm": 170,
+    "careerStats": {
+      "polePositions": 0,
+      "wins": 0,
+      "podiums": 0,
+      "fastestLaps": 0,
+      "championships": 0
+    }
+  },
+  {
+    "id": "esteban_ocon",
+    "firstName": "Esteban",
+    "lastName": "Ocon",
+    "abbreviation": "OCO",
+    "number": 31,
+    "teamId": "haas",
+    "nationality": "France",
+    "portraitPath": "/f1_2025_driver_portraits/esteban_ocon.webp",
+    "heightCm": 186,
+    "careerStats": {
+      "polePositions": 0,
+      "wins": 1,
+      "podiums": 3,
+      "fastestLaps": 0,
+      "championships": 0
+    }
+  },
+  {
+    "id": "isack_hadjar",
+    "firstName": "Isack",
+    "lastName": "Hadjar",
+    "abbreviation": "HAD",
+    "number": 6,
+    "teamId": "racing_bulls",
+    "nationality": "France",
+    "portraitPath": "/f1_2025_driver_portraits/isack_hadjar.webp",
+    "heightCm": 175,
+    "careerStats": {
+      "polePositions": 0,
+      "wins": 0,
+      "podiums": 0,
+      "fastestLaps": 0,
+      "championships": 0
+    }
+  },
+  {
+    "id": "yuki_tsunoda",
+    "firstName": "Yuki",
+    "lastName": "Tsunoda",
+    "abbreviation": "TSU",
+    "number": 22,
+    "teamId": "red_bull",
+    "nationality": "Japan",
+    "portraitPath": "/f1_2025_driver_portraits/yuki_tsunoda.webp",
+    "heightCm": 159,
+    "careerStats": {
+      "polePositions": 0,
+      "wins": 0,
+      "podiums": 1,
+      "fastestLaps": 0,
+      "championships": 0
+    }
+  },
+  {
+    "id": "oliver_bearman",
+    "firstName": "Oliver",
+    "lastName": "Bearman",
+    "abbreviation": "BEA",
+    "number": 87,
+    "teamId": "haas",
+    "nationality": "United Kingdom",
+    "portraitPath": "/f1_2025_driver_portraits/oliver_bearman.webp",
+    "heightCm": 180,
+    "careerStats": {
+      "polePositions": 0,
+      "wins": 0,
+      "podiums": 0,
+      "fastestLaps": 0,
+      "championships": 0
+    }
+  },
+  {
+    "id": "carlos_sainz",
+    "firstName": "Carlos",
+    "lastName": "Sainz",
+    "abbreviation": "SAI",
+    "number": 55,
+    "teamId": "williams",
+    "nationality": "Spain",
+    "portraitPath": "/f1_2025_driver_portraits/carlos_sainz.webp",
+    "heightCm": 178,
+    "careerStats": {
+      "polePositions": 6,
+      "wins": 4,
+      "podiums": 25,
+      "fastestLaps": 5,
+      "championships": 0
+    }
+  },
+  {
+    "id": "liam_lawson",
+    "firstName": "Liam",
+    "lastName": "Lawson",
+    "abbreviation": "LAW",
+    "number": 30,
+    "teamId": "racing_bulls",
+    "nationality": "New Zealand",
+    "portraitPath": "/f1_2025_driver_portraits/liam_lawson.webp",
+    "heightCm": 175,
+    "careerStats": {
+      "polePositions": 0,
+      "wins": 0,
+      "podiums": 0,
+      "fastestLaps": 0,
+      "championships": 0
+    }
+  },
+  {
+    "id": "kimi_antonelli",
+    "firstName": "Kimi",
+    "lastName": "Antonelli",
+    "abbreviation": "ANT",
+    "number": 12,
+    "teamId": "mercedes",
+    "nationality": "Italy",
+    "portraitPath": "/f1_2025_driver_portraits/kimi_antonelli.webp",
+    "heightCm": 175,
+    "careerStats": {
+      "polePositions": 0,
+      "wins": 0,
+      "podiums": 0,
+      "fastestLaps": 0,
+      "championships": 0
+    }
+  },
+  {
+    "id": "lance_stroll",
+    "firstName": "Lance",
+    "lastName": "Stroll",
+    "abbreviation": "STR",
+    "number": 18,
+    "teamId": "aston_martin",
+    "nationality": "Canada",
+    "portraitPath": "/f1_2025_driver_portraits/lance_stroll.webp",
+    "heightCm": 182,
+    "careerStats": {
+      "polePositions": 1,
+      "wins": 0,
+      "podiums": 3,
+      "fastestLaps": 0,
+      "championships": 0
+    }
+  },
+  {
+    "id": "lewis_hamilton",
+    "firstName": "Lewis",
+    "lastName": "Hamilton",
+    "abbreviation": "HAM",
+    "number": 44,
+    "teamId": "ferrari",
+    "nationality": "United Kingdom",
+    "portraitPath": "/f1_2025_driver_portraits/lewis_hamilton.webp",
+    "heightCm": 174,
+    "careerStats": {
+      "polePositions": 104,
+      "wins": 105,
+      "podiums": 201,
+      "fastestLaps": 67,
+      "championships": 7
+    }
+  },
+  {
+    "id": "alexander_albon",
+    "firstName": "Alexander",
+    "lastName": "Albon",
+    "abbreviation": "ALB",
+    "number": 23,
+    "teamId": "williams",
+    "nationality": "Thailand",
+    "portraitPath": "/f1_2025_driver_portraits/alexander_albon.webp",
+    "heightCm": 186,
+    "careerStats": {
+      "polePositions": 0,
+      "wins": 0,
+      "podiums": 2,
+      "fastestLaps": 0,
+      "championships": 0
+    }
+  },
+  {
+    "id": "nico_hulkenberg",
+    "firstName": "Nico",
+    "lastName": "Hulkenberg",
+    "abbreviation": "HUL",
+    "number": 27,
+    "teamId": "sauber",
+    "nationality": "Germany",
+    "portraitPath": "/f1_2025_driver_portraits/nico_hulkenberg.webp",
+    "heightCm": 184,
+    "careerStats": {
+      "polePositions": 1,
+      "wins": 0,
+      "podiums": 0,
+      "fastestLaps": 2,
+      "championships": 0
+    }
+  },
+  {
+    "id": "pierre_gasly",
+    "firstName": "Pierre",
+    "lastName": "Gasly",
+    "abbreviation": "GAS",
+    "number": 10,
+    "teamId": "alpine",
+    "nationality": "France",
+    "portraitPath": "/f1_2025_driver_portraits/pierre_gasly.webp",
+    "heightCm": 177,
+    "careerStats": {
+      "polePositions": 0,
+      "wins": 1,
+      "podiums": 4,
+      "fastestLaps": 3,
+      "championships": 0
+    }
+  },
+  {
+    "id": "franco_colapinto",
+    "firstName": "Franco",
+    "lastName": "Colapinto",
+    "abbreviation": "COL",
+    "number": 43,
+    "teamId": "alpine",
+    "nationality": "Argentina",
+    "portraitPath": "/f1_2025_driver_portraits/franco_colapinto.webp",
+    "heightCm": 175,
+    "careerStats": {
+      "polePositions": 0,
+      "wins": 0,
+      "podiums": 0,
+      "fastestLaps": 0,
+      "championships": 0
+    }
+  }
+]

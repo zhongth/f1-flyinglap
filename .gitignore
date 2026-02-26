@@ -45,3 +45,10 @@ next-env.d.ts
 .agents/
 .kiro/
 .windsurf/
+
+# Python pipeline
+pipeline/cache/
+pipeline/.venv/
+__pycache__/
+*.pyc
+*.pyo

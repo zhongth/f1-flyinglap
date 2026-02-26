@@ -1,0 +1,142 @@
+{
+  "red_bull.season": {
+    "driver1Id": "max_verstappen",
+    "driver2Id": "yuki_tsunoda",
+    "driver1Wins": 23,
+    "driver2Wins": 0,
+    "scope": "season"
+  },
+  "ferrari.season": {
+    "driver1Id": "charles_leclerc",
+    "driver2Id": "lewis_hamilton",
+    "driver1Wins": 19,
+    "driver2Wins": 5,
+    "scope": "season"
+  },
+  "mclaren.season": {
+    "driver1Id": "lando_norris",
+    "driver2Id": "oscar_piastri",
+    "driver1Wins": 12,
+    "driver2Wins": 12,
+    "scope": "season"
+  },
+  "mercedes.season": {
+    "driver1Id": "george_russell",
+    "driver2Id": "kimi_antonelli",
+    "driver1Wins": 21,
+    "driver2Wins": 3,
+    "scope": "season"
+  },
+  "aston_martin.season": {
+    "driver1Id": "fernando_alonso",
+    "driver2Id": "lance_stroll",
+    "driver1Wins": 23,
+    "driver2Wins": 0,
+    "scope": "season"
+  },
+  "alpine.season": {
+    "driver1Id": "pierre_gasly",
+    "driver2Id": "franco_colapinto",
+    "driver1Wins": 13,
+    "driver2Wins": 5,
+    "scope": "season"
+  },
+  "williams.season": {
+    "driver1Id": "carlos_sainz",
+    "driver2Id": "alexander_albon",
+    "driver1Wins": 13,
+    "driver2Wins": 10,
+    "scope": "season"
+  },
+  "racing_bulls.season": {
+    "driver1Id": "isack_hadjar",
+    "driver2Id": "liam_lawson",
+    "driver1Wins": 18,
+    "driver2Wins": 5,
+    "scope": "season"
+  },
+  "sauber.season": {
+    "driver1Id": "gabriel_bortoleto",
+    "driver2Id": "nico_hulkenberg",
+    "driver1Wins": 10,
+    "driver2Wins": 13,
+    "scope": "season"
+  },
+  "haas.season": {
+    "driver1Id": "esteban_ocon",
+    "driver2Id": "oliver_bearman",
+    "driver1Wins": 10,
+    "driver2Wins": 12,
+    "scope": "season"
+  },
+  "red_bull.last5": {
+    "driver1Id": "max_verstappen",
+    "driver2Id": "yuki_tsunoda",
+    "driver1Wins": 5,
+    "driver2Wins": 0,
+    "scope": "last5"
+  },
+  "ferrari.last5": {
+    "driver1Id": "charles_leclerc",
+    "driver2Id": "lewis_hamilton",
+    "driver1Wins": 5,
+    "driver2Wins": 0,
+    "scope": "last5"
+  },
+  "mclaren.last5": {
+    "driver1Id": "lando_norris",
+    "driver2Id": "oscar_piastri",
+    "driver1Wins": 4,
+    "driver2Wins": 1,
+    "scope": "last5"
+  },
+  "mercedes.last5": {
+    "driver1Id": "george_russell",
+    "driver2Id": "kimi_antonelli",
+    "driver1Wins": 4,
+    "driver2Wins": 1,
+    "scope": "last5"
+  },
+  "aston_martin.last5": {
+    "driver1Id": "fernando_alonso",
+    "driver2Id": "lance_stroll",
+    "driver1Wins": 5,
+    "driver2Wins": 0,
+    "scope": "last5"
+  },
+  "alpine.last5": {
+    "driver1Id": "pierre_gasly",
+    "driver2Id": "franco_colapinto",
+    "driver1Wins": 5,
+    "driver2Wins": 0,
+    "scope": "last5"
+  },
+  "williams.last5": {
+    "driver1Id": "carlos_sainz",
+    "driver2Id": "alexander_albon",
+    "driver1Wins": 4,
+    "driver2Wins": 1,
+    "scope": "last5"
+  },
+  "racing_bulls.last5": {
+    "driver1Id": "isack_hadjar",
+    "driver2Id": "liam_lawson",
+    "driver1Wins": 4,
+    "driver2Wins": 1,
+    "scope": "last5"
+  },
+  "sauber.last5": {
+    "driver1Id": "gabriel_bortoleto",
+    "driver2Id": "nico_hulkenberg",
+    "driver1Wins": 1,
+    "driver2Wins": 3,
+    "scope": "last5"
+  },
+  "haas.last5": {
+    "driver1Id": "esteban_ocon",
+    "driver2Id": "oliver_bearman",
+    "driver1Wins": 2,
+    "driver2Wins": 3,
+    "scope": "last5"
+  }
+}

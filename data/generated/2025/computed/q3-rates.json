@@ -1,0 +1,282 @@
+{
+  "max_verstappen.season": {
+    "driverId": "max_verstappen",
+    "q3Appearances": 23,
+    "totalRaces": 24,
+    "q3Rate": 0.9583,
+    "scope": "season"
+  },
+  "lando_norris.season": {
+    "driverId": "lando_norris",
+    "q3Appearances": 23,
+    "totalRaces": 24,
+    "q3Rate": 0.9583,
+    "scope": "season"
+  },
+  "oscar_piastri.season": {
+    "driverId": "oscar_piastri",
+    "q3Appearances": 23,
+    "totalRaces": 24,
+    "q3Rate": 0.9583,
+    "scope": "season"
+  },
+  "george_russell.season": {
+    "driverId": "george_russell",
+    "q3Appearances": 23,
+    "totalRaces": 24,
+    "q3Rate": 0.9583,
+    "scope": "season"
+  },
+  "charles_leclerc.season": {
+    "driverId": "charles_leclerc",
+    "q3Appearances": 22,
+    "totalRaces": 24,
+    "q3Rate": 0.9167,
+    "scope": "season"
+  },
+  "fernando_alonso.season": {
+    "driverId": "fernando_alonso",
+    "q3Appearances": 13,
+    "totalRaces": 24,
+    "q3Rate": 0.5417,
+    "scope": "season"
+  },
+  "gabriel_bortoleto.season": {
+    "driverId": "gabriel_bortoleto",
+    "q3Appearances": 5,
+    "totalRaces": 23,
+    "q3Rate": 0.2174,
+    "scope": "season"
+  },
+  "esteban_ocon.season": {
+    "driverId": "esteban_ocon",
+    "q3Appearances": 3,
+    "totalRaces": 23,
+    "q3Rate": 0.1304,
+    "scope": "season"
+  },
+  "isack_hadjar.season": {
+    "driverId": "isack_hadjar",
+    "q3Appearances": 16,
+    "totalRaces": 23,
+    "q3Rate": 0.6957,
+    "scope": "season"
+  },
+  "yuki_tsunoda.season": {
+    "driverId": "yuki_tsunoda",
+    "q3Appearances": 8,
+    "totalRaces": 23,
+    "q3Rate": 0.3478,
+    "scope": "season"
+  },
+  "oliver_bearman.season": {
+    "driverId": "oliver_bearman",
+    "q3Appearances": 6,
+    "totalRaces": 23,
+    "q3Rate": 0.2609,
+    "scope": "season"
+  },
+  "carlos_sainz.season": {
+    "driverId": "carlos_sainz",
+    "q3Appearances": 11,
+    "totalRaces": 23,
+    "q3Rate": 0.4783,
+    "scope": "season"
+  },
+  "liam_lawson.season": {
+    "driverId": "liam_lawson",
+    "q3Appearances": 8,
+    "totalRaces": 24,
+    "q3Rate": 0.3333,
+    "scope": "season"
+  },
+  "kimi_antonelli.season": {
+    "driverId": "kimi_antonelli",
+    "q3Appearances": 16,
+    "totalRaces": 24,
+    "q3Rate": 0.6667,
+    "scope": "season"
+  },
+  "lance_stroll.season": {
+    "driverId": "lance_stroll",
+    "q3Appearances": 2,
+    "totalRaces": 23,
+    "q3Rate": 0.087,
+    "scope": "season"
+  },
+  "lewis_hamilton.season": {
+    "driverId": "lewis_hamilton",
+    "q3Appearances": 15,
+    "totalRaces": 24,
+    "q3Rate": 0.625,
+    "scope": "season"
+  },
+  "alexander_albon.season": {
+    "driverId": "alexander_albon",
+    "q3Appearances": 8,
+    "totalRaces": 23,
+    "q3Rate": 0.3478,
+    "scope": "season"
+  },
+  "nico_hulkenberg.season": {
+    "driverId": "nico_hulkenberg",
+    "q3Appearances": 1,
+    "totalRaces": 24,
+    "q3Rate": 0.0417,
+    "scope": "season"
+  },
+  "pierre_gasly.season": {
+    "driverId": "pierre_gasly",
+    "q3Appearances": 10,
+    "totalRaces": 24,
+    "q3Rate": 0.4167,
+    "scope": "season"
+  },
+  "franco_colapinto.season": {
+    "driverId": "franco_colapinto",
+    "q3Appearances": 0,
+    "totalRaces": 18,
+    "q3Rate": 0.0,
+    "scope": "season"
+  },
+  "max_verstappen.last5": {
+    "driverId": "max_verstappen",
+    "q3Appearances": 4,
+    "totalRaces": 5,
+    "q3Rate": 0.8,
+    "scope": "last5"
+  },
+  "lando_norris.last5": {
+    "driverId": "lando_norris",
+    "q3Appearances": 5,
+    "totalRaces": 5,
+    "q3Rate": 1.0,
+    "scope": "last5"
+  },
+  "oscar_piastri.last5": {
+    "driverId": "oscar_piastri",
+    "q3Appearances": 5,
+    "totalRaces": 5,
+    "q3Rate": 1.0,
+    "scope": "last5"
+  },
+  "george_russell.last5": {
+    "driverId": "george_russell",
+    "q3Appearances": 5,
+    "totalRaces": 5,
+    "q3Rate": 1.0,
+    "scope": "last5"
+  },
+  "charles_leclerc.last5": {
+    "driverId": "charles_leclerc",
+    "q3Appearances": 5,
+    "totalRaces": 5,
+    "q3Rate": 1.0,
+    "scope": "last5"
+  },
+  "fernando_alonso.last5": {
+    "driverId": "fernando_alonso",
+    "q3Appearances": 3,
+    "totalRaces": 5,
+    "q3Rate": 0.6,
+    "scope": "last5"
+  },
+  "gabriel_bortoleto.last5": {
+    "driverId": "gabriel_bortoleto",
+    "q3Appearances": 1,
+    "totalRaces": 4,
+    "q3Rate": 0.25,
+    "scope": "last5"
+  },
+  "esteban_ocon.last5": {
+    "driverId": "esteban_ocon",
+    "q3Appearances": 1,
+    "totalRaces": 5,
+    "q3Rate": 0.2,
+    "scope": "last5"
+  },
+  "isack_hadjar.last5": {
+    "driverId": "isack_hadjar",
+    "q3Appearances": 5,
+    "totalRaces": 5,
+    "q3Rate": 1.0,
+    "scope": "last5"
+  },
+  "yuki_tsunoda.last5": {
+    "driverId": "yuki_tsunoda",
+    "q3Appearances": 0,
+    "totalRaces": 5,
+    "q3Rate": 0.0,
+    "scope": "last5"
+  },
+  "oliver_bearman.last5": {
+    "driverId": "oliver_bearman",
+    "q3Appearances": 2,
+    "totalRaces": 5,
+    "q3Rate": 0.4,
+    "scope": "last5"
+  },
+  "carlos_sainz.last5": {
+    "driverId": "carlos_sainz",
+    "q3Appearances": 3,
+    "totalRaces": 5,
+    "q3Rate": 0.6,
+    "scope": "last5"
+  },
+  "liam_lawson.last5": {
+    "driverId": "liam_lawson",
+    "q3Appearances": 2,
+    "totalRaces": 5,
+    "q3Rate": 0.4,
+    "scope": "last5"
+  },
+  "kimi_antonelli.last5": {
+    "driverId": "kimi_antonelli",
+    "q3Appearances": 3,
+    "totalRaces": 5,
+    "q3Rate": 0.6,
+    "scope": "last5"
+  },
+  "lance_stroll.last5": {
+    "driverId": "lance_stroll",
+    "q3Appearances": 0,
+    "totalRaces": 5,
+    "q3Rate": 0.0,
+    "scope": "last5"
+  },
+  "lewis_hamilton.last5": {
+    "driverId": "lewis_hamilton",
+    "q3Appearances": 1,
+    "totalRaces": 5,
+    "q3Rate": 0.2,
+    "scope": "last5"
+  },
+  "alexander_albon.last5": {
+    "driverId": "alexander_albon",
+    "q3Appearances": 0,
+    "totalRaces": 5,
+    "q3Rate": 0.0,
+    "scope": "last5"
+  },
+  "nico_hulkenberg.last5": {
+    "driverId": "nico_hulkenberg",
+    "q3Appearances": 1,
+    "totalRaces": 5,
+    "q3Rate": 0.2,
+    "scope": "last5"
+  },
+  "pierre_gasly.last5": {
+    "driverId": "pierre_gasly",
+    "q3Appearances": 3,
+    "totalRaces": 5,
+    "q3Rate": 0.6,
+    "scope": "last5"
+  },
+  "franco_colapinto.last5": {
+    "driverId": "franco_colapinto",
+    "q3Appearances": 0,
+    "totalRaces": 5,
+    "q3Rate": 0.0,
+    "scope": "last5"
+  }
+}

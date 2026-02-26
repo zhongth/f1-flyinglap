@@ -1,0 +1,182 @@
+{
+  "red_bull.season": {
+    "teamId": "red_bull",
+    "driver1Id": "max_verstappen",
+    "driver2Id": "yuki_tsunoda",
+    "medianGap": -827.0,
+    "medianGapFormatted": "-0.827",
+    "raceCount": 23,
+    "scope": "season"
+  },
+  "ferrari.season": {
+    "teamId": "ferrari",
+    "driver1Id": "charles_leclerc",
+    "driver2Id": "lewis_hamilton",
+    "medianGap": -235.0,
+    "medianGapFormatted": "-0.235",
+    "raceCount": 24,
+    "scope": "season"
+  },
+  "mclaren.season": {
+    "teamId": "mclaren",
+    "driver1Id": "lando_norris",
+    "driver2Id": "oscar_piastri",
+    "medianGap": -8.5,
+    "medianGapFormatted": "-0.008",
+    "raceCount": 24,
+    "scope": "season"
+  },
+  "mercedes.season": {
+    "teamId": "mercedes",
+    "driver1Id": "george_russell",
+    "driver2Id": "kimi_antonelli",
+    "medianGap": -359.0,
+    "medianGapFormatted": "-0.359",
+    "raceCount": 24,
+    "scope": "season"
+  },
+  "aston_martin.season": {
+    "teamId": "aston_martin",
+    "driver1Id": "fernando_alonso",
+    "driver2Id": "lance_stroll",
+    "medianGap": -503.0,
+    "medianGapFormatted": "-0.503",
+    "raceCount": 23,
+    "scope": "season"
+  },
+  "alpine.season": {
+    "teamId": "alpine",
+    "driver1Id": "pierre_gasly",
+    "driver2Id": "franco_colapinto",
+    "medianGap": -407.5,
+    "medianGapFormatted": "-0.407",
+    "raceCount": 18,
+    "scope": "season"
+  },
+  "williams.season": {
+    "teamId": "williams",
+    "driver1Id": "carlos_sainz",
+    "driver2Id": "alexander_albon",
+    "medianGap": -55.0,
+    "medianGapFormatted": "-0.055",
+    "raceCount": 23,
+    "scope": "season"
+  },
+  "racing_bulls.season": {
+    "teamId": "racing_bulls",
+    "driver1Id": "isack_hadjar",
+    "driver2Id": "liam_lawson",
+    "medianGap": -337.0,
+    "medianGapFormatted": "-0.337",
+    "raceCount": 23,
+    "scope": "season"
+  },
+  "sauber.season": {
+    "teamId": "sauber",
+    "driver1Id": "gabriel_bortoleto",
+    "driver2Id": "nico_hulkenberg",
+    "medianGap": 119.0,
+    "medianGapFormatted": "+0.119",
+    "raceCount": 23,
+    "scope": "season"
+  },
+  "haas.season": {
+    "teamId": "haas",
+    "driver1Id": "esteban_ocon",
+    "driver2Id": "oliver_bearman",
+    "medianGap": 156.5,
+    "medianGapFormatted": "+0.156",
+    "raceCount": 22,
+    "scope": "season"
+  },
+  "red_bull.last5": {
+    "teamId": "red_bull",
+    "driver1Id": "max_verstappen",
+    "driver2Id": "yuki_tsunoda",
+    "medianGap": -827.0,
+    "medianGapFormatted": "-0.827",
+    "raceCount": 5,
+    "scope": "last5"
+  },
+  "ferrari.last5": {
+    "teamId": "ferrari",
+    "driver1Id": "charles_leclerc",
+    "driver2Id": "lewis_hamilton",
+    "medianGap": -346.0,
+    "medianGapFormatted": "-0.346",
+    "raceCount": 5,
+    "scope": "last5"
+  },
+  "mclaren.last5": {
+    "teamId": "mclaren",
+    "driver1Id": "lando_norris",
+    "driver2Id": "oscar_piastri",
+    "medianGap": -375.0,
+    "medianGapFormatted": "-0.375",
+    "raceCount": 5,
+    "scope": "last5"
+  },
+  "mercedes.last5": {
+    "teamId": "mercedes",
+    "driver1Id": "george_russell",
+    "driver2Id": "kimi_antonelli",
+    "medianGap": -184.0,
+    "medianGapFormatted": "-0.184",
+    "raceCount": 5,
+    "scope": "last5"
+  },
+  "aston_martin.last5": {
+    "teamId": "aston_martin",
+    "driver1Id": "fernando_alonso",
+    "driver2Id": "lance_stroll",
+    "medianGap": -503.0,
+    "medianGapFormatted": "-0.503",
+    "raceCount": 5,
+    "scope": "last5"
+  },
+  "alpine.last5": {
+    "teamId": "alpine",
+    "driver1Id": "pierre_gasly",
+    "driver2Id": "franco_colapinto",
+    "medianGap": -630.0,
+    "medianGapFormatted": "-0.630",
+    "raceCount": 5,
+    "scope": "last5"
+  },
+  "williams.last5": {
+    "teamId": "williams",
+    "driver1Id": "carlos_sainz",
+    "driver2Id": "alexander_albon",
+    "medianGap": -374.0,
+    "medianGapFormatted": "-0.374",
+    "raceCount": 5,
+    "scope": "last5"
+  },
+  "racing_bulls.last5": {
+    "teamId": "racing_bulls",
+    "driver1Id": "isack_hadjar",
+    "driver2Id": "liam_lawson",
+    "medianGap": -31.0,
+    "medianGapFormatted": "-0.031",
+    "raceCount": 5,
+    "scope": "last5"
+  },
+  "sauber.last5": {
+    "teamId": "sauber",
+    "driver1Id": "gabriel_bortoleto",
+    "driver2Id": "nico_hulkenberg",
+    "medianGap": 288.5,
+    "medianGapFormatted": "+0.288",
+    "raceCount": 4,
+    "scope": "last5"
+  },
+  "haas.last5": {
+    "teamId": "haas",
+    "driver1Id": "esteban_ocon",
+    "driver2Id": "oliver_bearman",
+    "medianGap": 377.0,
+    "medianGapFormatted": "+0.377",
+    "raceCount": 5,
+    "scope": "last5"
+  }
+}
