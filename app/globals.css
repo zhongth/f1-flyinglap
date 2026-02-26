@@ -1,95 +1,304 @@
 @import "tailwindcss";
 
-/* Dark Luxury Motorsport Theme */
+/* F1 Theme Variables */
 :root {
+  /* Base colors */
   --background: #0a0a0a;
   --foreground: #ededed;
+  --background-secondary: #151515;
+  --background-tertiary: #1a1a1a;
+
+  /* F1 Brand */
+  --f1-red: #e10600;
+  --f1-black: #15151e;
+  --f1-white: #ffffff;
+
+  /* Gap indicator colors */
+  --gap-faster: #00d400;
+  --gap-slower: #ff1e00;
+  --gap-neutral: #888888;
+
+  /* Team colors */
+  --team-red-bull: #3671c6;
+  --team-ferrari: #e80020;
+  --team-mclaren: #ff8000;
+  --team-mercedes: #27f4d2;
+  --team-aston-martin: #229971;
+  --team-alpine: #ff87bc;
+  --team-williams: #64c4ff;
+  --team-racing-bulls: #6692ff;
+  --team-sauber: #52e252;
+  --team-haas: #b6babd;
+
+  /* Font families */
+  --font-f1: var(--font-f1-regular), system-ui, sans-serif;
+  --font-f1-bold: var(--font-f1-bold), system-ui, sans-serif;
+  --font-f1-wide: var(--font-f1-wide), system-ui, sans-serif;
+  --font-northwell: var(--font-northwell), cursive;
+
+  /* Spacing */
+  --navbar-height: 80px;
+
+  /* Transitions */
+  --transition-fast: 150ms ease-out;
+  --transition-normal: 300ms ease-out;
+  --transition-slow: 500ms ease-out;
 }
 
-@theme inline {
-  --color-background: #0a0a0a;
-  --color-foreground: #ededed;
-
-  /* F1 Font Variables - mapped from next/font/local */
-  --font-f1-reg: var(--font-f1-reg);
-  --font-f1-bold: var(--font-f1-bold);
-  --font-f1-wide: var(--font-f1-wide);
-
-  /* Speed Delta Colors */
-  --color-speed-faster: #00ff00;
-  --color-speed-slower: #ff0000;
-
-  /* Team Colors - Ferrari */
-  --color-ferrari-primary: #dc0000;
-  --color-ferrari-dark: #8b0000;
-
-  /* Team Colors - Red Bull */
-  --color-redbull-primary: #0600ef;
-  --color-redbull-dark: #000080;
-
-  /* Team Colors - Mercedes */
-  --color-mercedes-primary: #00d2be;
-  --color-mercedes-dark: #006666;
-
-  /* Team Colors - McLaren */
-  --color-mclaren-primary: #ff8700;
-  --color-mclaren-dark: #cc6600;
-
-  /* Team Colors - Aston Martin */
-  --color-astonmartin-primary: #006f62;
-  --color-astonmartin-dark: #003d35;
-
-  /* Team Colors - Alpine */
-  --color-alpine-primary: #0090ff;
-  --color-alpine-dark: #004d8c;
-
-  /* Team Colors - Williams */
-  --color-williams-primary: #005aff;
-  --color-williams-dark: #003380;
-
-  /* Team Colors - Haas */
-  --color-haas-primary: #ffffff;
-  --color-haas-dark: #787878;
-
-  /* Team Colors - Sauber */
-  --color-sauber-primary: #00ff00;
-  --color-sauber-dark: #006600;
-
-  /* Team Colors - RB */
-  --color-rb-primary: #6692ff;
-  --color-rb-dark: #3355aa;
+/* Base styles */
+html {
+  color-scheme: dark;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-f1-reg), sans-serif;
-  overflow-x: hidden;
+  font-family: var(--font-f1);
+  overflow: hidden;
+  min-height: 100vh;
 }
 
-/* Utility Classes */
-.font-f1-reg {
-  font-family: var(--font-f1-reg), sans-serif;
+/* Font utility classes */
+.font-f1 {
+  font-family: var(--font-f1);
 }
 
 .font-f1-bold {
-  font-family: var(--font-f1-bold), sans-serif;
+  font-family: var(--font-f1-bold);
 }
 
 .font-f1-wide {
-  font-family: var(--font-f1-wide), sans-serif;
+  font-family: var(--font-f1-wide);
 }
 
-/* Scanline Animation for Placeholders */
-@keyframes scanline {
-  0% {
-    transform: translateY(-100%);
+.font-northwell {
+  font-family: var(--font-northwell);
+}
+
+/* Team color utilities */
+.team-red-bull { --team-color: var(--team-red-bull); }
+.team-ferrari { --team-color: var(--team-ferrari); }
+.team-mclaren { --team-color: var(--team-mclaren); }
+.team-mercedes { --team-color: var(--team-mercedes); }
+.team-aston-martin { --team-color: var(--team-aston-martin); }
+.team-alpine { --team-color: var(--team-alpine); }
+.team-williams { --team-color: var(--team-williams); }
+.team-racing-bulls { --team-color: var(--team-racing-bulls); }
+.team-sauber { --team-color: var(--team-sauber); }
+.team-haas { --team-color: var(--team-haas); }
+
+/* Gap color utilities */
+.gap-faster {
+  color: var(--gap-faster);
+}
+
+.gap-slower {
+  color: var(--gap-slower);
+}
+
+.gap-neutral {
+  color: var(--gap-neutral);
+}
+
+/* Grayscale filter for logos */
+.grayscale-logo {
+  filter: grayscale(100%) brightness(0.7);
+  transition: filter var(--transition-normal);
+}
+
+.grayscale-logo:hover,
+.grayscale-logo.active {
+  filter: grayscale(0%) brightness(1);
+}
+
+/* Hardware acceleration for animations */
+.will-animate {
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* Hide scrollbar but keep functionality */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Text glow effect for numbers */
+.text-glow {
+  text-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+}
+
+.text-glow-subtle {
+  text-shadow: 0 0 10px currentColor;
+}
+
+/* Selection styling */
+::selection {
+  background: var(--f1-red);
+  color: var(--f1-white);
+}
+
+/* Keyframe Animations */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes scan-vertical {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
   }
-  100% {
-    transform: translateY(100%);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
-.scanline {
-  animation: scanline 3s linear infinite;
+/* Animation utilities */
+.animate-pulse-glow {
+  animation: pulse-glow 4s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+}
+
+/* Glass morphism utilities */
+.glass {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Noise texture overlay */
+.noise-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.02;
+  pointer-events: none;
+}
+
+/* Gradient text */
+.gradient-text {
+  background: linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.6) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Hollow/outline text */
+.text-hollow {
+  color: transparent;
+  -webkit-text-stroke-width: 2px;
+  -webkit-text-stroke-color: var(--stroke-color, currentColor);
+}
+
+/* Carousel */
+.carousel-container {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: pan-y;
+  cursor: grab;
+  user-select: none;
+}
+
+.carousel-container.dragging {
+  cursor: grabbing;
+}
+
+.carousel-logo {
+  position: absolute;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+  cursor: pointer;
+  transform-origin: center center;
+  transition: filter 0.4s ease-out;
+}
+
+.carousel-logo.active {
+  filter: grayscale(0%) brightness(1) drop-shadow(0 0 24px var(--glow-color, white));
+  z-index: 10;
+}
+
+.carousel-logo:not(.active) {
+  filter: grayscale(70%) brightness(0.5);
+}
+
+.carousel-select-btn {
+  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.carousel-select-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.wallpaper-layer {
+  position: absolute;
+  inset: 0;
+  will-change: opacity;
+  pointer-events: none;
+}
+
+/* Border glow effect */
+.border-glow {
+  position: relative;
+}
+
+.border-glow::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent, rgba(255,255,255,0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
 }

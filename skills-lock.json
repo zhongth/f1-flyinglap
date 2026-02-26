@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "skills": {
+    "accessibility-a11y": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "computedHash": "3117d5b0302f4fbb90cf7b3b65474aa0ea70eadaf91036ab9e20c912d68f9289"
+    },
+    "awwwards-landing-page": {
+      "source": "eng0ai/eng0-template-skills",
+      "sourceType": "github",
+      "computedHash": "7b9fe005bd664db3d8e0cde36a3750958de3bdb8f8a8d2ec0116dbd0261e1fa4"
+    },
+    "gsap-greensock": {
+      "source": "dylantarre/animation-principles",
+      "sourceType": "github",
+      "computedHash": "08a5bc6d818dfda5016d37cc0e767c63bbac5372c7cab20cdf4d05209c0af0cc"
+    },
+    "premium-frontend-design": {
+      "source": "kv0906/cc-skills",
+      "sourceType": "github",
+      "computedHash": "954f360f8e3c2c9ecc97857044ace2da990f519a4b4df8e2bd89c467bcf9273f"
+    },
+    "scroll-experience": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "5056619d8bcecdff6df25217c4f04e9878b4fc65d6cdd122c63522b26a24c615"
+    },
+    "tailwindcss-advanced-layouts": {
+      "source": "josiahsiegel/claude-plugin-marketplace",
+      "sourceType": "github",
+      "computedHash": "fa08c5757b8f24df2d412543d370bc25d8c14eadeb27be4112b2354323f5889f"
+    },
+    "tailwindcss-animations": {
+      "source": "josiahsiegel/claude-plugin-marketplace",
+      "sourceType": "github",
+      "computedHash": "a3ff1c497a4c106d83f2342b30569257bbde3d12a40dde21b84ff693e3767bf0"
+    },
+    "threejs": {
+      "source": "mrgoonie/claudekit-skills",
+      "sourceType": "github",
+      "computedHash": "91ce7060f3662b18178cee772d44c89a87e72a16f3a46a46a93760757897568c"
+    },
+    "web-performance-optimization": {
+      "source": "sickn33/antigravity-awesome-skills",
+      "sourceType": "github",
+      "computedHash": "3abc254c0d708fc983ae54ff6789feaabb6a9ddbf6f018aa01934b9207e5ec6a"
+    },
+    "zustand": {
+      "source": "bobmatnyc/claude-mpm-skills",
+      "sourceType": "github",
+      "computedHash": "b87f714ffab159f1758a07cef69806b016360ba74783684155ed83d614f162af"
+    }
+  }
+}
