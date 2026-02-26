@@ -13,6 +13,7 @@ import {
   calculateHeadToHead,
   calculateQ3Rate,
   getDriverPedigree,
+  getPerRaceQualifyingGaps,
 } from "@/data";
 
 export function VersusMode() {
@@ -69,6 +70,11 @@ export function VersusMode() {
       driver2: calculateQ3Rate(displayDrivers[1].id, timeScope),
     };
   }, [displayDrivers, timeScope]);
+
+  const perRaceGaps = useMemo(() => {
+    if (drivers.length !== 2) return [];
+    return getPerRaceQualifyingGaps(drivers[0].id, drivers[1].id, 5);
+  }, [drivers]);
 
   // Pedigree is a career stat — doesn't change with timeScope
   const pedigrees = useMemo(() => {
@@ -304,6 +310,7 @@ export function VersusMode() {
             raceCount={medianGap?.raceCount ?? 0}
             timeScope={timeScope}
             onTimeScopeChange={handleTimeScopeToggle}
+            perRaceGaps={perRaceGaps}
           />
 
           {/* Right driver — uses displayTeam/displayDrivers (swaps mid-animation) */}

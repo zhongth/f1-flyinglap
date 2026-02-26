@@ -1,4 +1,4 @@
-import type { QualifyingResult, RaceWeekend, MedianGapResult, HeadToHeadResult, Q3RateResult } from "@/types";
+import type { QualifyingResult, RaceWeekend, MedianGapResult, HeadToHeadResult, Q3RateResult, PerRaceGap } from "@/types";
 import racesData from "@/data/generated/2025/races.json";
 import qualifyingData from "@/data/generated/2025/qualifying-results.json";
 import teammateGapsData from "@/data/generated/2025/computed/teammate-gaps.json";
@@ -118,4 +118,70 @@ export function formatGap(ms: number): string {
 
 export function getQualifyingResultsForDriver(driverId: string): QualifyingResult[] {
   return qualifyingResults.filter((r) => r.driverId === driverId);
+}
+
+export function getPerRaceQualifyingGaps(
+  driver1Id: string,
+  driver2Id: string,
+  count: number = 5
+): PerRaceGap[] {
+  const d1Results = getQualifyingResultsForDriver(driver1Id);
+  const d2Results = getQualifyingResultsForDriver(driver2Id);
+
+  // Index by raceId for fast lookup
+  const d1ByRace = new Map(d1Results.map((r) => [r.raceId, r]));
+  const d2ByRace = new Map(d2Results.map((r) => [r.raceId, r]));
+
+  // Race map for circuit names
+  const raceMap = new Map(races2025.map((r) => [r.id, r]));
+
+  // Walk races in reverse chronological order (highest round first)
+  const sortedRaces = [...races2025].sort((a, b) => b.round - a.round);
+  const gaps: PerRaceGap[] = [];
+
+  for (const race of sortedRaces) {
+    if (gaps.length >= count) break;
+
+    const r1 = d1ByRace.get(race.id);
+    const r2 = d2ByRace.get(race.id);
+    if (!r1 || !r2) continue;
+
+    // Determine highest common session
+    let session: "Q1" | "Q2" | "Q3";
+    let t1: number | null;
+    let t2: number | null;
+
+    if (r1.q3Time && r2.q3Time) {
+      session = "Q3";
+      t1 = parseQualifyingTime(r1.q3Time);
+      t2 = parseQualifyingTime(r2.q3Time);
+    } else if (r1.q2Time && r2.q2Time) {
+      session = "Q2";
+      t1 = parseQualifyingTime(r1.q2Time);
+      t2 = parseQualifyingTime(r2.q2Time);
+    } else if (r1.q1Time && r2.q1Time) {
+      session = "Q1";
+      t1 = parseQualifyingTime(r1.q1Time);
+      t2 = parseQualifyingTime(r2.q1Time);
+    } else {
+      continue;
+    }
+
+    if (t1 === null || t2 === null) continue;
+
+    const gapMs = t2 - t1; // negative = driver1 faster
+    const raceInfo = raceMap.get(race.id);
+
+    gaps.push({
+      raceId: race.id,
+      circuit: raceInfo?.circuit ?? race.id,
+      round: race.round,
+      gapMs,
+      gapFormatted: formatGap(gapMs),
+      session,
+    });
+  }
+
+  // Return in chronological order (oldest first → newest last)
+  return gaps.reverse();
 }

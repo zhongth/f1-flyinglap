@@ -3,6 +3,8 @@
 import { useRef, useEffect, useState } from "react";
 import { gsap } from "@/lib/gsap";
 import { cn } from "@/lib/utils";
+import { QualifyingGapChart } from "@/components/ui/QualifyingGapChart";
+import type { PerRaceGap } from "@/types";
 
 interface VSBadgeProps {
   value: number;
@@ -16,6 +18,7 @@ interface VSBadgeProps {
   raceCount: number;
   timeScope: "season" | "last5";
   onTimeScopeChange: () => void;
+  perRaceGaps?: PerRaceGap[];
   className?: string;
 }
 
@@ -28,6 +31,7 @@ export function VSBadge({
   driver2H2HWins,
   timeScope,
   onTimeScopeChange,
+  perRaceGaps,
   className,
 }: VSBadgeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -95,11 +99,11 @@ export function VSBadge({
       )}
       style={{
         width: 472,
-        paddingTop: 56,
-        paddingBottom: 72,
+        paddingTop: 48,
+        paddingBottom: 40,
         paddingLeft: 52,
         paddingRight: 52,
-        gap: 36,
+        gap: 28,
       }}
     >
       {/* Header */}
@@ -240,6 +244,16 @@ export function VSBadge({
             </div>
           </div>
         </div>
+
+        {/* Per-race qualifying gap chart */}
+        {perRaceGaps && perRaceGaps.length > 0 && (
+          <QualifyingGapChart
+            data={perRaceGaps}
+            teamColor={teamColor}
+            driver1Abbreviation={driver1Abbreviation}
+            driver2Abbreviation={driver2Abbreviation}
+          />
+        )}
       </div>
     </div>
   );

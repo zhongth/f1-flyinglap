@@ -41,3 +41,12 @@ export interface Q3RateResult {
   q3Rate: number; // 0–1
   scope: "season" | "last5";
 }
+
+export interface PerRaceGap {
+  raceId: string;
+  circuit: string;
+  round: number;
+  gapMs: number;
+  gapFormatted: string;
+  session: "Q1" | "Q2" | "Q3";
+}
