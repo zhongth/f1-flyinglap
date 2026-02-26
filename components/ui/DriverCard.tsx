@@ -91,6 +91,7 @@ export function DriverCard({
           src={driver.portraitPath}
           alt={`${driver.firstName} ${driver.lastName}`}
           fill
+          sizes="(max-width: 768px) 288px, 512px"
           className="object-contain object-bottom"
           priority
         />

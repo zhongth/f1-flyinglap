@@ -121,6 +121,7 @@ export function DriverShowcase({
           src={driver.portraitPath}
           alt={`${driver.firstName} ${driver.lastName}`}
           fill
+          sizes="250px"
           className="object-contain object-bottom"
           priority
         />
@@ -151,6 +152,7 @@ export function DriverShowcase({
           src={team.logoPath}
           alt={team.shortName}
           fill
+          sizes="34px"
           className="object-contain"
         />
       </div>

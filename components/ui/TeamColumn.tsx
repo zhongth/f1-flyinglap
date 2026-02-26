@@ -108,6 +108,7 @@ export function TeamColumn({
           src={team.logoPath}
           alt={team.name}
           fill
+          sizes="60px"
           className="object-contain"
           priority={index < 5}
         />

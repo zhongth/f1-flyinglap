@@ -4,6 +4,12 @@ on:
   # Run every Monday at 06:00 UTC (after most race weekends)
   schedule:
     - cron: "0 6 * * 1"
+  # Run when pipeline code changes
+  push:
+    branches: [dev, main]
+    paths:
+      - "pipeline/**"
+      - ".github/workflows/update-f1-data.yml"
   # Allow manual trigger
   workflow_dispatch:
     inputs:

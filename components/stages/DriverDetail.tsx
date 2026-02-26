@@ -123,6 +123,7 @@ export function DriverDetail() {
               src={driver.portraitPath}
               alt={`${driver.firstName} ${driver.lastName}`}
               fill
+              sizes="(max-width: 768px) 100vw, 640px"
               className="object-contain object-bottom"
               priority
             />

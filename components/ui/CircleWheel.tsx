@@ -338,6 +338,7 @@ export function CircleWheel({
               src={team.logoPath}
               alt={team.name}
               fill
+              sizes="60px"
               className="object-contain pointer-events-none"
               draggable={false}
               priority={i < 5}
