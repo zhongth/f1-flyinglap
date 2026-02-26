@@ -1,10 +1,10 @@
 "use client";
 
-import { useRef, useEffect, useLayoutEffect } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import { gsap, Flip } from "@/lib/gsap";
 import { useAppStore } from "@/store/useAppStore";
 import { TeamColumn } from "@/components/ui/TeamColumn";
-import { teams } from "@/data";
+import { teams, getTeamById } from "@/data";
 
 export function TeamGrid() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -145,8 +145,33 @@ export function TeamGrid() {
     (a, b) => a.constructorOrder - b.constructorOrder
   );
 
+  const hoveredTeam = hoveredTeamId ? getTeamById(hoveredTeamId) : null;
+
   return (
     <div className="relative h-screen w-full overflow-hidden bg-[var(--background)]">
+      {/* Team background images — all preloaded, only hovered one visible */}
+      <div className="absolute inset-0 pointer-events-none">
+        {teams.map((t) =>
+          t.bgImagePath ? (
+            <img
+              key={t.id}
+              src={t.bgImagePath}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500 ease-out"
+              style={{ opacity: hoveredTeamId === t.id ? 0.5 : 0 }}
+            />
+          ) : null
+        )}
+        {/* Vignette overlay */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.85) 100%)",
+          }}
+        />
+      </div>
+
       {/* Title */}
       <div
         ref={titleRef}

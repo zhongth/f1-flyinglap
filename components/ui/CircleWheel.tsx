@@ -59,8 +59,9 @@ export function CircleWheel({
   const velocityHistoryRef = useRef<{ x: number; t: number }[]>([]);
   const snapTweenRef = useRef<gsap.core.Tween | null>(null);
   const wheelCooldownRef = useRef(false);
-  const dimensionsRef = useRef(getResponsiveValues());
+  const dimensionsRef = useRef({ radius: 500, logoSize: 65, centerYOffset: 0.28, sensitivity: DRAG_SENSITIVITY });
   const [activeIndex, setActiveIndex] = useState(0);
+  const [logoSize, setLogoSize] = useState(65);
 
   // Store props in refs to avoid re-render loops in callbacks
   const onActiveTeamChangeRef = useRef(onActiveTeamChange);
@@ -96,11 +97,11 @@ export function CircleWheel({
       // Opacity: 1.0 at top, fade out past 90 degrees
       const opacity = delta > 100 ? 0 : delta > 70 ? 0.15 : 1.0 - (delta / 100) * 0.7;
 
-      const { logoSize } = dimensionsRef.current;
+      const size = dimensionsRef.current.logoSize;
 
       gsap.set(el, {
-        x: x - logoSize / 2,
-        y: y - logoSize / 2,
+        x: x - size / 2,
+        y: y - size / 2,
         scale,
         opacity,
         zIndex: delta < 5 ? 10 : Math.floor(10 - delta / 18),
@@ -286,6 +287,7 @@ export function CircleWheel({
   useEffect(() => {
     const update = () => {
       dimensionsRef.current = getResponsiveValues();
+      setLogoSize(dimensionsRef.current.logoSize);
       positionLogos();
     };
 
@@ -308,8 +310,6 @@ export function CircleWheel({
   useEffect(() => {
     updateActiveTeam();
   }, [updateActiveTeam]);
-
-  const { logoSize } = dimensionsRef.current;
 
   return (
     <div

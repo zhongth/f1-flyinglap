@@ -9,29 +9,36 @@ interface VSBadgeProps {
   teamColor: string;
   driver1Name: string;
   driver2Name: string;
+  driver1Abbreviation: string;
+  driver2Abbreviation: string;
+  driver1H2HWins: number;
+  driver2H2HWins: number;
   raceCount: number;
+  timeScope: "season" | "last5";
+  onTimeScopeChange: () => void;
   className?: string;
 }
 
 export function VSBadge({
   value,
   teamColor,
-  driver1Name,
-  driver2Name,
-  raceCount,
+  driver1Abbreviation,
+  driver2Abbreviation,
+  driver1H2HWins,
+  driver2H2HWins,
+  timeScope,
+  onTimeScopeChange,
   className,
 }: VSBadgeProps) {
-  const numberRef = useRef<HTMLDivElement>(null);
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const [displayValue, setDisplayValue] = useState("0.000");
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [displayValue, setDisplayValue] = useState("0.000%");
   const previousValue = useRef(0);
 
   const formatValue = (ms: number): string => {
-    const sign = ms >= 0 ? "+" : "-";
     const absMs = Math.abs(ms);
     const seconds = Math.floor(absMs / 1000);
     const milliseconds = Math.floor(absMs % 1000);
-    return `${sign}${seconds}.${milliseconds.toString().padStart(3, "0")}`;
+    return `${seconds}.${milliseconds.toString().padStart(3, "0")}%`;
   };
 
   useEffect(() => {
@@ -53,145 +60,186 @@ export function VSBadge({
 
   // Entry animation
   useEffect(() => {
-    if (!numberRef.current) return;
+    if (!containerRef.current) return;
 
     gsap.fromTo(
-      numberRef.current,
-      { scale: 0.5, opacity: 0 },
-      { scale: 1, opacity: 1, duration: 0.8, ease: "back.out(1.7)", delay: 0.3 }
+      containerRef.current,
+      { scale: 0.9, opacity: 0 },
+      {
+        scale: 1,
+        opacity: 1,
+        duration: 0.8,
+        ease: "back.out(1.4)",
+        delay: 0.2,
+      }
     );
   }, []);
 
-  const isFaster = value < 0;
+  const isFaster = value < 0; // driver1 is faster when value is negative
+
+  // Slider: calculate thumb position (center=50%)
+  const maxOffset = 42;
+  const thumbPosition =
+    50 +
+    (value > 0
+      ? Math.min(maxOffset, value / 24)
+      : -Math.min(maxOffset, Math.abs(value) / 24));
+  const fillWidth = Math.abs(thumbPosition - 50);
 
   return (
-    <div className={cn("relative flex flex-col items-center", className)}>
-      {/* VS Text */}
-      <div className="relative mb-6">
-        <span
-          className="font-f1-bold text-xl tracking-[0.2em] opacity-30"
-          style={{ color: teamColor }}
+    <div
+      ref={containerRef}
+      className={cn(
+        "flex flex-col items-center rounded-[36px] bg-black/50 shrink-0",
+        className
+      )}
+      style={{
+        width: 472,
+        paddingTop: 56,
+        paddingBottom: 72,
+        paddingLeft: 52,
+        paddingRight: 52,
+        gap: 36,
+      }}
+    >
+      {/* Header */}
+      <div className="flex flex-col items-center gap-6">
+        <p className="font-f1-bold text-[24px] text-white uppercase text-center tracking-[0.1em]">
+          medium Quali Gap
+        </p>
+        <button
+          onClick={onTimeScopeChange}
+          className="flex items-center gap-1.5 text-white hover:text-white/80 transition-colors"
         >
-          MEDIUM QUALIFICATION GAP
-        </span>
-      </div>
-
-      {/* Main number container */}
-      <div ref={numberRef} className="relative">
-
-
-        {/* The number */}
-        <div className="relative">
-          <span className="font-f1-bold text-7xl md:text-8xl lg:text-[10rem] tracking-tight text-white leading-none">
-            {displayValue}
+          <span className="text-[16px] font-semibold capitalize">
+            {timeScope === "season" ? "2025 Season" : "Last 5 Races"}
           </span>
-        </div>
-
-        {/* Unit */}
-        <div className="text-center mt-2">
-          <span className="text-white/40 text-sm uppercase tracking-widest">
-            seconds
-          </span>
-        </div>
-      </div>
-
-      {/* Animated Slider Indicator */}
-      <div className="mt-10 w-72">
-        {/* Slider container */}
-        <div className="relative">
-          {/* Track background */}
-          <div className="h-2 bg-white/5 rounded-full" />
-
-          {/* Gradient fill from center */}
-          <div
-            className="absolute top-0 h-2 rounded-full transition-all duration-700 ease-out"
-            style={{
-              background: `linear-gradient(${isFaster ? "to left" : "to right"}, ${teamColor}, ${teamColor}00)`,
-              left: isFaster ? `${50 - Math.min(48, Math.abs(value) / 20)}%` : "50%",
-              right: value > 0 ? `${50 - Math.min(48, Math.abs(value) / 20)}%` : "50%",
-            }}
-          />
-
-          {/* Sliding indicator thumb */}
-          <div
-            ref={sliderRef}
-            className="absolute top-1/2 -translate-y-1/2 transition-all duration-700 ease-out"
-            style={{
-              left: `${50 + (value > 0 ? Math.min(42, value / 24) : -Math.min(42, Math.abs(value) / 24))}%`,
-            }}
+          <svg
+            className="w-6 h-6"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
           >
-            {/* Glow */}
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 5l7 7-7 7"
+            />
+          </svg>
+        </button>
+      </div>
+
+      {/* Gap value + H2H + slider */}
+      <div className="flex flex-col items-center gap-7">
+        <p className="font-f1-bold text-[96px] text-white uppercase leading-[1.36] text-center">
+          {displayValue}
+        </p>
+
+        {/* Head-to-head record */}
+        <div className="flex items-center gap-3 text-white">
+          <span
+            className={cn(
+              "font-f1-bold text-[18px]",
+              isFaster ? "opacity-100" : "opacity-50"
+            )}
+          >
+            {driver1Abbreviation}
+          </span>
+          <span
+            className={cn(
+              "font-f1-bold text-[28px] tabular-nums",
+              isFaster ? "opacity-100" : "opacity-50"
+            )}
+          >
+            {driver1H2HWins}
+          </span>
+          <span className="text-[20px] opacity-30 font-f1">—</span>
+          <span
+            className={cn(
+              "font-f1-bold text-[28px] tabular-nums",
+              value > 0 ? "opacity-100" : "opacity-50"
+            )}
+          >
+            {driver2H2HWins}
+          </span>
+          <span
+            className={cn(
+              "font-f1-bold text-[18px]",
+              value > 0 ? "opacity-100" : "opacity-50"
+            )}
+          >
+            {driver2Abbreviation}
+          </span>
+        </div>
+
+        {/* Slider area */}
+        <div className="flex flex-col gap-3 w-[368px]">
+          {/* Track */}
+          <div
+            className="relative h-2 rounded-full"
+            style={{ backgroundColor: "rgba(110,110,110,0.3)" }}
+          >
+            {/* Active fill from center */}
             <div
-              className="absolute inset-0 w-5 h-5 -translate-x-1/2 rounded-full blur-md opacity-60"
-              style={{ backgroundColor: teamColor }}
+              className="absolute top-0 bottom-0 rounded-full transition-all duration-700 ease-out"
+              style={{
+                backgroundColor: teamColor,
+                left: isFaster ? `${thumbPosition}%` : "50%",
+                width: `${fillWidth}%`,
+              }}
             />
             {/* Thumb */}
             <div
-              className="relative w-5 h-5 -translate-x-1/2 rounded-full border-2"
+              className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 size-6 rounded-full transition-all duration-700 ease-out"
               style={{
-                borderColor: teamColor,
-                backgroundColor: "#0a0a0a",
-                boxShadow: `0 0 20px ${teamColor}50`,
+                left: `${thumbPosition}%`,
+                backgroundColor: teamColor,
+                boxShadow: `0 0 12px ${teamColor}80`,
               }}
-            >
-              {/* Inner dot */}
-              <div
-                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-1.5 h-1.5 rounded-full"
-                style={{ backgroundColor: teamColor }}
-              />
+            />
+          </div>
+
+          {/* Driver labels */}
+          <div className="flex items-start justify-between text-white capitalize">
+            <div className="flex flex-col gap-[3px]">
+              <span
+                className={cn(
+                  "font-f1-bold text-[16px]",
+                  isFaster ? "opacity-100" : "opacity-50"
+                )}
+              >
+                {driver1Abbreviation}
+              </span>
+              <span
+                className={cn(
+                  "text-[14px]",
+                  isFaster ? "opacity-100" : "opacity-50"
+                )}
+              >
+                faster
+              </span>
+            </div>
+            <div className="flex flex-col gap-[3px] items-end">
+              <span
+                className={cn(
+                  "font-f1-bold text-[16px]",
+                  value > 0 ? "opacity-100" : "opacity-50"
+                )}
+              >
+                {driver2Abbreviation}
+              </span>
+              <span
+                className={cn(
+                  "text-[14px]",
+                  value > 0 ? "opacity-100" : "opacity-50"
+                )}
+              >
+                faster
+              </span>
             </div>
           </div>
         </div>
-
-        {/* Driver labels */}
-        <div className="flex justify-between mt-4">
-          <div className="flex flex-col items-start">
-            <span
-              className={cn(
-                "text-[10px] font-f1-bold uppercase tracking-wider transition-all duration-500",
-                isFaster ? "opacity-100 scale-105" : "opacity-30"
-              )}
-              style={{ color: isFaster ? teamColor : "white" }}
-            >
-              {driver1Name}
-            </span>
-            {isFaster && (
-              <span
-                className="text-[9px] uppercase tracking-widest mt-0.5 animate-pulse"
-                style={{ color: teamColor }}
-              >
-                Faster
-              </span>
-            )}
-          </div>
-
-          <div className="flex flex-col items-end">
-            <span
-              className={cn(
-                "text-[10px] font-f1-bold uppercase tracking-wider transition-all duration-500",
-                value > 0 ? "opacity-100 scale-105" : "opacity-30"
-              )}
-              style={{ color: value > 0 ? teamColor : "white" }}
-            >
-              {driver2Name}
-            </span>
-            {value > 0 && (
-              <span
-                className="text-[9px] uppercase tracking-widest mt-0.5 animate-pulse"
-                style={{ color: teamColor }}
-              >
-                Faster
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Race count */}
-      <div className="mt-4 px-4 py-2 bg-white/5 rounded-full">
-        <span className="text-white/40 text-xs uppercase tracking-wider">
-          {raceCount} qualifying sessions
-        </span>
       </div>
     </div>
   );

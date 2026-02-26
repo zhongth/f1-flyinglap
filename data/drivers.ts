@@ -397,3 +397,23 @@ export function getTeammateOf(driverId: string): Driver | undefined {
 export function getHeightScale(heightCm: number): number {
   return heightCm / MAX_DRIVER_HEIGHT;
 }
+
+export type PedigreeTier = "champion" | "winner" | "podium" | "rookie";
+
+export function getDriverPedigree(driverId: string): { text: string; tier: PedigreeTier } {
+  const driver = getDriverById(driverId);
+  if (!driver) return { text: "ROOKIE", tier: "rookie" };
+
+  const { championships, wins, podiums } = driver.careerStats;
+
+  if (championships > 0) {
+    return { text: `${championships}x WDC`, tier: "champion" };
+  }
+  if (wins > 0) {
+    return { text: `${wins} ${wins === 1 ? "WIN" : "WINS"}`, tier: "winner" };
+  }
+  if (podiums > 0) {
+    return { text: `${podiums} ${podiums === 1 ? "PODIUM" : "PODIUMS"}`, tier: "podium" };
+  }
+  return { text: "ROOKIE", tier: "rookie" };
+}

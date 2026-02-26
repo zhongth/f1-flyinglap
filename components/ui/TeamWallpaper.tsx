@@ -7,6 +7,7 @@ import type { Team } from "@/types";
 interface WallpaperLayer {
   primaryColor: string;
   secondaryColor: string;
+  bgImagePath?: string;
   key: number;
 }
 
@@ -27,6 +28,7 @@ export function TeamWallpaper({ team }: TeamWallpaperProps) {
     const newLayer: WallpaperLayer = {
       primaryColor: team.primaryColor,
       secondaryColor: team.secondaryColor,
+      bgImagePath: team.bgImagePath,
       key: Date.now(),
     };
 
@@ -85,8 +87,24 @@ export function TeamWallpaper({ team }: TeamWallpaperProps) {
             opacity: i === 0 && layers.length === 1 ? 1 : 0,
             backgroundColor: `${layer.primaryColor}4D`,
           }}
-        />
+        >
+          {layer.bgImagePath && (
+            <img
+              src={layer.bgImagePath}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover opacity-50"
+            />
+          )}
+        </div>
       ))}
+      {/* Vignette overlay */}
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at center, transparent 20%, rgba(0,0,0,0.85) 100%)",
+        }}
+      />
     </div>
   );
 }

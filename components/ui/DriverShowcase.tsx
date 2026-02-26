@@ -1,16 +1,19 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useMemo } from "react";
 import Image from "next/image";
 import { gsap } from "@/lib/gsap";
-import { cn } from "@/lib/utils";
-import { getHeightScale } from "@/data/drivers";
+import { cn, getTeamDarkColors } from "@/lib/utils";
 import type { Driver, Team } from "@/types";
+import type { PedigreeTier } from "@/data/drivers";
 
 interface DriverShowcaseProps {
   driver: Driver;
   team: Team;
   position: "left" | "right";
+  q3Rate?: number; // 0–1
+  pedigreeLabel?: string;
+  pedigreeTier?: PedigreeTier;
   onClick?: () => void;
 }
 
@@ -18,164 +21,190 @@ export function DriverShowcase({
   driver,
   team,
   position,
+  q3Rate,
+  pedigreeLabel,
+  pedigreeTier,
   onClick,
 }: DriverShowcaseProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
-  const infoRef = useRef<HTMLDivElement>(null);
-  const numberRef = useRef<HTMLDivElement>(null);
+  const numberRef = useRef<HTMLParagraphElement>(null);
+  const nameRef = useRef<HTMLDivElement>(null);
+  const statsRef = useRef<HTMLDivElement>(null);
+
+  const darkColors = useMemo(
+    () => getTeamDarkColors(team.primaryColor),
+    [team.primaryColor]
+  );
+
+  const isLeft = position === "left";
 
   // Entry animation
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!cardRef.current) return;
 
-    const direction = position === "left" ? -1 : 1;
+    const dir = isLeft ? -1 : 1;
 
     const ctx = gsap.context(() => {
-      // Image slides in
       gsap.fromTo(
-        imageRef.current,
-        { x: direction * 300, opacity: 0, scale: 1.1 },
-        { x: 0, opacity: 1, scale: 1, duration: 1, ease: "power3.out", delay: 0.2 }
+        cardRef.current,
+        { x: dir * 80, opacity: 0 },
+        { x: 0, opacity: 1, duration: 0.8, ease: "power3.out", delay: 0.1 }
       );
 
-      // Number fades in
-      gsap.fromTo(
-        numberRef.current,
-        { opacity: 0, y: 50 },
-        { opacity: 0.4, y: 0, duration: 0.8, ease: "power2.out", delay: 0.5 }
-      );
+      if (imageRef.current) {
+        gsap.fromTo(
+          imageRef.current,
+          { x: dir * 40, opacity: 0, scale: 1.05 },
+          {
+            x: 0,
+            opacity: 1,
+            scale: 1,
+            duration: 1,
+            ease: "power3.out",
+            delay: 0.3,
+          }
+        );
+      }
 
-      // Info slides up
-      gsap.fromTo(
-        infoRef.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", delay: 0.7 }
-      );
-    }, containerRef);
+      if (numberRef.current) {
+        gsap.fromTo(
+          numberRef.current,
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", delay: 0.4 }
+        );
+      }
+
+      if (nameRef.current) {
+        gsap.fromTo(
+          nameRef.current,
+          { opacity: 0, y: 20 },
+          { opacity: 1, y: 0, duration: 0.6, ease: "power2.out", delay: 0.6 }
+        );
+      }
+
+      if (statsRef.current) {
+        gsap.fromTo(
+          statsRef.current,
+          { opacity: 0, y: 10 },
+          { opacity: 1, y: 0, duration: 0.5, ease: "power2.out", delay: 0.7 }
+        );
+      }
+    }, cardRef);
 
     return () => ctx.revert();
-  }, [position]);
-
-  // Calculate height-based scale (taller drivers = larger portraits)
-  const heightScale = getHeightScale(driver.heightCm);
-  // Scale between 85% and 100% of container height based on driver height
-  const imageHeightPercent = 65 + (heightScale * 20); // 65-85% range
-
-  // Hover effects
-  const handleMouseEnter = () => {
-    if (!imageRef.current) return;
-    gsap.to(imageRef.current, {
-      scale: 1.03,
-      duration: 0.4,
-      ease: "power2.out",
-    });
-  };
-
-  const handleMouseLeave = () => {
-    if (!imageRef.current) return;
-    gsap.to(imageRef.current, {
-      scale: 1,
-      duration: 0.4,
-      ease: "power2.out",
-    });
-  };
+  }, [isLeft]);
 
   return (
     <div
-      ref={containerRef}
-      className={cn(
-        "relative h-full flex flex-col cursor-pointer group",
-        position === "left" ? "items-start" : "items-end"
-      )}
+      ref={cardRef}
+      className="relative cursor-pointer group shrink-0"
+      style={{
+        width: 480,
+        height: 606,
+        borderRadius: 40,
+        backgroundColor: darkColors.cardBg,
+        border: `3px solid ${darkColors.cardBorder}`,
+      }}
       onClick={onClick}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
     >
-      {/* Giant driver number - top corner, hollow style */}
-      <div
-        ref={numberRef}
-        className={cn(
-          "absolute top-8 font-f1-bold text-[10rem] md:text-[14rem] lg:text-[18rem] leading-none pointer-events-none select-none z-0 text-hollow",
-          position === "left" ? "left-8" : "right-8"
-        )}
-        style={{ "--stroke-color": team.primaryColor } as React.CSSProperties}
-      >
-        {driver.number}
-      </div>
-
-      {/* Driver image container - height based on real driver height */}
+      {/* Driver portrait - overflows card bounds */}
       <div
         ref={imageRef}
         className={cn(
-          "relative w-full will-change-transform mt-12",
-          position === "left" ? "-ml-16 lg:-ml-24" : "-mr-16 lg:-mr-24"
+          "absolute will-change-transform",
+          isLeft ? "right-0" : "left-[2%]"
         )}
-        style={{ height: `${imageHeightPercent}vh` }}
+        style={{ top: "-9%", width: "52%", height: "130%" }}
       >
-        {/* Backlight glow */}
-        <div
-          className="absolute bottom-20 left-1/2 -translate-x-1/2 w-[120%] h-[60%] blur-[100px] opacity-40 z-0"
-          style={{
-            background: `radial-gradient(ellipse at bottom, ${team.primaryColor} 0%, transparent 70%)`,
-          }}
-        />
-
-        {/* Driver image */}
         <Image
           src={driver.portraitPath}
           alt={`${driver.firstName} ${driver.lastName}`}
           fill
-          className="object-contain object-bottom z-10"
+          className="object-contain object-bottom"
           priority
         />
-
-        {/* Bottom gradient fade */}
       </div>
 
-      {/* Driver info - glass card style */}
-      <div
-        ref={infoRef}
+      {/* Driver number */}
+      <p
+        ref={numberRef}
         className={cn(
-          "absolute bottom-8 z-10",
-          position === "left" ? "left-8" : "right-8"
+          "absolute font-f1-bold leading-[1.36] z-10",
+          isLeft ? "left-[40px] top-[26px]" : "right-[21px] top-[8px]"
+        )}
+        style={{ color: darkColors.cardBorder, fontSize: 128 }}
+      >
+        {driver.number}
+      </p>
+
+      {/* Team logo */}
+      <div
+        className={cn(
+          "absolute z-10",
+          isLeft
+            ? "left-[40px] top-[200px] w-[34px] h-[44px]"
+            : "right-[33px] top-[182px] w-[27px] h-[36px]"
         )}
       >
-        {/* Glass card */}
+        <Image
+          src={team.logoPath}
+          alt={team.shortName}
+          fill
+          className="object-contain"
+        />
+      </div>
+
+      {/* Driver name + pedigree */}
+      <div
+        ref={nameRef}
+        className={cn(
+          "absolute bottom-[44px] z-10 leading-[1.36]",
+          isLeft ? "left-[40px] text-left" : "right-[18px] text-right"
+        )}
+      >
+        <p className="font-northwell text-white text-[64px]">
+          {driver.firstName}
+        </p>
+        <p className="font-f1-bold text-white text-[40px] uppercase">
+          {driver.lastName}
+        </p>
+        {pedigreeLabel && (
+          <span
+            className={cn(
+              "inline-block mt-2 px-3 py-0.5 rounded-full text-[11px] font-f1-bold uppercase tracking-wider",
+              pedigreeTier === "champion"
+                ? "bg-amber-500/20 text-amber-400"
+                : pedigreeTier === "winner"
+                  ? "bg-white/15 text-white/80"
+                  : pedigreeTier === "podium"
+                    ? "bg-white/10 text-white/60"
+                    : "bg-white/8 text-white/40"
+            )}
+          >
+            {pedigreeLabel}
+          </span>
+        )}
+      </div>
+
+      {/* Q3 rate stat */}
+      {q3Rate !== undefined && (
         <div
+          ref={statsRef}
           className={cn(
-            "relative px-12 py-10 overflow-hidden",
-            position === "left" ? "text-left" : "text-right"
+            "absolute z-10",
+            isLeft ? "left-[40px] top-[260px]" : "right-[18px] top-[242px]",
+            isLeft ? "text-left" : "text-right"
           )}
         >
-
-
-          {/* Name */}
-          <div>
-            <p className="font-northwell text-white/80 text-6xl md:text-7xl -mb-1">
-              {driver.firstName}
-            </p>
-            <p
-              className={cn(
-                "font-f1-bold text-5xl md:text-6xl lg:text-7xl uppercase",
-                position === "left" ? "ml-4" : "mr-4"
-              )}
-              style={{ color: team.primaryColor }}
-            >
-              {driver.lastName}
-            </p>
-          </div>
-
-
-          {/* Hover hint */}
-          <div className="mt-4 flex items-center gap-2 text-white/30 text-xs opacity-0 group-hover:opacity-100 transition-opacity">
-            <span>View stats</span>
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </div>
+          <span className="text-[12px] font-f1 text-white/40 uppercase tracking-wider">
+            Q3{" "}
+          </span>
+          <span className="text-[16px] font-f1-bold text-white/70 tabular-nums">
+            {Math.round(q3Rate * 100)}%
+          </span>
         </div>
-      </div>
+      )}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { QualifyingResult, RaceWeekend, MedianGapResult } from "@/types";
+import type { QualifyingResult, RaceWeekend, MedianGapResult, HeadToHeadResult, Q3RateResult } from "@/types";
 
 export const races2025: RaceWeekend[] = [
   { id: "bahrain", name: "Bahrain Grand Prix", circuit: "Sakhir", date: "2025-03-02", round: 1 },
@@ -164,4 +164,75 @@ export function calculateMedianQualifyingGap(
 
 export function getQualifyingResultsForDriver(driverId: string): QualifyingResult[] {
   return qualifyingResults.filter((r) => r.driverId === driverId);
+}
+
+export function calculateHeadToHead(
+  driver1Id: string,
+  driver2Id: string,
+  scope: "season" | "last5" = "season"
+): HeadToHeadResult {
+  let raceIds = races2025.map((r) => r.id);
+  if (scope === "last5") {
+    raceIds = raceIds.slice(-5);
+  }
+
+  const driver1Results = qualifyingResults.filter(
+    (r) => r.driverId === driver1Id && raceIds.includes(r.raceId)
+  );
+  const driver2Results = qualifyingResults.filter(
+    (r) => r.driverId === driver2Id && raceIds.includes(r.raceId)
+  );
+
+  let driver1Wins = 0;
+  let driver2Wins = 0;
+
+  for (const r1 of driver1Results) {
+    const r2 = driver2Results.find((r) => r.raceId === r1.raceId);
+    if (r2 && r1.bestTime && r2.bestTime) {
+      const time1 = parseQualifyingTime(r1.bestTime);
+      const time2 = parseQualifyingTime(r2.bestTime);
+      if (time1 !== null && time2 !== null) {
+        if (time1 < time2) driver1Wins++;
+        else if (time2 < time1) driver2Wins++;
+      }
+    }
+  }
+
+  return { driver1Id, driver2Id, driver1Wins, driver2Wins, scope };
+}
+
+export function calculateQ3Rate(
+  driverId: string,
+  scope: "season" | "last5" = "season"
+): Q3RateResult {
+  let raceIds = races2025.map((r) => r.id);
+  if (scope === "last5") {
+    raceIds = raceIds.slice(-5);
+  }
+
+  const driverResults = qualifyingResults.filter(
+    (r) => r.driverId === driverId && raceIds.includes(r.raceId)
+  );
+
+  let q3Appearances = 0;
+  let totalRaces = 0;
+
+  for (const result of driverResults) {
+    // Count races where the driver set a time (not DNS/mechanical)
+    if (result.bestTime) {
+      totalRaces++;
+      // Q3 appearance = the driver set a Q3 time
+      if (result.q3Time) {
+        q3Appearances++;
+      }
+    }
+  }
+
+  return {
+    driverId,
+    q3Appearances,
+    totalRaces,
+    q3Rate: totalRaces > 0 ? q3Appearances / totalRaces : 0,
+    scope,
+  };
 }

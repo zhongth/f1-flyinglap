@@ -5,6 +5,7 @@ export interface Team {
   primaryColor: string;
   secondaryColor: string;
   logoPath: string;
+  bgImagePath?: string;
   drivers: [string, string];
   constructorOrder: number;
 }
