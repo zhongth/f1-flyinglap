@@ -23,7 +23,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -58,24 +57,14 @@ jobs:
             --season ${{ github.event.inputs.season || '2025' }} \
             --output-dir ../data/generated
 
-      - name: Check for changes
-        id: changes
+      - name: Commit and push if changed
         run: |
-          git diff --quiet data/generated/ && echo "changed=false" >> $GITHUB_OUTPUT || echo "changed=true" >> $GITHUB_OUTPUT
-
-      - name: Create Pull Request
-        if: steps.changes.outputs.changed == 'true'
-        uses: peter-evans/create-pull-request@v7
-        with:
-          commit-message: "chore: update F1 data (${{ github.event.inputs.season || '2025' }})"
-          title: "Update F1 qualifying data"
-          body: |
-            Automated update of F1 qualifying data from FastF1.
-
-            - Season: ${{ github.event.inputs.season || '2025' }}
-            - Triggered by: ${{ github.event_name }}
-
-            Review the JSON changes and merge if data looks correct.
-          branch: data-update/f1-${{ github.event.inputs.season || '2025' }}
-          base: dev
-          labels: data-update
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/generated/
+          if git diff --cached --quiet; then
+            echo "No data changes to commit"
+          else
+            git commit -m "chore: update F1 data (${{ github.event.inputs.season || '2025' }})"
+            git push
+          fi
