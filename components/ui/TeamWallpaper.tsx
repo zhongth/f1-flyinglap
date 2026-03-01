@@ -16,9 +16,19 @@ interface TeamWallpaperProps {
 }
 
 export function TeamWallpaper({ team }: TeamWallpaperProps) {
-  const [layers, setLayers] = useState<WallpaperLayer[]>([]);
+  const [layers, setLayers] = useState<WallpaperLayer[]>(() => {
+    if (!team) return [];
+    return [
+      {
+        primaryColor: team.primaryColor,
+        secondaryColor: team.secondaryColor,
+        bgImagePath: team.bgImagePath,
+        key: Date.now(),
+      },
+    ];
+  });
   const layerRefs = useRef<Map<number, HTMLDivElement>>(new Map());
-  const prevTeamIdRef = useRef<string | null>(null);
+  const prevTeamIdRef = useRef<string | null>(team?.id ?? null);
 
   useEffect(() => {
     if (!team) return;
@@ -85,7 +95,7 @@ export function TeamWallpaper({ team }: TeamWallpaperProps) {
           className="wallpaper-layer"
           style={{
             opacity: i === 0 && layers.length === 1 ? 1 : 0,
-            backgroundColor: `${layer.primaryColor}4D`,
+            backgroundColor: "rgba(0, 0, 0, 0.3)",
           }}
         >
           {layer.bgImagePath && (

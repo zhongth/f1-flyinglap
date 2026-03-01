@@ -4,6 +4,7 @@ import { create } from "zustand";
 
 export type Stage = "GRID" | "VERSUS" | "DETAIL";
 export type TimeScope = "season" | "last5";
+const DEFAULT_TEAM_ID = "ferrari";
 
 interface AppState {
   // Stage management
@@ -45,7 +46,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   stage: "GRID",
   previousStage: null,
   selectedTeamId: null,
-  hoveredTeamId: null,
+  hoveredTeamId: DEFAULT_TEAM_ID,
   focusedDriverId: null,
   timeScope: "season",
   isAnimating: false,
@@ -105,6 +106,7 @@ export const useAppStore = create<AppState>((set, get) => ({
         stage: "GRID",
         previousStage: "VERSUS",
         selectedTeamId: null,
+        hoveredTeamId: DEFAULT_TEAM_ID,
         focusedDriverId: null,
       });
     }
@@ -116,7 +118,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       stage: "GRID",
       previousStage: null,
       selectedTeamId: null,
-      hoveredTeamId: null,
+      hoveredTeamId: DEFAULT_TEAM_ID,
       focusedDriverId: null,
       isAnimating: false,
     }),
