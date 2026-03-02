@@ -6,6 +6,7 @@ import { useAppStore } from "@/store/useAppStore";
 import { Navbar } from "@/components/ui/Navbar";
 import { VSBadge } from "@/components/ui/VSBadge";
 import { DriverShowcase } from "@/components/ui/DriverShowcase";
+import { TiltedCard } from "@/components/ui/TiltedCard";
 import {
   getTeamById,
   getDriversByTeamId,
@@ -30,11 +31,8 @@ export function VersusMode() {
     selectedTeamId,
     timeScope,
     setTimeScope,
-    selectDriver,
     goBack,
     setSelectedTeamId,
-    setStage,
-    setIsAnimating,
   } = useAppStore();
 
   // Display state: cards update mid-animation, center panel updates immediately
@@ -182,17 +180,6 @@ export function VersusMode() {
     [selectedTeamId, setSelectedTeamId]
   );
 
-  const handleDriverClick = useCallback(
-    (driverId: string) => {
-      selectDriver(driverId);
-      setTimeout(() => {
-        setStage("DETAIL");
-        setIsAnimating(false);
-      }, 400);
-    },
-    [selectDriver, setStage, setIsAnimating]
-  );
-
   const handleTimeScopeToggle = useCallback(() => {
     setTimeScope(timeScope === "season" ? "last5" : "season");
   }, [timeScope, setTimeScope]);
@@ -285,15 +272,16 @@ export function VersusMode() {
           {/* Left driver — uses displayTeam/displayDrivers (swaps mid-animation) */}
           <div ref={leftCardRef} className="will-change-transform">
             {displayDrivers[0] && displayTeam && (
-              <DriverShowcase
-                driver={displayDrivers[0]}
-                team={displayTeam}
-                position="left"
-                q3Rate={q3Rates?.driver1.q3Rate}
-                pedigreeLabel={pedigrees?.driver1.text}
-                pedigreeTier={pedigrees?.driver1.tier}
-                onClick={() => handleDriverClick(displayDrivers[0].id)}
-              />
+              <TiltedCard rotateAmplitude={5} scaleOnHover={1}>
+                <DriverShowcase
+                  driver={displayDrivers[0]}
+                  team={displayTeam}
+                  position="left"
+                  q3Rate={q3Rates?.driver1.q3Rate}
+                  pedigreeLabel={pedigrees?.driver1.text}
+                  pedigreeTier={pedigrees?.driver1.tier}
+                />
+              </TiltedCard>
             )}
           </div>
 
@@ -316,15 +304,16 @@ export function VersusMode() {
           {/* Right driver — uses displayTeam/displayDrivers (swaps mid-animation) */}
           <div ref={rightCardRef} className="will-change-transform">
             {displayDrivers[1] && displayTeam && (
-              <DriverShowcase
-                driver={displayDrivers[1]}
-                team={displayTeam}
-                position="right"
-                q3Rate={q3Rates?.driver2.q3Rate}
-                pedigreeLabel={pedigrees?.driver2.text}
-                pedigreeTier={pedigrees?.driver2.tier}
-                onClick={() => handleDriverClick(displayDrivers[1].id)}
-              />
+              <TiltedCard rotateAmplitude={5} scaleOnHover={1}>
+                <DriverShowcase
+                  driver={displayDrivers[1]}
+                  team={displayTeam}
+                  position="right"
+                  q3Rate={q3Rates?.driver2.q3Rate}
+                  pedigreeLabel={pedigrees?.driver2.text}
+                  pedigreeTier={pedigrees?.driver2.tier}
+                />
+              </TiltedCard>
             )}
           </div>
         </div>

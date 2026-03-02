@@ -3,8 +3,6 @@
 import { useAppStore } from "@/store/useAppStore";
 import { TeamCarousel } from "@/components/stages/TeamCarousel";
 import { VersusMode } from "@/components/stages/VersusMode";
-import { DriverDetail } from "@/components/stages/DriverDetail";
-
 export default function Home() {
   const { stage } = useAppStore();
 
@@ -12,7 +10,6 @@ export default function Home() {
     <main className="relative w-full min-h-screen overflow-hidden">
       {stage === "GRID" && <TeamCarousel />}
       {stage === "VERSUS" && <VersusMode />}
-      {stage === "DETAIL" && <DriverDetail />}
     </main>
   );
 }

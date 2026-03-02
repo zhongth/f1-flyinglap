@@ -120,6 +120,33 @@ export function getQualifyingResultsForDriver(driverId: string): QualifyingResul
   return qualifyingResults.filter((r) => r.driverId === driverId);
 }
 
+const RACE_ID_TO_COUNTRY: Record<string, string> = {
+  australia: "Australia",
+  china: "China",
+  japan: "Japan",
+  bahrain: "Bahrain",
+  saudi_arabia: "Saudi Arabia",
+  miami: "USA",
+  emilia_romagna: "Italy",
+  monaco: "Monaco",
+  spain: "Spain",
+  canada: "Canada",
+  austria: "Austria",
+  great_britain: "Great Britain",
+  belgium: "Belgium",
+  hungary: "Hungary",
+  netherlands: "Netherlands",
+  italy: "Italy",
+  azerbaijan: "Azerbaijan",
+  singapore: "Singapore",
+  united_states: "USA",
+  mexico: "Mexico",
+  brazil: "Brazil",
+  las_vegas: "USA",
+  qatar: "Qatar",
+  abu_dhabi: "Abu Dhabi",
+};
+
 export function getPerRaceQualifyingGaps(
   driver1Id: string,
   driver2Id: string,
@@ -169,12 +196,13 @@ export function getPerRaceQualifyingGaps(
 
     if (t1 === null || t2 === null) continue;
 
-    const gapMs = t2 - t1; // negative = driver1 faster
+    const gapMs = t2 - t1; // positive = driver1 faster
     const raceInfo = raceMap.get(race.id);
 
     gaps.push({
       raceId: race.id,
       circuit: raceInfo?.circuit ?? race.id,
+      country: RACE_ID_TO_COUNTRY[race.id] ?? race.id,
       round: race.round,
       gapMs,
       gapFormatted: formatGap(gapMs),

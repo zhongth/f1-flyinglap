@@ -5,7 +5,7 @@
     "shortName": "Red Bull",
     "primaryColor": "#3671C6",
     "secondaryColor": "#1E5BC6",
-    "logoPath": "/team-logos/Red_Bull_Racing-Logo.svg",
+    "logoPath": "/team-logos/redbull.svg",
     "bgImagePath": "/assets/f1-bg-collection/redbull-bg-2.jpg",
     "drivers": [
       "max_verstappen",
@@ -33,7 +33,7 @@
     "shortName": "McLaren",
     "primaryColor": "#FF8000",
     "secondaryColor": "#47C7FC",
-    "logoPath": "/team-logos/McLaren_Racing_logo.svg.svg",
+    "logoPath": "/team-logos/McLaren_Racing_logo.png",
     "bgImagePath": "/assets/f1-bg-collection/mclaren-bg-2.webp",
     "drivers": [
       "lando_norris",
@@ -47,7 +47,7 @@
     "shortName": "Mercedes",
     "primaryColor": "#27F4D2",
     "secondaryColor": "#00A19C",
-    "logoPath": "/team-logos/Mercedes-Benz_in_Formula_One_logo.svg.svg",
+    "logoPath": "/team-logos/Mercedes-Benz_in_Formula_One_logo.png",
     "bgImagePath": "/assets/f1-bg-collection/mercedes-bg-2.webp",
     "drivers": [
       "george_russell",
@@ -61,7 +61,7 @@
     "shortName": "Aston Martin",
     "primaryColor": "#229971",
     "secondaryColor": "#358C75",
-    "logoPath": "/team-logos/Logo_Aston_Martin_F1_Team.svg",
+    "logoPath": "/team-logos/Logo_Aston_Martin_F1_Team.png",
     "bgImagePath": "/assets/f1-bg-collection/astonmartin-bg-2.jpg",
     "drivers": [
       "fernando_alonso",
@@ -75,7 +75,7 @@
     "shortName": "Alpine",
     "primaryColor": "#FF87BC",
     "secondaryColor": "#0093CC",
-    "logoPath": "/team-logos/Logo_of_alpine_f1_team_2022.svg",
+    "logoPath": "/team-logos/Alpine_(automobile)-Logo.wine.png",
     "bgImagePath": "/assets/f1-bg-collection/alpine-bg-2.jpg",
     "drivers": [
       "pierre_gasly",
@@ -103,7 +103,7 @@
     "shortName": "RB",
     "primaryColor": "#6692FF",
     "secondaryColor": "#1B3D8A",
-    "logoPath": "/team-logos/VCARB_F1_logo.svg.svg",
+    "logoPath": "/team-logos/F1.Racing.Bulls.webp",
     "bgImagePath": "/assets/f1-bg-collection/rb-bg-1.webp",
     "drivers": [
       "isack_hadjar",
@@ -117,7 +117,7 @@
     "shortName": "Sauber",
     "primaryColor": "#52E252",
     "secondaryColor": "#00F800",
-    "logoPath": "/team-logos/Logo_of_Stake_F1_Team_Kick_Sauber.svg",
+    "logoPath": "/team-logos/Logo_of_Stake_F1_Team_Kick_Sauber.png",
     "bgImagePath": "/assets/f1-bg-collection/sauber-bg-1.jpg",
     "drivers": [
       "gabriel_bortoleto",

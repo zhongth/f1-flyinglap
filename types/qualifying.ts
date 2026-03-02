@@ -45,6 +45,7 @@ export interface Q3RateResult {
 export interface PerRaceGap {
   raceId: string;
   circuit: string;
+  country: string;
   round: number;
   gapMs: number;
   gapFormatted: string;

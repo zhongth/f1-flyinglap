@@ -96,14 +96,14 @@ TEAM_BRANDING: dict[str, dict] = {
         "shortName": "McLaren",
         "primaryColor": "#FF8000",
         "secondaryColor": "#47C7FC",
-        "logoPath": "/team-logos/McLaren_Racing_logo.svg.svg",
+        "logoPath": "/team-logos/McLaren_Racing_logo.png",
         "bgImagePath": "/assets/f1-bg-collection/mclaren-bg-2.webp",
     },
     "mercedes": {
         "shortName": "Mercedes",
         "primaryColor": "#27F4D2",
         "secondaryColor": "#00A19C",
-        "logoPath": "/team-logos/Mercedes-Benz_in_Formula_One_logo.svg.svg",
+        "logoPath": "/team-logos/Mercedes-Benz_in_Formula_One_logo.png",
         "bgImagePath": "/assets/f1-bg-collection/mercedes-bg-2.webp",
     },
     "aston_martin": {
@@ -138,7 +138,7 @@ TEAM_BRANDING: dict[str, dict] = {
         "shortName": "Sauber",
         "primaryColor": "#52E252",
         "secondaryColor": "#00F800",
-        "logoPath": "/team-logos/Logo_of_Stake_F1_Team_Kick_Sauber.svg",
+        "logoPath": "/team-logos/Logo_of_Stake_F1_Team_Kick_Sauber.png",
         "bgImagePath": "/assets/f1-bg-collection/sauber-bg-1.jpg",
     },
     "haas": {

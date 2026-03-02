@@ -69,7 +69,7 @@ export function Navbar({ onTeamSelect, onBack }: NavbarProps) {
         iconMagnification={80}
         iconDistance={160}
         direction="bottom"
-        className="h-auto gap-2 rounded-full border-white/10 bg-white/[0.04] backdrop-blur-lg px-4 py-2"
+        className="h-16 gap-2 rounded-full border-white/10 bg-white/[0.04] backdrop-blur-lg px-4 py-2"
       >
         {sortedTeams.map((team) => {
           const isSelected = team.id === selectedTeamId;
