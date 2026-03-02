@@ -268,7 +268,7 @@ export function TeamCarousel() {
         <h1 className="font-f1-bold text-2xl md:text-3xl lg:text-[40px] tracking-wider text-white/90 uppercase leading-relaxed">
           {hasActivatedWallpaper
             ? activeTeam?.name ?? defaultTeam.name
-            : "Choose your team"}
+            : "Welcome to Flying Lap"}
         </h1>
       </div>
 
