@@ -948,6 +948,9 @@ class App {
   timeOffset: number;
   handleResize: () => void;
   carModel: THREE.Group | null;
+  carViewOffset: THREE.Vector3;
+  carRotationFix: THREE.Quaternion;
+  carWorldPosition: THREE.Vector3;
 
   constructor(container: HTMLElement, options: HyperspeedOptions) {
     this.options = options;
@@ -1015,6 +1018,11 @@ class App {
     this.speedUp = 0;
     this.timeOffset = 0;
     this.carModel = null;
+    this.carViewOffset = new THREE.Vector3(0, -2.2, -5.5);
+    this.carRotationFix = new THREE.Quaternion().setFromEuler(
+      new THREE.Euler(0, Math.PI, 0)
+    );
+    this.carWorldPosition = new THREE.Vector3();
 
     this.tick = this.tick.bind(this);
     this.init = this.init.bind(this);
@@ -1193,32 +1201,28 @@ class App {
   setupCarModel(model: THREE.Group) {
     this.carModel = model;
 
-    // Compute bounding box for auto-scaling
+    // Compute bounding box for auto-scaling.
     const box = new THREE.Box3().setFromObject(model);
     const size = box.getSize(new THREE.Vector3());
-    const center = box.getCenter(new THREE.Vector3());
 
-    // Scale the model so its length is ~20 world units
+    // Scale the model so its largest dimension is compact in frame.
     const maxDim = Math.max(size.x, size.y, size.z);
-    const targetSize = 20;
+    const targetSize = 6;
     const scale = targetSize / maxDim;
     model.scale.setScalar(scale);
 
-    // Rotate 180° so the rear faces the camera (chase view)
-    model.rotation.y = Math.PI;
+    // Normalize model pivot so its center sits on origin and wheels touch y=0.
+    model.rotation.y = 0;
+    model.updateMatrixWorld(true);
+    const transformedBox = new THREE.Box3().setFromObject(model);
+    const transformedCenter = transformedBox.getCenter(new THREE.Vector3());
+    const transformedFloor = transformedBox.min.y;
 
-    // Position: rotation flips X and Z, so offset signs are inverted
-    const desiredCenterZ = -40;
     model.position.set(
-      center.x * scale,                        // center horizontally (flipped by rotation)
-      -box.min.y * scale,                      // bottom of car at y=0
-      desiredCenterZ + center.z * scale        // center of car at desired z (flipped by rotation)
+      -transformedCenter.x,
+      -transformedFloor,
+      -transformedCenter.z
     );
-
-    // Store base position and road progress for distortion tracking
-    model.userData.baseX = model.position.x;
-    model.userData.baseY = model.position.y;
-    model.userData.roadProgress = Math.abs(desiredCenterZ) / this.options.length;
 
     // Boost material visibility for the dark scene
     model.traverse((child) => {
@@ -1232,6 +1236,20 @@ class App {
     });
 
     this.scene.add(model);
+    this.updateCarScreenLockPosition();
+  }
+
+  updateCarScreenLockPosition() {
+    if (!this.carModel) return;
+
+    // Keep the car locked in the camera's forward view while the world moves.
+    this.carWorldPosition
+      .copy(this.carViewOffset)
+      .applyMatrix4(this.camera.matrixWorld);
+    this.carModel.position.copy(this.carWorldPosition);
+    this.carModel.quaternion
+      .copy(this.camera.quaternion)
+      .multiply(this.carRotationFix);
   }
 
   update(delta: number) {
@@ -1244,38 +1262,6 @@ class App {
     this.leftCarLights.update(time);
     this.leftSticks.update(time);
     this.road.update(time);
-
-    // Make the car follow the road's distortion path
-    if (this.carModel) {
-      const baseX = this.carModel.userData.baseX ?? 0;
-      const baseY = this.carModel.userData.baseY ?? 0;
-      const progress = this.carModel.userData.roadProgress ?? 0;
-      const fix = 0.02;
-
-      const dist = this.options.distortion;
-      if (typeof dist === 'object' && dist.uniforms?.uFreq && dist.uniforms?.uAmp) {
-        const freq = dist.uniforms.uFreq.value;
-        const amp = dist.uniforms.uAmp.value;
-
-        if (freq instanceof THREE.Vector2) {
-          // xyDistortion / LongRaceDistortion style
-          const dx = Math.cos(progress * Math.PI * freq.x + time) * amp.x -
-                     Math.cos(fix * Math.PI * freq.x + time) * amp.x;
-          const dy = Math.sin(progress * Math.PI * freq.y + Math.PI / 2 + time) * amp.y -
-                     Math.sin(fix * Math.PI * freq.y + Math.PI / 2 + time) * amp.y;
-          this.carModel.position.x = baseX + dx;
-          this.carModel.position.y = baseY + dy;
-        } else if (freq instanceof THREE.Vector3) {
-          // mountainDistortion style
-          const dx = Math.cos(progress * Math.PI * freq.x + time) * amp.x -
-                     Math.cos(fix * Math.PI * freq.x + time) * amp.x;
-          this.carModel.position.x = baseX + dx;
-        }
-      }
-
-      // Subtle vibration on top
-      this.carModel.position.y += Math.sin(time * 8) * 0.02 + Math.sin(time * 13) * 0.01;
-    }
 
     let updateCamera = false;
     const fovChange = lerp(this.camera.fov, this.fovTarget, lerpPercentage);
@@ -1299,6 +1285,8 @@ class App {
     if (updateCamera) {
       this.camera.updateProjectionMatrix();
     }
+
+    this.updateCarScreenLockPosition();
   }
 
   render(delta: number) {
