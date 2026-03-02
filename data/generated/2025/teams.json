@@ -5,7 +5,7 @@
     "shortName": "Red Bull",
     "primaryColor": "#3671C6",
     "secondaryColor": "#1E5BC6",
-    "logoPath": "/team-logos/redbull.svg",
+    "logoPath": "/team-logos/Red_Bull_Racing-Logo.svg",
     "bgImagePath": "/assets/f1-bg-collection/redbull-bg-2.jpg",
     "drivers": [
       "max_verstappen",
@@ -61,7 +61,7 @@
     "shortName": "Aston Martin",
     "primaryColor": "#229971",
     "secondaryColor": "#358C75",
-    "logoPath": "/team-logos/Logo_Aston_Martin_F1_Team.png",
+    "logoPath": "/team-logos/Logo_Aston_Martin_F1_Team.svg",
     "bgImagePath": "/assets/f1-bg-collection/astonmartin-bg-2.jpg",
     "drivers": [
       "fernando_alonso",
@@ -75,7 +75,7 @@
     "shortName": "Alpine",
     "primaryColor": "#FF87BC",
     "secondaryColor": "#0093CC",
-    "logoPath": "/team-logos/Alpine_(automobile)-Logo.wine.png",
+    "logoPath": "/team-logos/Logo_of_alpine_f1_team_2022.svg",
     "bgImagePath": "/assets/f1-bg-collection/alpine-bg-2.jpg",
     "drivers": [
       "pierre_gasly",
@@ -103,7 +103,7 @@
     "shortName": "RB",
     "primaryColor": "#6692FF",
     "secondaryColor": "#1B3D8A",
-    "logoPath": "/team-logos/F1.Racing.Bulls.webp",
+    "logoPath": "/team-logos/VCARB_F1_logo.svg.svg",
     "bgImagePath": "/assets/f1-bg-collection/rb-bg-1.webp",
     "drivers": [
       "isack_hadjar",
