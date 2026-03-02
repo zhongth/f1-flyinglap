@@ -13,13 +13,19 @@ const RotatingCards = dynamic(
   () => import("@/components/ui/RotatingCards"),
   { ssr: false }
 );
+const HyperspeedBackground = dynamic(
+  () => import("@/components/ui/HyperspeedBackground"),
+  { ssr: false }
+);
 import { teams } from "@/data";
 import { getTeamById } from "@/data/teams";
+import { hyperspeedPresets } from "@/components/ui/HyperspeedPresets";
 
 export function TeamCarousel() {
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
+  const hyperspeedRef = useRef<HTMLDivElement>(null);
   const wallpaperRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
 
@@ -53,6 +59,7 @@ export function TeamCarousel() {
     return topCenterAngle - ferrariIndex * angleStep;
   }, [sortedTeams]);
   const [spinIntro, setSpinIntro] = useState(!isIntroComplete);
+  const [hasActivatedWallpaper, setHasActivatedWallpaper] = useState(false);
   const handleIntroSpinComplete = useCallback(() => {
     setSpinIntro(false);
   }, []);
@@ -129,15 +136,20 @@ export function TeamCarousel() {
         );
 
         // Wallpaper fades out
-        tl.to(
-          wallpaperRef.current,
-          {
-            opacity: 0,
-            duration: 0.4,
-            ease: "power2.in",
-          },
-          0.1
+        const bgLayers = [hyperspeedRef.current, wallpaperRef.current].filter(
+          Boolean
         );
+        if (bgLayers.length > 0) {
+          tl.to(
+            bgLayers,
+            {
+              opacity: 0,
+              duration: 0.4,
+              ease: "power2.in",
+            },
+            0.1
+          );
+        }
 
         // Hint exits downward
         tl.to(
@@ -161,6 +173,12 @@ export function TeamCarousel() {
       if (isAnimating) return;
       const teamId = card.id as string;
 
+      if (!hasActivatedWallpaper) {
+        setHasActivatedWallpaper(true);
+        setHoveredTeamId(teamId);
+        return;
+      }
+
       if (hoveredTeamId === teamId) {
         // Same team clicked again — select it
         handleTeamSelect(teamId);
@@ -169,7 +187,13 @@ export function TeamCarousel() {
         setHoveredTeamId(teamId);
       }
     },
-    [isAnimating, hoveredTeamId, setHoveredTeamId, handleTeamSelect]
+    [
+      isAnimating,
+      hoveredTeamId,
+      setHoveredTeamId,
+      handleTeamSelect,
+      hasActivatedWallpaper,
+    ]
   );
 
   // Whether we're still in the intro phase (used for CSS initial states)
@@ -182,7 +206,7 @@ export function TeamCarousel() {
     const ctx = gsap.context(() => {
       const title = titleRef.current;
       const wheel = wheelRef.current;
-      const wallpaper = wallpaperRef.current;
+      const hyperspeed = hyperspeedRef.current;
       const hint = hintRef.current;
 
       // Set initial states (CSS classes handle opacity:0, GSAP adds transforms)
@@ -194,7 +218,7 @@ export function TeamCarousel() {
         onComplete: () => setIntroComplete(),
       });
 
-      tl.to(wallpaper, { opacity: 1, duration: 1, ease: "power2.out" });
+      tl.to(hyperspeed, { opacity: 1, duration: 1, ease: "power2.out" });
       tl.to(title, { y: 0, opacity: 1, duration: 0.6, ease: "power2.out" }, "-=0.7");
       tl.to(wheel, { y: 0, opacity: 1, duration: 0.8, ease: "power3.out" }, "-=0.6");
       tl.to(hint, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, "-=0.3");
@@ -206,25 +230,50 @@ export function TeamCarousel() {
   return (
     <div
       ref={containerRef}
-      className="relative h-screen w-full overflow-hidden bg-(--background)"
+      className="relative h-screen w-full overflow-hidden bg-black"
     >
-      {/* Dynamic gradient wallpaper */}
-      <div ref={wallpaperRef} className={showIntro ? "opacity-0" : undefined}>
-        <TeamWallpaper team={activeTeam ?? null} />
+      {/* Hyperspeed base background — always rendered */}
+      <div
+        ref={hyperspeedRef}
+        className={`absolute inset-0 z-0 pointer-events-none ${showIntro ? "opacity-0" : ""}`}
+      >
+        <HyperspeedBackground
+          effectOptions={{
+            ...hyperspeedPresets.two,
+            distortion: "xyDistortion",
+            speedUp: 1,
+            fovSpeedUp: 102,
+            lanesPerRoad: 3,
+            lightPairsPerRoadWay: 22,
+            totalSideLightSticks: 18,
+            islandWidth: 12,
+          }}
+          className="h-full w-full"
+        />
+      </div>
+
+      {/* Team wallpaper overlay — appears after first click */}
+      <div
+        ref={wallpaperRef}
+        className={`absolute inset-0 z-10 transition-opacity duration-700 ${hasActivatedWallpaper && !showIntro ? "opacity-100" : "opacity-0"}`}
+      >
+        <TeamWallpaper team={hasActivatedWallpaper ? activeTeam ?? null : null} />
       </div>
 
       {/* Team name — prominent display at top */}
       <div
         ref={titleRef}
-        className={`absolute top-[12%] left-0 right-0 z-20 text-center pointer-events-none ${showIntro ? "opacity-0" : ""}`}
+        className={`absolute top-[12%] left-0 right-0 z-40 text-center pointer-events-none ${showIntro ? "opacity-0" : ""}`}
       >
         <h1 className="font-f1-bold text-2xl md:text-3xl lg:text-[40px] tracking-wider text-white/90 uppercase leading-relaxed">
-          {activeTeam?.name ?? defaultTeam.name}
+          {hasActivatedWallpaper
+            ? activeTeam?.name ?? defaultTeam.name
+            : "Choose your team"}
         </h1>
       </div>
 
       {/* Rotating cards carousel — positioned at bottom, half visible */}
-      <div className="absolute bottom-0 left-0 right-0 z-20 flex h-[50vh] translate-y-[40%] items-center justify-center">
+      <div className="absolute bottom-0 left-0 right-0 z-50 flex h-[50vh] translate-y-[40%] items-center justify-center">
         <div ref={wheelRef} className={showIntro ? "opacity-0" : undefined}>
           <RotatingCards
             cards={teamCards}
@@ -250,7 +299,7 @@ export function TeamCarousel() {
       {/* "Select your team" text + hint icons at bottom */}
       <div
         ref={hintRef}
-        className={`absolute bottom-[4%] left-0 right-0 flex flex-col items-center pointer-events-none z-30 ${showIntro ? "opacity-0" : ""}`}
+        className={`absolute bottom-[4%] left-0 right-0 flex flex-col items-center pointer-events-none z-[60] ${showIntro ? "opacity-0" : ""}`}
       >
         <p className="font-f1 text-base md:text-lg lg:text-xl tracking-[0.2em] text-white/70 uppercase">
           Select your team

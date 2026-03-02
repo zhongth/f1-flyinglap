@@ -19,11 +19,13 @@
     "lucide-react": "^0.562.0",
     "motion": "^12.34.3",
     "next": "16.1.0",
+    "postprocessing": "^6.38.3",
     "radix-ui": "^1.4.3",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "recharts": "2.15.4",
     "tailwind-merge": "^3.5.0",
+    "three": "^0.183.2",
     "zustand": "^5.0.10"
   },
   "devDependencies": {
@@ -32,6 +34,7 @@
     "@types/node": "^20.19.27",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
+    "@types/three": "^0.183.1",
     "prettier": "^3.7.4",
     "prettier-plugin-tailwindcss": "^0.7.2",
     "shadcn": "^3.8.5",
