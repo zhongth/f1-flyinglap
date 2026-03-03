@@ -56,6 +56,7 @@ export function TeamCarousel() {
     return ferrariIndex < 0 ? 0 : ferrariIndex;
   }, [sortedTeams]);
   const [hasInteracted, setHasInteracted] = useState(false);
+  const selectingRef = useRef(false);
   const activeCarModelPath = useMemo(
     () => getTeamCarModelPath(activeTeam?.id ?? defaultTeam.id),
     [activeTeam?.id, defaultTeam.id],
@@ -121,7 +122,8 @@ export function TeamCarousel() {
   // Handle team selection with exit animation
   const handleTeamSelect = useCallback(
     (teamId: string) => {
-      if (isAnimating || !containerRef.current) return;
+      if (selectingRef.current || isAnimating || !containerRef.current) return;
+      selectingRef.current = true;
 
       selectTeam(teamId);
 
