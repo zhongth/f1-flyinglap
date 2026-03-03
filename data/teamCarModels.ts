@@ -17,3 +17,8 @@ export function getTeamCarModelPath(teamId: string | null | undefined): string {
   if (!teamId) return DEFAULT_CAR_MODEL_PATH;
   return TEAM_CAR_MODEL_PATHS[teamId] ?? DEFAULT_CAR_MODEL_PATH;
 }
+
+/** Every model path the app may need (default + all teams). */
+export function getAllModelPaths(): string[] {
+  return [DEFAULT_CAR_MODEL_PATH, ...Object.values(TEAM_CAR_MODEL_PATHS)];
+}

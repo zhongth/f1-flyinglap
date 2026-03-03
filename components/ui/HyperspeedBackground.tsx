@@ -11,6 +11,7 @@ import {
 import { type FC, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { cloneCachedScene } from "@/lib/modelPreloader";
 
 interface Distortion {
   uniforms: Record<string, { value: any }>;
@@ -1308,51 +1309,61 @@ class App {
     this.pendingCarModelPath = modelPath;
     const loadToken = ++this.carLoadToken;
 
+    const applyModel = (scene: THREE.Group) => {
+      if (this.disposed || loadToken !== this.carLoadToken) {
+        this.disposeObject3D(scene);
+        return;
+      }
+
+      this.pendingCarModelPath = null;
+      this.cancelModelTransition();
+
+      const incoming = this.prepareCarModel(scene);
+      const incomingMaterials = this.collectModelMaterials(incoming);
+      const outgoing = this.carModel;
+
+      this.carAnchor.add(incoming);
+
+      if (animate && outgoing) {
+        const outgoingMaterials = this.collectModelMaterials(outgoing);
+        this.setModelOpacity(incomingMaterials, 0);
+        this.setModelScaleFactor(incoming, 0.86);
+        incoming.rotation.y = 0.2;
+
+        this.modelTransition = {
+          outgoing,
+          incoming,
+          outgoingMaterials,
+          incomingMaterials,
+          startedAt: performance.now(),
+          durationMs: 560,
+        };
+      } else {
+        if (outgoing) {
+          this.removeCarModel(outgoing);
+        }
+        this.setModelOpacity(incomingMaterials, 1);
+        this.setModelScaleFactor(incoming, 1);
+        incoming.rotation.y = 0;
+        this.modelTransition = null;
+      }
+
+      this.carModel = incoming;
+      this.currentCarModelPath = modelPath;
+      this.updateCarScreenLockPosition();
+    };
+
+    // Use cached model for instant switch (no network request)
+    const cached = cloneCachedScene(modelPath);
+    if (cached) {
+      applyModel(cached);
+      return;
+    }
+
+    // Fallback: load from network if not in cache
     this.carLoader.load(
       modelPath,
-      (gltf) => {
-        if (this.disposed || loadToken !== this.carLoadToken) {
-          this.disposeObject3D(gltf.scene);
-          return;
-        }
-
-        this.pendingCarModelPath = null;
-        this.cancelModelTransition();
-
-        const incoming = this.prepareCarModel(gltf.scene);
-        const incomingMaterials = this.collectModelMaterials(incoming);
-        const outgoing = this.carModel;
-
-        this.carAnchor.add(incoming);
-
-        if (animate && outgoing) {
-          const outgoingMaterials = this.collectModelMaterials(outgoing);
-          this.setModelOpacity(incomingMaterials, 0);
-          this.setModelScaleFactor(incoming, 0.86);
-          incoming.rotation.y = 0.2;
-
-          this.modelTransition = {
-            outgoing,
-            incoming,
-            outgoingMaterials,
-            incomingMaterials,
-            startedAt: performance.now(),
-            durationMs: 560,
-          };
-        } else {
-          if (outgoing) {
-            this.removeCarModel(outgoing);
-          }
-          this.setModelOpacity(incomingMaterials, 1);
-          this.setModelScaleFactor(incoming, 1);
-          incoming.rotation.y = 0;
-          this.modelTransition = null;
-        }
-
-        this.carModel = incoming;
-        this.currentCarModelPath = modelPath;
-        this.updateCarScreenLockPosition();
-      },
+      (gltf) => applyModel(gltf.scene),
       undefined,
       (error) => {
         if (loadToken !== this.carLoadToken) return;
