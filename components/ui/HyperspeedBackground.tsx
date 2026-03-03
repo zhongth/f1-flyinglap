@@ -126,6 +126,31 @@ interface ModelTransitionState {
   durationMs: number;
 }
 
+const CAR_SURFACE_MATTE_CONFIG = {
+  body: {
+    roughnessMin: 0.46,
+    metalnessMax: 0.45,
+    envMapIntensityMax: 0.95,
+    clearcoatMax: 0.32,
+    clearcoatRoughnessMin: 0.32,
+    specularIntensityMax: 0.9,
+  },
+  glass: {
+    roughnessMin: 0.18,
+    metalnessMax: 0.55,
+    envMapIntensityMax: 1.05,
+    clearcoatMax: 0.7,
+    clearcoatRoughnessMin: 0.16,
+    specularIntensityMax: 1,
+  },
+} as const;
+
+function isLikelyGlassOrTrim(name: string): boolean {
+  return /glass|window|windscreen|windshield|visor|mirror|chrome|light|lamp|led/i.test(
+    name,
+  );
+}
+
 function nsin(val: number) {
   return Math.sin(val) * 0.5 + 0.5;
 }
@@ -1265,27 +1290,27 @@ class App {
   }
 
   addLighting() {
-    // Ambient fill so the car isn't pitch black
-    const ambient = new THREE.AmbientLight(0xffffff, 0.62);
+    // Keep a bright base so the car still reads like a normal showroom render.
+    const ambient = new THREE.AmbientLight(0xf2f6ff, 0.56);
     this.scene.add(ambient);
 
-    // Key light from above-right-front — aimed toward the car
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.7);
-    keyLight.position.set(5, 12, -10);
+    // Neutral key from front-right for familiar readability.
+    const keyLight = new THREE.DirectionalLight(0xffffff, 1.3);
+    keyLight.position.set(6, 10, -12);
     this.scene.add(keyLight);
 
-    // Fill light from the left
-    const fillLight = new THREE.DirectionalLight(0x88aaff, 0.5);
-    fillLight.position.set(-8, 5, -20);
+    // Subtle cool fill keeps the cyberpunk blend without darkening the car.
+    const fillLight = new THREE.DirectionalLight(0xaec8ff, 0.58);
+    fillLight.position.set(-8, 5, -18);
     this.scene.add(fillLight);
 
-    // Rim / back light for edge definition
-    const rimLight = new THREE.DirectionalLight(0xffffff, 0.85);
-    rimLight.position.set(0, 5, 5);
+    // Light magenta rim for edge separation.
+    const rimLight = new THREE.DirectionalLight(0xdca3ff, 0.58);
+    rimLight.position.set(0, 5, 6);
     this.scene.add(rimLight);
 
-    // Top-down light to catch the top surfaces
-    const topLight = new THREE.DirectionalLight(0xffffff, 0.8);
+    // Top fill to preserve shape on upper bodywork.
+    const topLight = new THREE.DirectionalLight(0xffffff, 0.5);
     topLight.position.set(0, 20, -18);
     this.scene.add(topLight);
   }
@@ -1411,7 +1436,7 @@ class App {
     );
     model.userData.baseScale = model.scale.clone();
 
-    // Boost material visibility for the dark scene.
+    // Matte-friendly material response so the car blends into the neon scene.
     model.traverse((child) => {
       if (child instanceof THREE.Mesh && child.material) {
         const materials = Array.isArray(child.material)
@@ -1419,7 +1444,38 @@ class App {
           : [child.material];
         for (const material of materials) {
           if (material instanceof THREE.MeshStandardMaterial) {
-            material.envMapIntensity = 1.5;
+            const name = `${material.name} ${child.name}`.toLowerCase();
+            const matteProfile = isLikelyGlassOrTrim(name)
+              ? CAR_SURFACE_MATTE_CONFIG.glass
+              : CAR_SURFACE_MATTE_CONFIG.body;
+
+            material.roughness = Math.max(
+              material.roughness,
+              matteProfile.roughnessMin,
+            );
+            material.metalness = Math.min(
+              material.metalness,
+              matteProfile.metalnessMax,
+            );
+            material.envMapIntensity = Math.min(
+              material.envMapIntensity,
+              matteProfile.envMapIntensityMax,
+            );
+
+            if (material instanceof THREE.MeshPhysicalMaterial) {
+              material.clearcoat = Math.min(
+                material.clearcoat,
+                matteProfile.clearcoatMax,
+              );
+              material.clearcoatRoughness = Math.max(
+                material.clearcoatRoughness,
+                matteProfile.clearcoatRoughnessMin,
+              );
+              material.specularIntensity = Math.min(
+                material.specularIntensity,
+                matteProfile.specularIntensityMax,
+              );
+            }
             material.needsUpdate = true;
           }
         }
