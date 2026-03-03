@@ -1,20 +1,52 @@
 "use client";
 
-import React, {
-  useRef,
-  useEffect,
-  useState,
+import {
+  type ReactNode,
   useCallback,
+  useEffect,
   useMemo,
+  useRef,
+  useState,
 } from "react";
 import { gsap } from "@/lib/gsap";
 import { cn } from "@/lib/utils";
 
+export interface GradientCarouselItem {
+  /** Unique identifier for stable rendering */
+  id: string | number;
+  /** Optional image source (kept for compatibility with image-only usage) */
+  image?: string;
+  /** Optional custom card content */
+  content?: ReactNode;
+  /** Optional card background (e.g., gradient) */
+  background?: string;
+  /** Optional stronger background for the centered/active card */
+  activeBackground?: string;
+  /** Optional primary color override for animated backdrop */
+  primaryColor?: string;
+  /** Optional secondary color override for animated backdrop */
+  secondaryColor?: string;
+  /** Optional image alt text */
+  alt?: string;
+  /** Optional per-card class override */
+  cardClassName?: string;
+}
+
 export interface GradientCarouselProps {
-  /** Array of image URLs to display in the carousel */
+  /** Legacy array of image URLs to display in the carousel */
   images?: string[];
+  /** Rich item list with optional custom content */
+  items?: GradientCarouselItem[];
   /** Additional CSS classes for the wrapper */
   className?: string;
+  /** Additional CSS classes for each card wrapper */
+  cardClassName?: string;
+  /** Additional CSS classes for custom content wrapper */
+  contentClassName?: string;
+  /** Render animated canvas backdrop behind cards */
+  showBackdrop?: boolean;
+  /** Render loading overlay while initializing */
+  showLoadingOverlay?: boolean;
   /** Maximum rotation angle for cards in degrees */
   maxRotationDegrees?: number;
   /** Maximum depth on Z-axis in pixels */
@@ -41,14 +73,25 @@ export interface GradientCarouselProps {
   onCardChange?: (index: number) => void;
   /** Callback when the active card is tapped (not dragged) */
   onCardClick?: (index: number) => void;
+  /** Fixed card width in pixels (falls back to responsive width if omitted) */
+  cardWidthPx?: number;
   /** Aspect ratio of cards (width/height) */
   cardAspectRatio?: number;
   /** Initial card index to display */
   initialIndex?: number;
+  /** Play an intro spin animation on first load */
+  introSpin?: boolean;
+  /** Number of full rounds to travel during intro spin */
+  introSpinRounds?: number;
+  /** Duration of intro spin in milliseconds */
+  introSpinDurationMs?: number;
+  /** Callback fired when intro spin completes */
+  onIntroComplete?: () => void;
 }
 
 interface CardItem {
   element: HTMLDivElement;
+  surface?: HTMLDivElement;
   position: number;
 }
 
@@ -68,7 +111,12 @@ interface GradientState {
 
 const GradientCarousel: React.FC<GradientCarouselProps> = ({
   images = [],
+  items,
   className = "",
+  cardClassName = "",
+  contentClassName = "",
+  showBackdrop = true,
+  showLoadingOverlay = true,
   maxRotationDegrees = 28,
   maxDepthPx = 140,
   minScale = 0.92,
@@ -82,11 +130,25 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
   enableKeyboard = true,
   onCardChange,
   onCardClick,
+  cardWidthPx,
   cardAspectRatio = 4 / 5,
   initialIndex = 0,
+  introSpin = false,
+  introSpinRounds = 1,
+  introSpinDurationMs = 2600,
+  onIntroComplete,
 }) => {
-  const imagesKey = JSON.stringify(images);
-  const stableImages = useMemo(() => images, [imagesKey]);
+  const stableItems = useMemo<GradientCarouselItem[]>(
+    () =>
+      items && items.length > 0
+        ? items
+        : images.map((src, index) => ({
+            id: index,
+            image: src,
+            alt: `Carousel item ${index + 1}`,
+          })),
+    [items, images],
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const cardsContainerRef = useRef<HTMLDivElement>(null);
@@ -94,6 +156,11 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
   const cardsRef = useRef<CardItem[]>([]);
   const animationFrameRef = useRef<number | null>(null);
   const bgAnimationFrameRef = useRef<number | null>(null);
+  const showBackdropRef = useRef(showBackdrop);
+  const introSpinRef = useRef(introSpin);
+  const introSpinRoundsRef = useRef(introSpinRounds);
+  const introSpinDurationRef = useRef(introSpinDurationMs);
+  const onIntroCompleteRef = useRef(onIntroComplete);
 
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -125,6 +192,30 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
   const activeCardIndexRef = useRef(-1);
   const lastBgDrawTimeRef = useRef(0);
   const fastRenderUntilRef = useRef(0);
+  const pointerDownCardIndexRef = useRef<number | null>(null);
+  const snapTweenRef = useRef<ReturnType<typeof gsap.to> | null>(null);
+  const introPlayedRef = useRef(false);
+  const introAnimatingRef = useRef(false);
+
+  useEffect(() => {
+    showBackdropRef.current = showBackdrop;
+  }, [showBackdrop]);
+
+  useEffect(() => {
+    introSpinRef.current = introSpin;
+  }, [introSpin]);
+
+  useEffect(() => {
+    introSpinRoundsRef.current = introSpinRounds;
+  }, [introSpinRounds]);
+
+  useEffect(() => {
+    introSpinDurationRef.current = introSpinDurationMs;
+  }, [introSpinDurationMs]);
+
+  useEffect(() => {
+    onIntroCompleteRef.current = onIntroComplete;
+  }, [onIntroComplete]);
 
   const wrapValue = useCallback((value: number, max: number): number => {
     return ((value % max) + max) % max;
@@ -199,6 +290,24 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
     [hslToRgb],
   );
 
+  const parseHexColor = useCallback(
+    (value?: string): [number, number, number] | null => {
+      if (!value) return null;
+      const normalized = value.trim().replace(/^#/, "");
+      const expanded =
+        normalized.length === 3
+          ? normalized
+              .split("")
+              .map((c) => c + c)
+              .join("")
+          : normalized;
+      if (!/^[0-9a-fA-F]{6}$/.test(expanded)) return null;
+      const intValue = Number.parseInt(expanded, 16);
+      return [(intValue >> 16) & 255, (intValue >> 8) & 255, intValue & 255];
+    },
+    [],
+  );
+
   const extractImageColors = useCallback(
     (img: HTMLImageElement, index: number): ColorPair => {
       try {
@@ -269,8 +378,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
         if (primaryIndex < 0 || primaryWeight <= 0)
           return generateFallbackColors(index);
 
-        const primaryHue =
-          Math.floor(primaryIndex / satBins) * (360 / hueBins);
+        const primaryHue = Math.floor(primaryIndex / satBins) * (360 / hueBins);
         let secondaryIndex = -1;
         let secondaryWeight = 0;
         for (let i = 0; i < totalBins; i++) {
@@ -329,7 +437,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
       const scaleRange = 0.1;
       const scale = minScale + inverseNormalized * scaleRange;
       return {
-        transform: `translate3d(${screenPositionX}px,-50%,${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
+        transform: `translate3d(-50%,-50%,0) translate3d(${screenPositionX}px,0,${translateZ}px) rotateY(${rotateY}deg) scale(${scale})`,
         zDepth: translateZ,
       };
     },
@@ -365,6 +473,14 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
   }, []);
 
   const updateAllCardTransforms = useCallback(() => {
+    if (
+      cardsRef.current.length === 0 ||
+      totalTrackLengthRef.current <= 0 ||
+      viewportHalfRef.current <= 0
+    ) {
+      return;
+    }
+
     const halfTrack = totalTrackLengthRef.current / 2;
     const wrappedPositions = new Float32Array(cardsRef.current.length);
     let closestIndex = -1;
@@ -373,10 +489,8 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
     for (let i = 0; i < cardsRef.current.length; i++) {
       const card = cardsRef.current[i];
       let relativePos = card.position - scrollOffsetRef.current;
-      if (relativePos < -halfTrack)
-        relativePos += totalTrackLengthRef.current;
-      if (relativePos > halfTrack)
-        relativePos -= totalTrackLengthRef.current;
+      if (relativePos < -halfTrack) relativePos += totalTrackLengthRef.current;
+      if (relativePos > halfTrack) relativePos -= totalTrackLengthRef.current;
       wrappedPositions[i] = relativePos;
       const distance = Math.abs(relativePos);
       if (distance < closestDistance) {
@@ -386,38 +500,143 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
     }
 
     const prevIndex =
-      (closestIndex - 1 + cardsRef.current.length) %
-      cardsRef.current.length;
+      (closestIndex - 1 + cardsRef.current.length) % cardsRef.current.length;
     const nextIndex = (closestIndex + 1) % cardsRef.current.length;
 
     for (let i = 0; i < cardsRef.current.length; i++) {
       const card = cardsRef.current[i];
       const pos = wrappedPositions[i];
-      const norm = Math.max(
-        -1,
-        Math.min(1, pos / viewportHalfRef.current),
-      );
+      const norm = Math.max(-1, Math.min(1, pos / viewportHalfRef.current));
       const { transform, zDepth } = calculateCardTransform(pos);
+      const isActive = i === closestIndex;
       card.element.style.transform = transform;
       card.element.style.zIndex = String(1000 + Math.round(zDepth));
       const isCoreCard =
         i === closestIndex || i === prevIndex || i === nextIndex;
-      const blurAmount = isCoreCard
-        ? 0
-        : 2 * Math.pow(Math.abs(norm), 1.1);
+      const blurAmount = isCoreCard ? 0 : 2 * Math.abs(norm) ** 1.1;
       card.element.style.filter = `blur(${blurAmount.toFixed(2)}px)`;
+
+      const item = stableItems[i];
+      if (card.surface && item) {
+        const defaultBackground = item.background ?? "";
+        const activeBackground = item.activeBackground ?? defaultBackground;
+        card.surface.style.background = isActive
+          ? activeBackground
+          : defaultBackground;
+        card.surface.style.borderColor = isActive
+          ? "rgba(255, 255, 255, 0.20)"
+          : "rgba(255, 255, 255, 0.10)";
+        card.surface.style.boxShadow = isActive
+          ? "0 18px 42px rgba(0, 0, 0, 0.38), inset 0 0 0 1px rgba(255, 255, 255, 0.12)"
+          : "0 14px 34px rgba(0, 0, 0, 0.28)";
+      }
     }
 
     if (closestIndex !== activeCardIndexRef.current && closestIndex >= 0) {
-      updateActiveGradient(closestIndex);
+      if (showBackdropRef.current) {
+        updateActiveGradient(closestIndex);
+      } else {
+        activeCardIndexRef.current = closestIndex;
+      }
       if (onCardChange) {
         onCardChange(closestIndex);
       }
     }
-  }, [calculateCardTransform, updateActiveGradient, onCardChange]);
+  }, [calculateCardTransform, stableItems, updateActiveGradient, onCardChange]);
+
+  const focusCardIndex = useCallback(
+    (index: number) => {
+      const cardCount = cardsRef.current.length;
+      const totalLength = totalTrackLengthRef.current;
+      if (cardCount === 0 || totalLength <= 0) return;
+      if (index < 0 || index >= cardCount) return;
+
+      const targetOffset = index * cardStepRef.current;
+      const currentOffset = scrollOffsetRef.current;
+      const deltas = [
+        targetOffset - currentOffset,
+        targetOffset - currentOffset + totalLength,
+        targetOffset - currentOffset - totalLength,
+      ];
+      const shortestDelta = deltas.reduce((best, delta) =>
+        Math.abs(delta) < Math.abs(best) ? delta : best,
+      );
+
+      const tweenState = { offset: currentOffset };
+      snapTweenRef.current?.kill();
+      velocityRef.current = 0;
+
+      snapTweenRef.current = gsap.to(tweenState, {
+        offset: currentOffset + shortestDelta,
+        duration: 0.36,
+        ease: "power3.out",
+        onUpdate: () => {
+          scrollOffsetRef.current = wrapValue(tweenState.offset, totalLength);
+          updateAllCardTransforms();
+        },
+        onComplete: () => {
+          scrollOffsetRef.current = wrapValue(targetOffset, totalLength);
+          updateAllCardTransforms();
+        },
+      });
+    },
+    [updateAllCardTransforms, wrapValue],
+  );
+
+  const runIntroSpin = useCallback(
+    (targetIndex: number): boolean => {
+      const cardCount = cardsRef.current.length;
+      const totalLength = totalTrackLengthRef.current;
+      if (cardCount === 0 || totalLength <= 0) return false;
+      if (targetIndex < 0 || targetIndex >= cardCount) return false;
+
+      const rounds = Math.max(0.25, introSpinRoundsRef.current);
+      const durationSec = Math.max(0.4, introSpinDurationRef.current / 1000);
+      const targetOffset = targetIndex * cardStepRef.current;
+      const startOffset = targetOffset - totalLength * rounds;
+      const tweenState = { offset: startOffset };
+
+      snapTweenRef.current?.kill();
+      velocityRef.current = 0;
+      introAnimatingRef.current = true;
+      scrollOffsetRef.current = wrapValue(startOffset, totalLength);
+      updateAllCardTransforms();
+
+      snapTweenRef.current = gsap.to(tweenState, {
+        offset: targetOffset,
+        duration: durationSec,
+        ease: "power4.out",
+        onUpdate: () => {
+          scrollOffsetRef.current = wrapValue(tweenState.offset, totalLength);
+          updateAllCardTransforms();
+        },
+        onComplete: () => {
+          scrollOffsetRef.current = wrapValue(targetOffset, totalLength);
+          introAnimatingRef.current = false;
+          updateAllCardTransforms();
+          setIsReady(true);
+          onIntroCompleteRef.current?.();
+        },
+      });
+
+      return true;
+    },
+    [updateAllCardTransforms, wrapValue],
+  );
 
   const animationLoop = useCallback(
     (timestamp: number) => {
+      if (totalTrackLengthRef.current <= 0) {
+        animationFrameRef.current = requestAnimationFrame(animationLoop);
+        return;
+      }
+
+      if (introAnimatingRef.current) {
+        lastTimeRef.current = timestamp;
+        animationFrameRef.current = requestAnimationFrame(animationLoop);
+        return;
+      }
+
       const deltaTime = lastTimeRef.current
         ? (timestamp - lastTimeRef.current) / 1000
         : 0;
@@ -426,7 +645,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
         scrollOffsetRef.current + velocityRef.current * deltaTime,
         totalTrackLengthRef.current,
       );
-      const decayFactor = Math.pow(frictionFactor, deltaTime * 60);
+      const decayFactor = frictionFactor ** (deltaTime * 60);
       velocityRef.current *= decayFactor;
       if (Math.abs(velocityRef.current) < 0.02) velocityRef.current = 0;
       updateAllCardTransforms();
@@ -504,19 +723,48 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
 
   useEffect(() => {
     if (!containerRef.current || !cardsContainerRef.current) return;
+    if (stableItems.length === 0) {
+      setIsLoading(false);
+      setIsReady(false);
+      return;
+    }
+
+    let isCancelled = false;
 
     const init = async () => {
-      const imageElements = await Promise.all(
-        stableImages.map((src) => {
-          return new Promise<HTMLImageElement>((resolve) => {
-            const img = new Image();
-            img.crossOrigin = "anonymous";
-            img.onload = () => resolve(img);
-            img.onerror = () => resolve(img);
-            img.src = src;
-          });
+      cardsRef.current = cardsRef.current.slice(0, stableItems.length);
+
+      const resolvedPalette = await Promise.all(
+        stableItems.map(async (item, index) => {
+          const fallback = generateFallbackColors(index);
+          const primaryFromItem = parseHexColor(item.primaryColor);
+          const secondaryFromItem = parseHexColor(item.secondaryColor);
+
+          if (primaryFromItem || secondaryFromItem) {
+            return {
+              primary: primaryFromItem ?? fallback.primary,
+              secondary:
+                secondaryFromItem ?? primaryFromItem ?? fallback.secondary,
+            };
+          }
+
+          const imageSrc = item.image;
+          if (!imageSrc) return fallback;
+
+          const imageElement = await new Promise<HTMLImageElement>(
+            (resolve) => {
+              const img = new Image();
+              img.crossOrigin = "anonymous";
+              img.onload = () => resolve(img);
+              img.onerror = () => resolve(img);
+              img.src = imageSrc;
+            },
+          );
+
+          return extractImageColors(imageElement, index);
         }),
       );
+      if (isCancelled) return;
 
       const containerWidth =
         containerRef.current?.clientWidth || window.innerWidth;
@@ -531,12 +779,15 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
         cardsRef.current.forEach((card, i) => {
           card.position = i * cardStepRef.current;
         });
+      } else {
+        cardWidthRef.current = cardWidthPx ?? 300;
+        cardHeightRef.current = cardWidthRef.current / cardAspectRatio;
+        cardStepRef.current = cardWidthRef.current + cardGap;
+        totalTrackLengthRef.current = stableItems.length * cardStepRef.current;
       }
 
       viewportHalfRef.current = containerWidth * 0.5;
-      colorPaletteRef.current = imageElements.map((img, i) =>
-        extractImageColors(img, i),
-      );
+      colorPaletteRef.current = resolvedPalette;
 
       const clampedInitialIndex = Math.max(
         0,
@@ -550,21 +801,55 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
       }
 
       setIsLoading(false);
-      setIsReady(true);
       lastTimeRef.current = 0;
       animationFrameRef.current = requestAnimationFrame(animationLoop);
-      bgAnimationFrameRef.current = requestAnimationFrame(renderBackground);
+      if (showBackdropRef.current) {
+        bgAnimationFrameRef.current = requestAnimationFrame(renderBackground);
+      }
+
+      const shouldPlayIntro = introSpinRef.current && !introPlayedRef.current;
+      if (shouldPlayIntro) {
+        introPlayedRef.current = true;
+        setIsReady(false);
+        const started = runIntroSpin(clampedInitialIndex);
+        if (!started) {
+          introAnimatingRef.current = false;
+          setIsReady(true);
+        }
+      } else {
+        setIsReady(true);
+      }
     };
 
+    setIsLoading(true);
+    setIsReady(false);
     init();
 
     return () => {
+      isCancelled = true;
+      introAnimatingRef.current = false;
+      snapTweenRef.current?.kill();
       if (animationFrameRef.current)
         cancelAnimationFrame(animationFrameRef.current);
       if (bgAnimationFrameRef.current)
         cancelAnimationFrame(bgAnimationFrameRef.current);
     };
-  }, [stableImages, initialIndex, cardAspectRatio]);
+  }, [
+    stableItems,
+    initialIndex,
+    cardAspectRatio,
+    cardGap,
+    cardWidthPx,
+    animationLoop,
+    renderBackground,
+    runIntroSpin,
+    updateActiveGradient,
+    updateAllCardTransforms,
+    generateFallbackColors,
+    parseHexColor,
+    extractImageColors,
+    onCardChange,
+  ]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -600,12 +885,19 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
     };
     window.addEventListener("resize", debouncedResize);
     return () => window.removeEventListener("resize", debouncedResize);
-  }, [cardGap]);
+  }, [cardGap, updateAllCardTransforms, wrapValue]);
 
   const handleWheel = useCallback(
     (e: WheelEvent) => {
-      if (!isReady) return;
+      if (
+        !isReady ||
+        introAnimatingRef.current ||
+        totalTrackLengthRef.current <= 0
+      ) {
+        return;
+      }
       e.preventDefault();
+      snapTweenRef.current?.kill();
       const delta =
         Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
       velocityRef.current += delta * wheelSensitivity * 20;
@@ -615,7 +907,16 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
 
   const handlePointerDown = useCallback(
     (e: PointerEvent) => {
-      if (!isReady) return;
+      if (!isReady || introAnimatingRef.current) return;
+      const eventTarget = e.target instanceof Element ? e.target : null;
+      const cardElement = eventTarget?.closest?.("[data-carousel-index]");
+      const clickedIndexRaw = cardElement?.getAttribute("data-carousel-index");
+      const clickedIndex = clickedIndexRaw ? Number(clickedIndexRaw) : NaN;
+      pointerDownCardIndexRef.current = Number.isFinite(clickedIndex)
+        ? clickedIndex
+        : null;
+
+      snapTweenRef.current?.kill();
       isDraggingRef.current = true;
       setIsDragging(true);
       lastPointerXRef.current = e.clientX;
@@ -632,7 +933,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
 
   const handlePointerMove = useCallback(
     (e: PointerEvent) => {
-      if (!isDraggingRef.current) return;
+      if (!isDraggingRef.current || totalTrackLengthRef.current <= 0) return;
       const now = performance.now();
       const dx = e.clientX - lastPointerXRef.current;
       const dt = Math.max(1, now - lastPointerTimeRef.current) / 1000;
@@ -655,8 +956,17 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
       const dx = e.clientX - pointerStartXRef.current;
       const dy = e.clientY - pointerStartYRef.current;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      if (distance < 8 && onCardClick && activeCardIndexRef.current >= 0) {
-        onCardClick(activeCardIndexRef.current);
+      const clickedCardIndex = pointerDownCardIndexRef.current;
+      pointerDownCardIndexRef.current = null;
+
+      if (distance < 8 && clickedCardIndex !== null) {
+        if (clickedCardIndex === activeCardIndexRef.current) {
+          if (onCardClick && activeCardIndexRef.current >= 0) {
+            onCardClick(activeCardIndexRef.current);
+          }
+        } else {
+          focusCardIndex(clickedCardIndex);
+        }
       } else {
         velocityRef.current = -lastDeltaRef.current * dragSensitivity;
       }
@@ -664,7 +974,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
         containerRef.current.releasePointerCapture(e.pointerId);
       }
     },
-    [dragSensitivity, onCardClick],
+    [dragSensitivity, onCardClick, focusCardIndex],
   );
 
   useEffect(() => {
@@ -690,6 +1000,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
   useEffect(() => {
     if (!enableKeyboard || !isReady) return;
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (introAnimatingRef.current) return;
       if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
         e.preventDefault();
         const direction = e.key === "ArrowLeft" ? -1 : 1;
@@ -701,6 +1012,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
   }, [enableKeyboard, isReady]);
 
   useEffect(() => {
+    if (!showBackdrop) return;
     const handleVisibilityChange = () => {
       if (document.hidden) {
         if (animationFrameRef.current)
@@ -710,19 +1022,16 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
       } else {
         lastTimeRef.current = 0;
         animationFrameRef.current = requestAnimationFrame(animationLoop);
-        bgAnimationFrameRef.current =
-          requestAnimationFrame(renderBackground);
+        bgAnimationFrameRef.current = requestAnimationFrame(renderBackground);
       }
     };
     document.addEventListener("visibilitychange", handleVisibilityChange);
     return () =>
-      document.removeEventListener(
-        "visibilitychange",
-        handleVisibilityChange,
-      );
-  }, [animationLoop, renderBackground]);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [animationLoop, renderBackground, showBackdrop]);
 
   useEffect(() => {
+    if (!showBackdrop) return;
     if (!isReady) return;
     if (bgAnimationFrameRef.current) {
       cancelAnimationFrame(bgAnimationFrameRef.current);
@@ -733,44 +1042,52 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
         cancelAnimationFrame(bgAnimationFrameRef.current);
       }
     };
-  }, [gradientIntensity, gradientSize, isReady, renderBackground]);
+  }, [isReady, renderBackground, showBackdrop]);
 
   return (
     <div
       ref={containerRef}
       className={cn(
-        "relative w-full h-full overflow-hidden bg-[#0a0a0a]",
+        "relative w-full h-full overflow-hidden",
+        showBackdrop ? "bg-[#0a0a0a]" : "bg-transparent",
         "touch-none select-none",
         isDragging ? "cursor-grabbing" : "cursor-grab",
         className,
       )}
       style={{ perspective: "1800px" }}
     >
-      {isLoading && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center bg-[#0a0a0a]">
+      {isLoading && showLoadingOverlay && (
+        <div
+          className={cn(
+            "absolute inset-0 z-50 flex items-center justify-center",
+            showBackdrop ? "bg-[#0a0a0a]" : "bg-transparent",
+          )}
+        >
           <div className="flex flex-col items-center gap-3">
             <div className="w-9 h-9 border-3 border-neutral-700 border-t-neutral-200 rounded-full animate-spin" />
           </div>
         </div>
       )}
 
-      <canvas
-        ref={canvasRef}
-        className="absolute inset-0 w-full h-full block pointer-events-none"
-        style={{
-          filter: `blur(${backgroundBlur}px) saturate(1.05)`,
-        }}
-        aria-hidden="true"
-      />
+      {showBackdrop ? (
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full block pointer-events-none"
+          style={{
+            filter: `blur(${backgroundBlur}px) saturate(1.05)`,
+          }}
+        />
+      ) : null}
 
       <div
         ref={cardsContainerRef}
         className="absolute inset-0 z-10"
         style={{ transformStyle: "preserve-3d" }}
       >
-        {stableImages.map((src, i) => (
+        {stableItems.map((item, i) => (
           <div
-            key={i}
+            key={item.id}
+            data-carousel-index={i}
             ref={(el) => {
               if (el) {
                 if (!cardsRef.current[i]) {
@@ -782,20 +1099,47 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
             }}
             className="absolute top-1/2 left-1/2 will-change-transform"
             style={{
-              width: "min(26vw, 360px)",
+              width: cardWidthPx ? `${cardWidthPx}px` : "min(26vw, 360px)",
               aspectRatio: String(cardAspectRatio),
               transformStyle: "preserve-3d",
               backfaceVisibility: "hidden",
               transformOrigin: "90% center",
             }}
           >
-            <img
-              src={src}
-              alt={`Carousel item ${i + 1}`}
-              className="w-full h-full object-cover rounded-4xl pointer-events-none select-none shadow-2xl border border-white/10"
-              draggable={false}
-              style={{ userSelect: "none" }}
-            />
+            <div
+              ref={(el) => {
+                if (cardsRef.current[i]) {
+                  cardsRef.current[i].surface = el ?? undefined;
+                }
+              }}
+              className={cn(
+                "w-full h-full rounded-2xl overflow-hidden pointer-events-none select-none shadow-2xl border border-white/10 transition-[background,border-color,box-shadow] duration-300",
+                cardClassName,
+                item.cardClassName,
+              )}
+              style={
+                item.background ? { background: item.background } : undefined
+              }
+            >
+              {item.content ? (
+                <div
+                  className={cn(
+                    "w-full h-full flex items-center justify-center",
+                    contentClassName,
+                  )}
+                >
+                  {item.content}
+                </div>
+              ) : item.image ? (
+                <img
+                  src={item.image}
+                  alt={item.alt ?? `Carousel item ${i + 1}`}
+                  className="w-full h-full object-cover"
+                  draggable={false}
+                  style={{ userSelect: "none" }}
+                />
+              ) : null}
+            </div>
           </div>
         ))}
       </div>
