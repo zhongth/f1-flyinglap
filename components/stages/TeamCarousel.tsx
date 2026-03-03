@@ -8,6 +8,7 @@ import type { GradientCarouselItem } from "@/components/ui/GradientCarousel";
 import { hyperspeedPresets } from "@/components/ui/HyperspeedPresets";
 import { ProgressiveBlur } from "@/components/ui/ProgressiveBlur";
 import { teams } from "@/data";
+import { getDriversByTeamId } from "@/data/drivers";
 import { getTeamCarModelPath } from "@/data/teamCarModels";
 import { getTeamById } from "@/data/teams";
 import { gsap } from "@/lib/gsap";
@@ -71,24 +72,46 @@ export function TeamCarousel() {
       sortedTeams.map((team) => ({
         id: team.id,
         content: (
-          <div className="flex flex-col items-center justify-center gap-3">
-            <div className="relative h-20 w-20">
-              <Image
-                src={team.logoPath}
-                alt={team.name}
-                fill
-                sizes="80px"
-                className="object-contain"
-                draggable={false}
+          <div className="relative flex flex-col items-center justify-center w-full h-full overflow-hidden">
+            {/* Logo with team-colored glow aura */}
+            <div className="relative z-10 flex items-center justify-center">
+              <div
+                className="absolute inset-[-12px] rounded-full blur-2xl opacity-20"
+                style={{ background: team.primaryColor }}
               />
+              <div className="relative h-[72px] w-[72px]">
+                <Image
+                  src={team.logoPath}
+                  alt={team.name}
+                  fill
+                  sizes="72px"
+                  className="object-contain drop-shadow-lg"
+                  draggable={false}
+                />
+              </div>
             </div>
-            <span className="text-[13px] font-f1 tracking-wider text-white/70 uppercase text-center leading-tight">
-              {team.shortName}
-            </span>
+
+            {/* Team name + accent divider + position */}
+            <div className="relative z-10 mt-6 flex flex-col items-center gap-3">
+              <span className="text-lg font-f1-bold  text-white/80 uppercase text-center leading-tight">
+                {team.shortName}
+              </span>
+     
+              <span
+                className="text-xs font-f1-bold uppercase"
+                style={{ color: `${team.primaryColor}99` }}
+              >
+                {getDriversByTeamId(team.id)
+                  .map((d) => d.abbreviation)
+                  .join(" · ")}
+              </span>
+            </div>
+
+
           </div>
         ),
-        background: `linear-gradient(135deg, ${team.primaryColor}30 0%, ${team.primaryColor}10 100%)`,
-        activeBackground: `linear-gradient(135deg, rgba(0,0,0,0.42) 0%, rgba(0,0,0,0.58) 100%), linear-gradient(135deg, ${team.primaryColor}9A 0%, ${team.primaryColor}72 100%)`,
+        background: `linear-gradient(165deg, ${team.primaryColor}18 0%, ${team.primaryColor}08 40%, rgba(0,0,0,0.3) 100%)`,
+        activeBackground: `linear-gradient(165deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 100%), linear-gradient(165deg, ${team.primaryColor}A0 0%, ${team.primaryColor}60 100%)`,
         primaryColor: team.primaryColor,
         secondaryColor: team.secondaryColor,
       })),

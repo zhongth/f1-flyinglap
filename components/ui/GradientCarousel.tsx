@@ -524,11 +524,12 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
           ? activeBackground
           : defaultBackground;
         card.surface.style.borderColor = isActive
-          ? "rgba(255, 255, 255, 0.20)"
-          : "rgba(255, 255, 255, 0.10)";
+          ? "rgba(255, 255, 255, 0.18)"
+          : "rgba(255, 255, 255, 0.06)";
+        const teamColor = item.primaryColor ?? "255, 255, 255";
         card.surface.style.boxShadow = isActive
-          ? "0 18px 42px rgba(0, 0, 0, 0.38), inset 0 0 0 1px rgba(255, 255, 255, 0.12)"
-          : "0 14px 34px rgba(0, 0, 0, 0.28)";
+          ? `0 24px 48px rgba(0, 0, 0, 0.45), 0 0 40px ${teamColor}20, inset 0 0 0 1px rgba(255, 255, 255, 0.10)`
+          : "0 12px 32px rgba(0, 0, 0, 0.30)";
       }
     }
 
