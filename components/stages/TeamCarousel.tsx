@@ -7,8 +7,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GradientCarouselItem } from "@/components/ui/GradientCarousel";
 import { hyperspeedPresets } from "@/components/ui/HyperspeedPresets";
 import { ProgressiveBlur } from "@/components/ui/ProgressiveBlur";
-import { TeamWallpaper } from "@/components/ui/TeamWallpaper";
 import { teams } from "@/data";
+import { getTeamCarModelPath } from "@/data/teamCarModels";
 import { getTeamById } from "@/data/teams";
 import { gsap } from "@/lib/gsap";
 import { useAppStore } from "@/store/useAppStore";
@@ -27,7 +27,6 @@ export function TeamCarousel() {
   const titleRef = useRef<HTMLDivElement>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
   const hyperspeedRef = useRef<HTMLDivElement>(null);
-  const wallpaperRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -55,7 +54,11 @@ export function TeamCarousel() {
     const ferrariIndex = sortedTeams.findIndex((team) => team.id === "ferrari");
     return ferrariIndex < 0 ? 0 : ferrariIndex;
   }, [sortedTeams]);
-  const [hasActivatedWallpaper, setHasActivatedWallpaper] = useState(false);
+  const [hasInteracted, setHasInteracted] = useState(false);
+  const activeCarModelPath = useMemo(
+    () => getTeamCarModelPath(activeTeam?.id ?? defaultTeam.id),
+    [activeTeam?.id, defaultTeam.id],
+  );
 
   useEffect(() => {
     if (hoveredTeamId && getTeamById(hoveredTeamId)) return;
@@ -131,13 +134,9 @@ export function TeamCarousel() {
           0.1,
         );
 
-        // Wallpaper fades out
-        const bgLayers = [hyperspeedRef.current, wallpaperRef.current].filter(
-          Boolean,
-        );
-        if (bgLayers.length > 0) {
+        if (hyperspeedRef.current) {
           tl.to(
-            bgLayers,
+            hyperspeedRef.current,
             {
               opacity: 0,
               duration: 0.4,
@@ -163,7 +162,7 @@ export function TeamCarousel() {
     [isAnimating, selectTeam, setStage, setIsAnimating],
   );
 
-  // Click a card: first click activates wallpaper, second click selects
+  // Click a card: first click previews car model, second click selects.
   const handleCardClick = useCallback(
     (index: number) => {
       if (isAnimating) return;
@@ -171,8 +170,8 @@ export function TeamCarousel() {
       if (!selectedTeam) return;
       const teamId = selectedTeam.id;
 
-      if (!hasActivatedWallpaper) {
-        setHasActivatedWallpaper(true);
+      if (!hasInteracted) {
+        setHasInteracted(true);
         setHoveredTeamId(teamId);
         return;
       }
@@ -190,7 +189,7 @@ export function TeamCarousel() {
       hoveredTeamId,
       setHoveredTeamId,
       handleTeamSelect,
-      hasActivatedWallpaper,
+      hasInteracted,
       sortedTeams,
     ],
   );
@@ -259,17 +258,8 @@ export function TeamCarousel() {
       >
         <HyperspeedBackground
           effectOptions={hyperspeedEffectOptions}
+          carModelPath={activeCarModelPath}
           className="h-full w-full"
-        />
-      </div>
-
-      {/* Team wallpaper overlay — appears after first click */}
-      <div
-        ref={wallpaperRef}
-        className={`absolute inset-0 z-10 transition-opacity duration-700 ${hasActivatedWallpaper && !showIntro ? "opacity-100" : "opacity-0"}`}
-      >
-        <TeamWallpaper
-          team={hasActivatedWallpaper ? (activeTeam ?? null) : null}
         />
       </div>
 
@@ -279,7 +269,7 @@ export function TeamCarousel() {
         className={`absolute top-[12%] left-0 right-0 z-40 text-center pointer-events-none ${showIntro ? "opacity-0" : ""}`}
       >
         <h1 className="font-f1-bold text-2xl md:text-3xl lg:text-[40px] tracking-wider text-white/90 uppercase leading-relaxed">
-          {hasActivatedWallpaper
+          {hasInteracted
             ? (activeTeam?.name ?? defaultTeam.name)
             : "Welcome to Flying Lap"}
         </h1>
@@ -293,6 +283,9 @@ export function TeamCarousel() {
         >
           <p className="font-f1 text-base md:text-lg lg:text-xl tracking-[0.2em] text-white/70 uppercase">
             Select your team
+          </p>
+          <p className="mt-2 font-f1 text-[10px] tracking-[0.2em] text-white/40 uppercase">
+            Click to preview • Click again to confirm
           </p>
           <div className="mt-5 flex flex-col items-center gap-2">
             <Mouse className="h-5 w-5 text-white/25" strokeWidth={1.5} />
