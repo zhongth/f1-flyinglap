@@ -69,9 +69,9 @@ export interface GradientCarouselProps {
   gradientIntensity?: number;
   /** Enable keyboard arrow keys navigation */
   enableKeyboard?: boolean;
-  /** Callback when active card changes */
+  /** Callback when highlighted card changes */
   onCardChange?: (index: number) => void;
-  /** Callback when the active card is tapped (not dragged) */
+  /** Callback when the highlighted centered card is tapped (not dragged) */
   onCardClick?: (index: number) => void;
   /** Fixed card width in pixels (falls back to responsive width if omitted) */
   cardWidthPx?: number;
@@ -190,6 +190,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
     b2: 235,
   });
   const activeCardIndexRef = useRef(-1);
+  const centeredCardIndexRef = useRef(-1);
   const lastBgDrawTimeRef = useRef(0);
   const fastRenderUntilRef = useRef(0);
   const pointerDownCardIndexRef = useRef<number | null>(null);
@@ -444,33 +445,44 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
     [maxRotationDegrees, maxDepthPx, minScale],
   );
 
-  const updateActiveGradient = useCallback((index: number) => {
-    if (
-      index < 0 ||
-      index >= colorPaletteRef.current.length ||
-      index === activeCardIndexRef.current
-    )
-      return;
-    activeCardIndexRef.current = index;
-    const colors = colorPaletteRef.current[index] || {
-      primary: [240, 240, 240],
-      secondary: [235, 235, 235],
-    };
-    const targetState = {
-      r1: colors.primary[0],
-      g1: colors.primary[1],
-      b1: colors.primary[2],
-      r2: colors.secondary[0],
-      g2: colors.secondary[1],
-      b2: colors.secondary[2],
-    };
-    fastRenderUntilRef.current = performance.now() + 800;
-    gsap.to(currentGradientRef.current, {
-      ...targetState,
-      duration: 0.45,
-      ease: "power2.out",
-    });
-  }, []);
+  const updateActiveGradient = useCallback(
+    (index: number) => {
+      if (
+        index < 0 ||
+        index >= cardsRef.current.length ||
+        index === activeCardIndexRef.current
+      ) {
+        return;
+      }
+
+      activeCardIndexRef.current = index;
+      if (onCardChange) {
+        onCardChange(index);
+      }
+
+      if (!showBackdropRef.current) return;
+
+      const colors = colorPaletteRef.current[index] || {
+        primary: [240, 240, 240],
+        secondary: [235, 235, 235],
+      };
+      const targetState = {
+        r1: colors.primary[0],
+        g1: colors.primary[1],
+        b1: colors.primary[2],
+        r2: colors.secondary[0],
+        g2: colors.secondary[1],
+        b2: colors.secondary[2],
+      };
+      fastRenderUntilRef.current = performance.now() + 800;
+      gsap.to(currentGradientRef.current, {
+        ...targetState,
+        duration: 0.45,
+        ease: "power2.out",
+      });
+    },
+    [onCardChange],
+  );
 
   const updateAllCardTransforms = useCallback(() => {
     if (
@@ -508,7 +520,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
       const pos = wrappedPositions[i];
       const norm = Math.max(-1, Math.min(1, pos / viewportHalfRef.current));
       const { transform, zDepth } = calculateCardTransform(pos);
-      const isActive = i === closestIndex;
+      const isActive = i === activeCardIndexRef.current;
       card.element.style.transform = transform;
       card.element.style.zIndex = String(1000 + Math.round(zDepth));
       const isCoreCard =
@@ -533,17 +545,10 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
       }
     }
 
-    if (closestIndex !== activeCardIndexRef.current && closestIndex >= 0) {
-      if (showBackdropRef.current) {
-        updateActiveGradient(closestIndex);
-      } else {
-        activeCardIndexRef.current = closestIndex;
-      }
-      if (onCardChange) {
-        onCardChange(closestIndex);
-      }
+    if (closestIndex >= 0) {
+      centeredCardIndexRef.current = closestIndex;
     }
-  }, [calculateCardTransform, stableItems, updateActiveGradient, onCardChange]);
+  }, [calculateCardTransform, stableItems]);
 
   const focusCardIndex = useCallback(
     (index: number) => {
@@ -562,15 +567,24 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
       const shortestDelta = deltas.reduce((best, delta) =>
         Math.abs(delta) < Math.abs(best) ? delta : best,
       );
+      const stepDistance =
+        cardStepRef.current > 0
+          ? Math.abs(shortestDelta) / cardStepRef.current
+          : 0;
+      const duration = Math.min(
+        0.95,
+        Math.max(0.45, 0.3 + stepDistance * 0.12),
+      );
 
       const tweenState = { offset: currentOffset };
       snapTweenRef.current?.kill();
       velocityRef.current = 0;
+      updateAllCardTransforms();
 
       snapTweenRef.current = gsap.to(tweenState, {
         offset: currentOffset + shortestDelta,
-        duration: 0.36,
-        ease: "power3.out",
+        duration,
+        ease: "power2.inOut",
         onUpdate: () => {
           scrollOffsetRef.current = wrapValue(tweenState.offset, totalLength);
           updateAllCardTransforms();
@@ -797,9 +811,6 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
       scrollOffsetRef.current = clampedInitialIndex * cardStepRef.current;
       updateActiveGradient(clampedInitialIndex);
       updateAllCardTransforms();
-      if (onCardChange) {
-        onCardChange(clampedInitialIndex);
-      }
 
       setIsLoading(false);
       lastTimeRef.current = 0;
@@ -849,7 +860,6 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
     generateFallbackColors,
     parseHexColor,
     extractImageColors,
-    onCardChange,
   ]);
 
   // Support delayed intro trigger (e.g. wait until preloader fully exits).
@@ -985,9 +995,12 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
       pointerDownCardIndexRef.current = null;
 
       if (distance < 8 && clickedCardIndex !== null) {
-        if (clickedCardIndex === activeCardIndexRef.current) {
-          if (onCardClick && activeCardIndexRef.current >= 0) {
-            onCardClick(activeCardIndexRef.current);
+        if (clickedCardIndex !== activeCardIndexRef.current) {
+          updateActiveGradient(clickedCardIndex);
+          focusCardIndex(clickedCardIndex);
+        } else if (clickedCardIndex === centeredCardIndexRef.current) {
+          if (onCardClick && clickedCardIndex >= 0) {
+            onCardClick(clickedCardIndex);
           }
         } else {
           focusCardIndex(clickedCardIndex);
@@ -999,7 +1012,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
         containerRef.current.releasePointerCapture(e.pointerId);
       }
     },
-    [dragSensitivity, onCardClick, focusCardIndex],
+    [dragSensitivity, onCardClick, focusCardIndex, updateActiveGradient],
   );
 
   useEffect(() => {

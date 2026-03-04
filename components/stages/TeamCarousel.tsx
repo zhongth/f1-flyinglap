@@ -100,7 +100,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
               <span className="text-lg font-f1-bold  text-white/80 uppercase text-center leading-tight">
                 {team.shortName}
               </span>
-     
+
               <span
                 className="text-xs font-f1-bold uppercase"
                 style={{ color: `${team.primaryColor}99` }}
@@ -110,8 +110,6 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
                   .join(" · ")}
               </span>
             </div>
-
-
           </div>
         ),
         background: `linear-gradient(165deg, ${team.primaryColor}18 0%, ${team.primaryColor}08 40%, rgba(0,0,0,0.3) 100%)`,
@@ -199,7 +197,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     [setHoveredTeamId, sortedTeams],
   );
 
-  // Click centered card to select immediately.
+  // Click highlighted + centered card to enter Versus mode.
   const handleCardClick = useCallback(
     (index: number) => {
       if (isAnimating) return;
@@ -252,11 +250,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
         0.12,
       );
       tl.to(wheel, { opacity: 1, duration: 0.8, ease: "power2.out" }, 0);
-      tl.to(
-        hint,
-        { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" },
-        0.2,
-      );
+      tl.to(hint, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, 0.2);
     }, containerRef);
 
     return () => ctx.revert();
@@ -315,7 +309,8 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
               <MousePointerClick className="h-4 w-4" strokeWidth={1.5} />
             </div>
             <p className="mt-2 text-center font-f1 text-[10px] tracking-[0.17em] text-white/45 uppercase">
-              Click the centered card to enter Versus mode
+              Click any card to highlight and center, then click again to enter
+              Versus mode
             </p>
           </div>
         </div>
