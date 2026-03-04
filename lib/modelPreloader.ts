@@ -1,9 +1,15 @@
 import * as THREE from "three";
 import { GLTFLoader, type GLTF } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
 // Global model cache — persists across component mounts/unmounts
 const modelCache = new Map<string, GLTF>();
 const loader = new GLTFLoader();
+
+// Configure Draco decoder for compressed GLB models
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath("/draco/gltf/");
+loader.setDRACOLoader(dracoLoader);
 
 /**
  * Clone a cached GLTF scene for use in the 3D viewport.

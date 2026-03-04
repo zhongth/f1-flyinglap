@@ -2,7 +2,7 @@ const DEFAULT_CAR_MODEL_PATH = "/3d-model/2026_f1_car.glb";
 
 const TEAM_CAR_MODEL_PATHS: Record<string, string> = {
   red_bull: "/3d-model/Red Bull 3D Model.glb",
-  ferrari: "/3d-model/Ferrari 3D Model.glb",
+  ferrari: "/3d-model/375c749c-a34a-4266-9d3c-5e248ea16709.glb",
   mclaren: "/3d-model/Mclaren 3D Model.glb",
   mercedes: "/3d-model/Mercedas Benz 3D Model.glb",
   aston_martin: "/3d-model/Aston Martin 3D Model.glb",

@@ -160,15 +160,15 @@ const MODEL_SWAP_IN_START_DEPTH = -2.35;
 const MODEL_SWAP_IN_START_SCALE = 0.68;
 const WHEEL_BASE_ANGULAR_SPEED = Math.PI * 5;
 
+/** Matches material names that indicate wheel components (tires, rims, hubs/nuts). */
+const WHEEL_MATERIAL_PATTERN =
+  /(?:tire|tyre|rim|hub[_-]?nut|rtt[_-]?nut|\bnut\b|rubber|slick|pirelli)/i;
+
+/** Matches node names with explicit corner identifiers (uncompressed models). */
 const WHEEL_NODE_PATTERN =
   /(?:^|_)(wheel|tyre|tire|rim|hub)(?:[_-])*(lf|rf|lr|rr)(?:[_-]|$)/i;
-const WHEEL_KEYWORD_PATTERN = /wheel|tyre|tire|rim|hub|rubber|slick|pirelli/i;
 
-const AXIS_UNIT_VECTORS = [
-  new THREE.Vector3(1, 0, 0),
-  new THREE.Vector3(0, 1, 0),
-  new THREE.Vector3(0, 0, 1),
-] as const;
+const WHEEL_SPIN_AXIS = new THREE.Vector3(1, 0, 0);
 
 function isLikelyGlassOrTrim(name: string): boolean {
   return /glass|window|windscreen|windshield|visor|mirror|chrome|light|lamp|led/i.test(
@@ -1516,249 +1516,331 @@ class App {
     return model;
   }
 
+  /**
+   * Detect wheel meshes and create per-wheel spin targets.
+   * Handles both uncompressed models (named nodes) and compressed models
+   * (flat hierarchy with merged wheel geometry identified by material name).
+   */
   collectWheelSpinTargets(model: THREE.Group): WheelSpinTarget[] {
-    const namedTargets = this.collectNamedWheelSpinTargets(model);
-    if (namedTargets.length >= 2) {
-      return namedTargets;
-    }
+    // 1. Try named node detection (uncompressed models with corner IDs)
+    const namedTargets = this.collectNamedWheelTargets(model);
+    if (namedTargets.length >= 2) return namedTargets;
 
-    const fallbackTargets = this.collectFallbackWheelSpinTargets(model);
-    if (fallbackTargets.length > 0) {
-      return fallbackTargets;
-    }
-
-    return namedTargets;
+    // 2. Material-based detection (compressed / flattened models)
+    return this.collectMaterialWheelTargets(model);
   }
 
-  collectNamedWheelSpinTargets(model: THREE.Group): WheelSpinTarget[] {
-    const wheelByCorner = new Map<
-      string,
-      { object: THREE.Object3D; bounds: THREE.Box3; score: number }
-    >();
+  /** Find wheels by node name with corner identifiers (lf/rf/lr/rr). */
+  private collectNamedWheelTargets(model: THREE.Group): WheelSpinTarget[] {
+    const byCorner = new Map<string, { obj: THREE.Object3D; score: number }>();
 
     model.traverse((child) => {
+      if (!(child instanceof THREE.Mesh) || !child.geometry) return;
       const match = child.name.toLowerCase().match(WHEEL_NODE_PATTERN);
-      if (!match || !this.hasRenderableGeometry(child)) return;
-
-      const bounds = new THREE.Box3().setFromObject(child);
-      if (bounds.isEmpty()) return;
+      if (!match) return;
 
       const partType = match[1].toLowerCase();
       const corner = match[2].toLowerCase();
-      const isSubPart = /_sub\d*/i.test(child.name);
-
-      const partScore =
-        partType === "wheel"
-          ? 400
-          : partType === "hub"
-            ? 300
-            : partType === "tyre" || partType === "tire"
-              ? 200
-              : 100;
       const score =
-        partScore +
-        (child.children.length > 0 ? 20 : 0) +
-        (isSubPart ? -1000 : 0) +
-        child.name.length * 0.01;
+        partType === "wheel" ? 4
+        : partType === "tyre" || partType === "tire" ? 3
+        : partType === "hub" ? 2 : 1;
 
-      const existing = wheelByCorner.get(corner);
+      const existing = byCorner.get(corner);
       if (!existing || score > existing.score) {
-        wheelByCorner.set(corner, { object: child, bounds, score });
+        byCorner.set(corner, { obj: child, score });
       }
     });
 
     const targets: WheelSpinTarget[] = [];
     for (const corner of ["lf", "rf", "lr", "rr"]) {
-      const candidate = wheelByCorner.get(corner);
-      if (!candidate) continue;
-      const target = this.buildWheelSpinTarget(candidate.object, candidate.bounds);
-      if (!target) continue;
-      targets.push(target);
+      const entry = byCorner.get(corner);
+      if (!entry) continue;
+      const pivot = this.wrapInPivot(entry.obj);
+      if (pivot) targets.push({ object: pivot, axis: WHEEL_SPIN_AXIS.clone() });
     }
     return targets;
   }
 
-  collectFallbackWheelSpinTargets(model: THREE.Group): WheelSpinTarget[] {
+  /** Find wheel meshes by material name, splitting merged geometry if needed. */
+  private collectMaterialWheelTargets(model: THREE.Group): WheelSpinTarget[] {
     const modelBounds = new THREE.Box3().setFromObject(model);
     if (modelBounds.isEmpty()) return [];
-
-    const modelCenter = modelBounds.getCenter(new THREE.Vector3());
     const modelSize = modelBounds.getSize(new THREE.Vector3());
-    const modelHalfX = Math.max(modelSize.x * 0.5, 0.001);
-    const modelHalfZ = Math.max(modelSize.z * 0.5, 0.001);
-    const modelFloorY = modelBounds.min.y;
-    const modelMaxDim = Math.max(modelSize.x, modelSize.y, modelSize.z);
+    const modelCenter = modelBounds.getCenter(new THREE.Vector3());
 
-    type Candidate = {
-      object: THREE.Object3D;
-      bounds: THREE.Box3;
-      center: THREE.Vector3;
-      score: number;
-    };
-
-    const candidates: Candidate[] = [];
-
+    // Collect meshes with wheel-related materials
+    const wheelMeshes: THREE.Mesh[] = [];
     model.traverse((child) => {
-      if (!(child instanceof THREE.Mesh)) return;
-
-      const bounds = new THREE.Box3().setFromObject(child);
-      if (bounds.isEmpty()) return;
-
-      const size = bounds.getSize(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
-      if (maxDim < modelMaxDim * 0.05 || maxDim > modelMaxDim * 0.75) return;
-
-      const center = bounds.getCenter(new THREE.Vector3());
-      const xNorm = Math.abs(center.x - modelCenter.x) / modelHalfX;
-      const zNorm = Math.abs(center.z - modelCenter.z) / modelHalfZ;
-      const floorDistance = Math.abs(bounds.min.y - modelFloorY);
-      const floorScore = THREE.MathUtils.clamp(
-        1 - floorDistance / Math.max(modelSize.y * 0.35, 0.001),
-        0,
-        1,
-      );
-      const shapeScore = this.computeWheelShapeScore(size);
-      const materialNames = this.getMaterialNames(child);
-      const hasKeyword =
-        WHEEL_KEYWORD_PATTERN.test(child.name.toLowerCase()) ||
-        materialNames.some((name) => WHEEL_KEYWORD_PATTERN.test(name));
-
-      if (!hasKeyword && shapeScore < 0.55) return;
-      if (!hasKeyword && (xNorm < 0.25 || zNorm < 0.25)) return;
-
-      const cornerScore =
-        THREE.MathUtils.clamp((xNorm - 0.2) / 0.8, 0, 1) * 0.55 +
-        THREE.MathUtils.clamp((zNorm - 0.2) / 0.8, 0, 1) * 0.55;
-
-      const score =
-        shapeScore * 1.4 + cornerScore + floorScore * 0.45 + (hasKeyword ? 1.25 : 0);
-      if (score < 1) return;
-
-      candidates.push({ object: child, bounds, center, score });
+      if (!(child instanceof THREE.Mesh) || !child.material) return;
+      const mats = Array.isArray(child.material) ? child.material : [child.material];
+      if (mats.some((m) => WHEEL_MATERIAL_PATTERN.test(m.name))) {
+        wheelMeshes.push(child);
+      }
     });
 
-    if (candidates.length === 0) return [];
+    if (wheelMeshes.length === 0) return [];
 
-    const byQuadrant = new Map<string, Candidate>();
-    for (const candidate of candidates) {
-      const xSide = candidate.center.x >= modelCenter.x ? "r" : "l";
-      const zSide = candidate.center.z >= modelCenter.z ? "f" : "r";
-      const key = `${xSide}${zSide}`;
-      const existing = byQuadrant.get(key);
-      if (!existing || candidate.score > existing.score) {
-        byQuadrant.set(key, candidate);
+    // Check if the geometry is merged (spans most of the car width)
+    const firstBounds = new THREE.Box3().setFromObject(wheelMeshes[0]);
+    const firstSize = firstBounds.getSize(new THREE.Vector3());
+    const isMerged = firstSize.x > modelSize.x * 0.5 || firstSize.z > modelSize.z * 0.5;
+
+    if (!isMerged) {
+      // Each mesh is already a single wheel part — wrap in pivots
+      const targets: WheelSpinTarget[] = [];
+      const seen = new Set<THREE.Object3D>();
+      for (const mesh of wheelMeshes) {
+        if (seen.has(mesh)) continue;
+        seen.add(mesh);
+        const pivot = this.wrapInPivot(mesh);
+        if (pivot) targets.push({ object: pivot, axis: WHEEL_SPIN_AXIS.clone() });
+      }
+      return targets;
+    }
+
+    // Merged geometry: split each wheel-material mesh into 4 per-wheel sub-meshes
+    return this.splitAndCreateWheelTargets(wheelMeshes, modelCenter);
+  }
+
+  /**
+   * Split merged wheel meshes into per-wheel sub-meshes grouped by quadrant.
+   * All sub-meshes for the same wheel corner share a single pivot so they
+   * rotate together.
+   */
+  private splitAndCreateWheelTargets(
+    meshes: THREE.Mesh[],
+    modelCenter: THREE.Vector3,
+  ): WheelSpinTarget[] {
+    type QuadrantData = {
+      centroidSum: THREE.Vector3;
+      vertexCount: number;
+    };
+
+    // First pass: compute wheel center positions across ALL wheel meshes
+    const quadrantCenters = new Map<string, THREE.Vector3>();
+    const quadrantAccum = new Map<string, QuadrantData>();
+
+    for (const mesh of meshes) {
+      const geo = mesh.geometry;
+      const posAttr = geo.attributes.position;
+      if (!posAttr) continue;
+
+      mesh.updateMatrixWorld(true);
+      const worldMatrix = mesh.matrixWorld;
+      const vertex = new THREE.Vector3();
+
+      for (let i = 0; i < posAttr.count; i++) {
+        vertex.set(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+        vertex.applyMatrix4(worldMatrix);
+
+        const xSide = vertex.x >= modelCenter.x ? "r" : "l";
+        const zSide = vertex.z >= modelCenter.z ? "f" : "b";
+        const key = `${xSide}${zSide}`;
+
+        let acc = quadrantAccum.get(key);
+        if (!acc) {
+          acc = { centroidSum: new THREE.Vector3(), vertexCount: 0 };
+          quadrantAccum.set(key, acc);
+        }
+        acc.centroidSum.add(vertex);
+        acc.vertexCount++;
       }
     }
 
-    const quadrantTargets = Array.from(byQuadrant.values())
-      .sort((a, b) => b.score - a.score)
-      .slice(0, 4);
-
-    if (quadrantTargets.length >= 2) {
-      return this.buildWheelTargetsFromCandidates(quadrantTargets);
+    for (const [key, acc] of quadrantAccum) {
+      if (acc.vertexCount > 0) {
+        quadrantCenters.set(key, acc.centroidSum.divideScalar(acc.vertexCount));
+      }
     }
 
-    const rankedCandidates = candidates.sort((a, b) => b.score - a.score);
-    return this.buildWheelTargetsFromCandidates(rankedCandidates);
-  }
-
-  buildWheelTargetsFromCandidates(
-    candidates: Array<{ object: THREE.Object3D; bounds: THREE.Box3 }>,
-  ): WheelSpinTarget[] {
-    const seenObjects = new Set<THREE.Object3D>();
+    // Create pivots for each quadrant
+    const pivotByQuadrant = new Map<string, THREE.Object3D>();
     const targets: WheelSpinTarget[] = [];
 
-    for (const candidate of candidates) {
-      if (seenObjects.has(candidate.object)) continue;
-      seenObjects.add(candidate.object);
+    for (const [key, center] of quadrantCenters) {
+      const pivot = new THREE.Object3D();
+      pivot.name = `wheel_pivot_${key}`;
+      pivot.position.copy(center);
+      pivotByQuadrant.set(key, pivot);
+      targets.push({ object: pivot, axis: WHEEL_SPIN_AXIS.clone() });
+    }
 
-      const target = this.buildWheelSpinTarget(candidate.object, candidate.bounds);
-      if (!target) continue;
-      targets.push(target);
-      if (targets.length >= 4) break;
+    // Second pass: split each mesh's geometry by quadrant
+    for (const mesh of meshes) {
+      const parent = mesh.parent;
+      if (!parent) continue;
+
+      const geo = mesh.geometry;
+      const posAttr = geo.attributes.position;
+      if (!posAttr) continue;
+
+      mesh.updateMatrixWorld(true);
+      const worldMatrix = mesh.matrixWorld;
+
+      // Classify each vertex into a quadrant
+      const vertexQuadrant = new Array<string>(posAttr.count);
+      const vertex = new THREE.Vector3();
+      for (let i = 0; i < posAttr.count; i++) {
+        vertex.set(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
+        vertex.applyMatrix4(worldMatrix);
+        const xSide = vertex.x >= modelCenter.x ? "r" : "l";
+        const zSide = vertex.z >= modelCenter.z ? "f" : "b";
+        vertexQuadrant[i] = `${xSide}${zSide}`;
+      }
+
+      // Get triangle indices
+      const index = geo.index;
+      const triCount = index ? index.count / 3 : posAttr.count / 3;
+
+      // Group triangles by quadrant (use majority vote of 3 vertices)
+      const quadrantTriangles = new Map<string, number[]>();
+      for (let t = 0; t < triCount; t++) {
+        const i0 = index ? index.getX(t * 3) : t * 3;
+        const i1 = index ? index.getX(t * 3 + 1) : t * 3 + 1;
+        const i2 = index ? index.getX(t * 3 + 2) : t * 3 + 2;
+
+        // Majority vote
+        const q0 = vertexQuadrant[i0];
+        const q1 = vertexQuadrant[i1];
+        const q2 = vertexQuadrant[i2];
+        const quadrant = q0 === q1 || q0 === q2 ? q0 : q1 === q2 ? q1 : q0;
+
+        let tris = quadrantTriangles.get(quadrant);
+        if (!tris) {
+          tris = [];
+          quadrantTriangles.set(quadrant, tris);
+        }
+        tris.push(i0, i1, i2);
+      }
+
+      // Create a sub-mesh for each quadrant
+      for (const [quadrant, triIndices] of quadrantTriangles) {
+        const pivot = pivotByQuadrant.get(quadrant);
+        if (!pivot) continue;
+
+        const subGeo = this.buildSubGeometry(geo, triIndices, worldMatrix, pivot.position);
+        if (!subGeo) continue;
+
+        const subMesh = new THREE.Mesh(subGeo, mesh.material);
+        subMesh.name = `${mesh.name}_${quadrant}`;
+        pivot.add(subMesh);
+      }
+
+      // Add pivots to the scene (only once per pivot)
+      for (const pivot of pivotByQuadrant.values()) {
+        if (!pivot.parent) parent.add(pivot);
+      }
+
+      // Remove the original merged mesh
+      parent.remove(mesh);
+      mesh.geometry.dispose();
     }
 
     return targets;
   }
 
-  buildWheelSpinTarget(
-    object: THREE.Object3D,
-    boundsOverride?: THREE.Box3,
-  ): WheelSpinTarget | null {
-    const bounds = boundsOverride ?? new THREE.Box3().setFromObject(object);
-    if (bounds.isEmpty()) return null;
+  /**
+   * Build a new BufferGeometry from a subset of triangles, with positions
+   * transformed to pivot-local space (world space minus pivot position).
+   */
+  private buildSubGeometry(
+    srcGeo: THREE.BufferGeometry,
+    triIndices: number[],
+    worldMatrix: THREE.Matrix4,
+    pivotPos: THREE.Vector3,
+  ): THREE.BufferGeometry | null {
+    if (triIndices.length === 0) return null;
 
-    const size = bounds.getSize(new THREE.Vector3());
-    if (size.lengthSq() <= 0) return null;
-    const spinObject = this.createSpinPivotAtGeometryCenter(object, bounds);
+    // Collect unique vertex indices and build remapping
+    const uniqueOldIndices: number[] = [];
+    const oldToNew = new Map<number, number>();
+    for (const oldIdx of triIndices) {
+      if (!oldToNew.has(oldIdx)) {
+        oldToNew.set(oldIdx, uniqueOldIndices.length);
+        uniqueOldIndices.push(oldIdx);
+      }
+    }
 
-    return {
-      object: spinObject,
-      axis: AXIS_UNIT_VECTORS[0].clone(),
-    };
+    const vertCount = uniqueOldIndices.length;
+    const srcPos = srcGeo.attributes.position;
+    const srcNormal = srcGeo.attributes.normal as THREE.BufferAttribute | undefined;
+    const srcUV = srcGeo.attributes.uv as THREE.BufferAttribute | undefined;
+
+    // Build new position attribute (in pivot-local space)
+    const newPos = new Float32Array(vertCount * 3);
+    const v = new THREE.Vector3();
+    for (let i = 0; i < vertCount; i++) {
+      const oldIdx = uniqueOldIndices[i];
+      v.set(srcPos.getX(oldIdx), srcPos.getY(oldIdx), srcPos.getZ(oldIdx));
+      v.applyMatrix4(worldMatrix);
+      v.sub(pivotPos);
+      newPos[i * 3] = v.x;
+      newPos[i * 3 + 1] = v.y;
+      newPos[i * 3 + 2] = v.z;
+    }
+
+    // Build new normal attribute (transform by normal matrix)
+    let newNormal: Float32Array | null = null;
+    if (srcNormal) {
+      const normalMatrix = new THREE.Matrix3().getNormalMatrix(worldMatrix);
+      newNormal = new Float32Array(vertCount * 3);
+      const n = new THREE.Vector3();
+      for (let i = 0; i < vertCount; i++) {
+        const oldIdx = uniqueOldIndices[i];
+        n.set(srcNormal.getX(oldIdx), srcNormal.getY(oldIdx), srcNormal.getZ(oldIdx));
+        n.applyMatrix3(normalMatrix).normalize();
+        newNormal[i * 3] = n.x;
+        newNormal[i * 3 + 1] = n.y;
+        newNormal[i * 3 + 2] = n.z;
+      }
+    }
+
+    // Copy UV attribute as-is
+    let newUV: Float32Array | null = null;
+    if (srcUV) {
+      newUV = new Float32Array(vertCount * 2);
+      for (let i = 0; i < vertCount; i++) {
+        const oldIdx = uniqueOldIndices[i];
+        newUV[i * 2] = srcUV.getX(oldIdx);
+        newUV[i * 2 + 1] = srcUV.getY(oldIdx);
+      }
+    }
+
+    // Build new index buffer
+    const newIndices = new Uint32Array(triIndices.length);
+    for (let i = 0; i < triIndices.length; i++) {
+      newIndices[i] = oldToNew.get(triIndices[i])!;
+    }
+
+    const subGeo = new THREE.BufferGeometry();
+    subGeo.setAttribute("position", new THREE.BufferAttribute(newPos, 3));
+    if (newNormal) subGeo.setAttribute("normal", new THREE.BufferAttribute(newNormal, 3));
+    if (newUV) subGeo.setAttribute("uv", new THREE.BufferAttribute(newUV, 2));
+    subGeo.setIndex(new THREE.BufferAttribute(newIndices, 1));
+    subGeo.computeBoundingSphere();
+
+    return subGeo;
   }
 
-  createSpinPivotAtGeometryCenter(
-    object: THREE.Object3D,
-    bounds: THREE.Box3,
-  ): THREE.Object3D {
+  /** Wrap an object in a pivot positioned at its bounding box center. */
+  private wrapInPivot(object: THREE.Object3D): THREE.Object3D | null {
     const parent = object.parent;
-    if (!parent) return object;
+    if (!parent) return null;
 
-    const centerWorld = bounds.getCenter(new THREE.Vector3());
+    const bounds = new THREE.Box3().setFromObject(object);
+    if (bounds.isEmpty()) return null;
+
+    const center = bounds.getCenter(new THREE.Vector3());
     const pivot = new THREE.Object3D();
     pivot.name = `${object.name || "wheel"}_spin_pivot`;
-    pivot.position.copy(parent.worldToLocal(centerWorld.clone()));
+    pivot.position.copy(parent.worldToLocal(center.clone()));
     pivot.quaternion.copy(object.quaternion);
 
     parent.add(pivot);
     pivot.attach(object);
 
     return pivot;
-  }
-
-  computeWheelShapeScore(size: THREE.Vector3): number {
-    const dims = [Math.abs(size.x), Math.abs(size.y), Math.abs(size.z)].sort(
-      (a, b) => a - b,
-    );
-    const [small, mid, large] = dims;
-    if (small <= 0.0001 || mid <= 0.0001 || large <= 0.0001) return 0;
-
-    const midHighSimilarity =
-      1 - Math.min(1, Math.abs(large - mid) / Math.max(large, 0.0001));
-    const smallMidSimilarity =
-      1 - Math.min(1, Math.abs(mid - small) / Math.max(mid, 0.0001));
-    const thinAxisScore = 1 - Math.min(1, small / mid);
-    const longAxisScore = THREE.MathUtils.clamp((large / mid - 1) / 1.5, 0, 1);
-
-    const singleWheelScore = midHighSimilarity * thinAxisScore;
-    const dualWheelScore = smallMidSimilarity * longAxisScore;
-    return Math.max(singleWheelScore, dualWheelScore);
-  }
-
-  getMaterialNames(object: THREE.Object3D): string[] {
-    const names = new Set<string>();
-    object.traverse((child) => {
-      if (!(child instanceof THREE.Mesh) || !child.material) return;
-      const materials = Array.isArray(child.material)
-        ? child.material
-        : [child.material];
-      for (const material of materials) {
-        names.add(material.name.toLowerCase());
-      }
-    });
-    return Array.from(names);
-  }
-
-  hasRenderableGeometry(object: THREE.Object3D): boolean {
-    let hasGeometry = false;
-    object.traverse((child) => {
-      if (hasGeometry) return;
-      if (child instanceof THREE.Mesh && child.geometry) {
-        hasGeometry = true;
-      }
-    });
-    return hasGeometry;
   }
 
   spinWheelTargets(model: THREE.Group | null, spinRadians: number) {

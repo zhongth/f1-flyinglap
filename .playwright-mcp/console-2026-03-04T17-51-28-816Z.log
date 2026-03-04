@@ -1,0 +1,8 @@
+[    1880ms] [WARNING] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ http://localhost:3000/_next/static/chunks/70955_next_dist_1de4f897._.js:2297
+[    1897ms] [WARNING] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ http://localhost:3000/_next/static/chunks/70955_next_dist_1de4f897._.js:2297
+[    8270ms] [WARNING] Image with src "/team-logos/Mercedes-Benz_in_Formula_One_logo.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading @ http://localhost:3000/_next/static/chunks/70955_next_dist_1de4f897._.js:2297
+[  186583ms] [WARNING] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ http://localhost:3000/_next/static/chunks/70955_next_dist_1de4f897._.js:2297
+[  186601ms] [WARNING] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ http://localhost:3000/_next/static/chunks/70955_next_dist_1de4f897._.js:2297
+[  193261ms] [WARNING] Image with src "/team-logos/Mercedes-Benz_in_Formula_One_logo.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading @ http://localhost:3000/_next/static/chunks/70955_next_dist_1de4f897._.js:2297
