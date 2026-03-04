@@ -92,6 +92,7 @@ export function DriverShowcase({
   return (
     <div
       ref={cardRef}
+      data-driver-card
       className="relative cursor-pointer group shrink-0"
       style={{
         width: 480,

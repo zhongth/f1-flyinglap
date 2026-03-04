@@ -10,6 +10,7 @@ import { getAllModelPaths } from "@/data/teamCarModels";
 import { preloadImages } from "@/lib/imagePreloader";
 import { preloadAllModels } from "@/lib/modelPreloader";
 import { useAppStore } from "@/store/useAppStore";
+import CustomCursor from "@/components/ui/CustomCursor";
 
 export default function Home() {
   const { stage } = useAppStore();
@@ -68,6 +69,12 @@ export default function Home() {
 
   return (
     <>
+      <CustomCursor
+        targets={["[data-carousel-index]", "[data-driver-card]"]}
+        targetPadding={12}
+        elastic
+      />
+
       <Preloader
         loading={loading}
         variant="stairs"
