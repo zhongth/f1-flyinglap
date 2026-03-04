@@ -70,6 +70,8 @@ export default function Home() {
   return (
     <>
       <CustomCursor
+        circleSize={16}
+        circleColor="rgba(255, 255, 255, 0.3)"
         targets={["[data-carousel-index]", "[data-driver-card]"]}
         targetPadding={12}
         elastic

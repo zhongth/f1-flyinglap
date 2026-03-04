@@ -1,13 +1,16 @@
 "use client";
 
 /**
- * Adapted from React Bits CustomCursor (https://pro.reactbits.dev/docs/components/custom-cursor)
- * - Dot removed
- * - Targets use querySelectorAll to match multiple elements per selector
- * - Global cursor hiding injected automatically
+ * High-performance custom cursor.
+ *
+ * Key optimisations over the original React Bits version:
+ * – Single spring layer (was double-sprung → added latency)
+ * – Zero React state updates during interaction (all motion-values + refs)
+ * – Event delegation instead of querySelectorAll + MutationObserver
+ * – Passive event listeners throughout
  */
 
-import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   motion,
   useSpring,
@@ -50,266 +53,214 @@ const CustomCursor: React.FC<CustomCursorProps> = ({
   mixBlendMode,
   children,
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
+  // Only React state: touch detection (set once on mount)
   const [isTouchDevice, setIsTouchDevice] = useState(false);
-  const [activeElement, setActiveElement] = useState<HTMLElement | null>(null);
-  const [activeRect, setActiveRect] = useState<DOMRect | null>(null);
 
-  // Initialize at 0 — cursor is invisible until first mousemove anyway,
-  // and using window.innerWidth here causes SSR hydration mismatches.
-  const cursorX = useMotionValue(0);
-  const cursorY = useMotionValue(0);
+  // Everything else is refs — no re-renders during interaction
+  const isOnTargetRef = useRef(false);
+  const activeElRef = useRef<HTMLElement | null>(null);
+  const visibleRef = useRef(false);
 
-  const circleWidthMV = useMotionValue(circleSize);
-  const circleHeightMV = useMotionValue(circleSize);
-  const circleBorderRadiusMV = useMotionValue(circleSize / 2);
-  const circleXMV = useMotionValue(0);
-  const circleYMV = useMotionValue(0);
+  // ── Motion values ─────────────────────────────────────────
 
-  const springConfig = {
-    stiffness: 450,
-    damping: 32,
-    mass: 0.4,
-  };
+  // Raw position (drives velocity calculation only)
+  const rawX = useMotionValue(0);
+  const rawY = useMotionValue(0);
 
-  const circleWidth = useSpring(circleWidthMV, springConfig);
-  const circleHeight = useSpring(circleHeightMV, springConfig);
-  const circleBorderRadius = useSpring(circleBorderRadiusMV, springConfig);
-  const circleXSpring = useSpring(circleXMV, springConfig);
-  const circleYSpring = useSpring(circleYMV, springConfig);
-
-  const cursorFollowX = useSpring(cursorX, {
+  // Rendered position — ONE spring layer (was two before)
+  const posX = useSpring(0, {
     stiffness: circleStiffness,
     damping: circleDamping,
     mass: 0.3,
   });
-  const cursorFollowY = useSpring(cursorY, {
+  const posY = useSpring(0, {
     stiffness: circleStiffness,
     damping: circleDamping,
     mass: 0.3,
   });
 
-  const velocityX = useVelocity(cursorX);
-  const velocityY = useVelocity(cursorY);
+  // Size & shape morph
+  const morphCfg = { stiffness: 450, damping: 32, mass: 0.4 };
+  const width = useSpring(circleSize, morphCfg);
+  const height = useSpring(circleSize, morphCfg);
+  const borderRadius = useSpring(circleSize / 2, morphCfg);
 
-  const scaleX = useTransform(velocityX, [-1000, 0, 1000], [0.85, 1, 1.15]);
-  const scaleY = useTransform(velocityY, [-1000, 0, 1000], [0.85, 1, 1.15]);
+  // Visibility driven by motion value — no setState
+  const opacity = useMotionValue(0);
 
-  const isOnTarget = activeElement !== null;
+  // Elastic velocity-based scaling
+  const velX = useVelocity(rawX);
+  const velY = useVelocity(rawY);
+  const rawScaleX = useTransform(velX, [-1000, 0, 1000], [0.85, 1, 1.15]);
+  const rawScaleY = useTransform(velY, [-1000, 0, 1000], [0.85, 1, 1.15]);
 
-  const currentTargetData = useMemo(() => {
-    if (!activeElement || !activeRect) return null;
-    const borderRadiusValue =
-      parseFloat(window.getComputedStyle(activeElement).borderRadius) || 16;
-    return { rect: activeRect, borderRadiusValue };
-  }, [activeElement, activeRect]);
+  // Reactive on-target flag (motion value, not React state)
+  const onTargetMV = useMotionValue(0);
+  const scaleX = useTransform(
+    [rawScaleX, onTargetMV],
+    (latest: number[]) => (elastic && !latest[1] ? latest[0] : 1),
+  );
+  const scaleY = useTransform(
+    [rawScaleY, onTargetMV],
+    (latest: number[]) => (elastic && !latest[1] ? latest[0] : 1),
+  );
 
-  const isCircle = useMemo(() => {
-    if (!currentTargetData) return false;
-    const { rect, borderRadiusValue } = currentTargetData;
-    return (
-      Math.abs(rect.width - rect.height) < 1 &&
-      borderRadiusValue >= rect.width / 2 - 1
-    );
-  }, [currentTargetData]);
+  // ── Mouse tracking ────────────────────────────────────────
 
-  // Update circle spring targets when hovering/leaving targets
   useEffect(() => {
-    if (isOnTarget && currentTargetData) {
-      const { rect, borderRadiusValue } = currentTargetData;
-      const newWidth = rect.width + targetPadding * 2;
-      const newHeight = rect.height + targetPadding * 2;
-
-      circleWidthMV.set(newWidth);
-      circleHeightMV.set(newHeight);
-
-      if (isCircle) {
-        circleBorderRadiusMV.set(newWidth / 2);
-      } else {
-        circleBorderRadiusMV.set(borderRadiusValue + targetPadding);
-      }
-
-      circleXMV.set(rect.left + rect.width / 2);
-      circleYMV.set(rect.top + rect.height / 2);
-    } else if (!isOnTarget) {
-      circleWidthMV.set(circleSize);
-      circleHeightMV.set(circleSize);
-      circleBorderRadiusMV.set(circleSize / 2);
-
-      const unsubX = cursorFollowX.on("change", (v) => circleXMV.set(v));
-      const unsubY = cursorFollowY.on("change", (v) => circleYMV.set(v));
-
-      return () => {
-        unsubX();
-        unsubY();
-      };
-    }
-  }, [
-    isOnTarget,
-    currentTargetData,
-    circleSize,
-    circleWidthMV,
-    circleHeightMV,
-    circleBorderRadiusMV,
-    circleXMV,
-    circleYMV,
-    cursorFollowX,
-    cursorFollowY,
-    targetPadding,
-    isCircle,
-  ]);
-
-  // Attach mouseenter/mouseleave to all elements matching target selectors
-  useEffect(() => {
-    if (!targets || targets.length === 0) return;
-
-    const cleanupFunctions: (() => void)[] = [];
-
-    const attachListeners = () => {
-      cleanupFunctions.forEach((cleanup) => cleanup());
-      cleanupFunctions.length = 0;
-
-      targets.forEach((selector) => {
-        const elements = document.querySelectorAll(selector);
-        elements.forEach((el) => {
-          const element = el as HTMLElement;
-
-          const enterHandler = () => {
-            const rect = element.getBoundingClientRect();
-            setActiveElement(element);
-            setActiveRect(rect);
-          };
-
-          const leaveHandler = () => {
-            setActiveElement((prev) => (prev === element ? null : prev));
-            setActiveRect((prev) => {
-              // Only clear if this element is the active one
-              return prev ? null : prev;
-            });
-          };
-
-          element.addEventListener("mouseenter", enterHandler);
-          element.addEventListener("mouseleave", leaveHandler);
-
-          cleanupFunctions.push(() => {
-            element.removeEventListener("mouseenter", enterHandler);
-            element.removeEventListener("mouseleave", leaveHandler);
-          });
-        });
-      });
-    };
-
-    attachListeners();
-
-    let debounceTimer: NodeJS.Timeout;
-    const debouncedAttach = () => {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(() => {
-        attachListeners();
-      }, 200);
-    };
-
-    const observer = new MutationObserver(() => {
-      debouncedAttach();
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-
-    // Update rects on scroll/resize
-    const updateActiveRect = () => {
-      setActiveElement((el) => {
-        if (el) {
-          setActiveRect(el.getBoundingClientRect());
-        }
-        return el;
-      });
-    };
-
-    window.addEventListener("scroll", updateActiveRect, true);
-    window.addEventListener("resize", updateActiveRect);
-
-    return () => {
-      observer.disconnect();
-      clearTimeout(debounceTimer);
-      cleanupFunctions.forEach((cleanup) => cleanup());
-      window.removeEventListener("scroll", updateActiveRect, true);
-      window.removeEventListener("resize", updateActiveRect);
-    };
-  }, [targets]);
-
-  // Touch detection and mouse tracking
-  useEffect(() => {
-    const hasTouch =
-      "ontouchstart" in window ||
-      navigator.maxTouchPoints > 0;
+    const hasTouch = "ontouchstart" in window || navigator.maxTouchPoints > 0;
     setIsTouchDevice(hasTouch);
+    if (hasTouch && !showOnTouch) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
-      cursorX.set(e.clientX);
-      cursorY.set(e.clientY);
-      if (!isVisible) setIsVisible(true);
+    const onMove = (e: MouseEvent) => {
+      rawX.set(e.clientX);
+      rawY.set(e.clientY);
+      if (!isOnTargetRef.current) {
+        posX.set(e.clientX);
+        posY.set(e.clientY);
+      }
+      if (!visibleRef.current) {
+        visibleRef.current = true;
+        opacity.set(1);
+      }
     };
 
-    const handleMouseEnter = () => setIsVisible(true);
-    const handleMouseLeave = () => setIsVisible(false);
+    const onEnter = () => {
+      visibleRef.current = true;
+      opacity.set(1);
+    };
+    const onLeave = () => {
+      visibleRef.current = false;
+      opacity.set(0);
+    };
 
-    if (!hasTouch || showOnTouch) {
-      window.addEventListener("mousemove", handleMouseMove);
-      document.addEventListener("mouseenter", handleMouseEnter);
-      document.addEventListener("mouseleave", handleMouseLeave);
-    }
-
+    window.addEventListener("mousemove", onMove, { passive: true });
+    document.addEventListener("mouseenter", onEnter);
+    document.addEventListener("mouseleave", onLeave);
     return () => {
-      window.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseenter", handleMouseEnter);
-      document.removeEventListener("mouseleave", handleMouseLeave);
+      window.removeEventListener("mousemove", onMove);
+      document.removeEventListener("mouseenter", onEnter);
+      document.removeEventListener("mouseleave", onLeave);
     };
-  }, [cursorX, cursorY, isVisible, showOnTouch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showOnTouch]);
 
-  // Hide native cursor globally
+  // ── Target hover via event delegation ─────────────────────
+
+  useEffect(() => {
+    if (!targets.length) return;
+    const selector = targets.join(", ");
+
+    const morphTo = (el: HTMLElement) => {
+      activeElRef.current = el;
+      isOnTargetRef.current = true;
+      onTargetMV.set(1);
+
+      const r = el.getBoundingClientRect();
+      const br =
+        parseFloat(window.getComputedStyle(el).borderRadius) || 16;
+      const w = r.width + targetPadding * 2;
+      const h = r.height + targetPadding * 2;
+      const isCircle =
+        Math.abs(r.width - r.height) < 1 && br >= r.width / 2 - 1;
+
+      width.set(w);
+      height.set(h);
+      borderRadius.set(isCircle ? w / 2 : br + targetPadding);
+      posX.set(r.left + r.width / 2);
+      posY.set(r.top + r.height / 2);
+    };
+
+    const reset = () => {
+      isOnTargetRef.current = false;
+      activeElRef.current = null;
+      onTargetMV.set(0);
+      width.set(circleSize);
+      height.set(circleSize);
+      borderRadius.set(circleSize / 2);
+      // Snap spring target to current mouse so it resumes smoothly
+      posX.set(rawX.get());
+      posY.set(rawY.get());
+    };
+
+    const onOver = (e: MouseEvent) => {
+      const hit = (e.target as HTMLElement).closest?.(
+        selector,
+      ) as HTMLElement | null;
+      if (hit && hit !== activeElRef.current) morphTo(hit);
+    };
+
+    const onOut = (e: MouseEvent) => {
+      if (!activeElRef.current) return;
+      const rel = (
+        e.relatedTarget as HTMLElement | null
+      )?.closest?.(selector) as HTMLElement | null;
+      if (rel === activeElRef.current) return; // still inside same target
+      // Moving to another target? Morph directly. Otherwise reset.
+      rel ? morphTo(rel) : reset();
+    };
+
+    const onScroll = () => {
+      const el = activeElRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      posX.set(r.left + r.width / 2);
+      posY.set(r.top + r.height / 2);
+    };
+
+    document.addEventListener("mouseover", onOver, { passive: true });
+    document.addEventListener("mouseout", onOut, { passive: true });
+    window.addEventListener("scroll", onScroll, {
+      capture: true,
+      passive: true,
+    });
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      document.removeEventListener("mouseover", onOver);
+      document.removeEventListener("mouseout", onOut);
+      window.removeEventListener("scroll", onScroll, true);
+      window.removeEventListener("resize", onScroll);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targets, circleSize, targetPadding]);
+
+  // ── Hide native cursor ────────────────────────────────────
+
   useEffect(() => {
     if (isTouchDevice && !showOnTouch) return;
-
-    const style = document.createElement("style");
-    style.setAttribute("data-custom-cursor", "");
-    style.textContent = "*, *::before, *::after { cursor: none !important; }";
-    document.head.appendChild(style);
-
+    const s = document.createElement("style");
+    s.setAttribute("data-custom-cursor", "");
+    s.textContent = "*, *::before, *::after { cursor: none !important; }";
+    document.head.appendChild(s);
     return () => {
-      document.head.removeChild(style);
+      document.head.removeChild(s);
     };
   }, [isTouchDevice, showOnTouch]);
 
-  if (isTouchDevice && !showOnTouch) {
-    return null;
-  }
+  if (isTouchDevice && !showOnTouch) return null;
 
   return (
     <div
       className={cn("pointer-events-none fixed inset-0", className)}
       style={{ zIndex }}
     >
-      {/* Outer Circle */}
       <motion.div
         className={cn(
           "absolute flex items-center justify-center",
           circleClassName,
         )}
         style={{
-          width: circleWidth,
-          height: circleHeight,
-          borderRadius: circleBorderRadius,
-          left: circleXSpring,
-          top: circleYSpring,
+          width,
+          height,
+          borderRadius,
+          left: posX,
+          top: posY,
           x: "-50%",
           y: "-50%",
           border: `${circleBorderWidth}px solid ${circleColor}`,
-          opacity: isVisible ? 1 : 0,
-          scaleX: elastic && !isOnTarget ? scaleX : 1,
-          scaleY: elastic && !isOnTarget ? scaleY : 1,
+          opacity,
+          scaleX,
+          scaleY,
           mixBlendMode,
           willChange: "transform, width, height, border-radius",
         }}
