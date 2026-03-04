@@ -147,12 +147,12 @@ const CAR_SURFACE_MATTE_CONFIG = {
 
 const MODEL_SWAP_DURATION_MS = 1280;
 const MODEL_SWAP_OUT_PHASE_END = 0.58;
-const MODEL_SWAP_IN_PHASE_START = 0.32;
-const MODEL_SWAP_OUT_END_DEPTH = -2.8;
-const MODEL_SWAP_OUT_END_SCALE = 0.62;
-const MODEL_SWAP_OUT_END_OPACITY = 0.02;
-const MODEL_SWAP_IN_START_DEPTH = -3.2;
-const MODEL_SWAP_IN_START_SCALE = 0.56;
+const MODEL_SWAP_IN_PHASE_START = 0.72;
+const MODEL_SWAP_OUT_END_DEPTH = -2.05;
+const MODEL_SWAP_OUT_END_SCALE = 0.76;
+const MODEL_SWAP_OUT_END_OPACITY = 0.24;
+const MODEL_SWAP_IN_START_DEPTH = -2.35;
+const MODEL_SWAP_IN_START_SCALE = 0.68;
 
 function isLikelyGlassOrTrim(name: string): boolean {
   return /glass|window|windscreen|windshield|visor|mirror|chrome|light|lamp|led/i.test(
@@ -1526,8 +1526,7 @@ class App {
       state.material.opacity = state.baseOpacity * clampedAlpha;
       state.material.transparent =
         state.baseTransparent || clampedAlpha < 0.999;
-      state.material.depthWrite =
-        clampedAlpha >= 0.999 ? state.baseDepthWrite : false;
+      state.material.depthWrite = state.baseDepthWrite;
       state.material.needsUpdate = true;
     }
   }
