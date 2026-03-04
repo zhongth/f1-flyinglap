@@ -23,7 +23,11 @@ const HyperspeedBackground = dynamic(
   { ssr: false },
 );
 
-export function TeamCarousel() {
+interface TeamCarouselProps {
+  introReady?: boolean;
+}
+
+export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
@@ -237,7 +241,7 @@ export function TeamCarousel() {
 
   // Intro animation
   useEffect(() => {
-    if (!containerRef.current || isIntroComplete) return;
+    if (!introReady || !containerRef.current || isIntroComplete) return;
 
     const ctx = gsap.context(() => {
       const title = titleRef.current;
@@ -258,18 +262,18 @@ export function TeamCarousel() {
       tl.to(
         title,
         { y: 0, opacity: 1, duration: 0.6, ease: "power2.out" },
-        "-=0.7",
+        0.12,
       );
-      tl.to(wheel, { opacity: 1, duration: 0.8, ease: "power2.out" }, "-=0.6");
+      tl.to(wheel, { opacity: 1, duration: 0.8, ease: "power2.out" }, 0);
       tl.to(
         hint,
         { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" },
-        "-=0.3",
+        0.2,
       );
     }, containerRef);
 
     return () => ctx.revert();
-  }, [isIntroComplete, setIntroComplete]);
+  }, [introReady, isIntroComplete, setIntroComplete]);
 
   return (
     <div
@@ -338,21 +342,21 @@ export function TeamCarousel() {
               cardWidthPx={236}
               cardAspectRatio={110 / 140}
               initialIndex={ferrariInitialIndex}
-              introSpin={!isIntroComplete}
+              introSpin={introReady && !isIntroComplete}
               introSpinRounds={1}
               introSpinDurationMs={2900}
               onCardClick={handleCardClick}
-              maxRotationDegrees={12}
+              maxRotationDegrees={28}
               maxDepthPx={96}
-              cardGap={28}
-              dragSensitivity={1}
+              cardGap={32}
+              dragSensitivity={0.8}
               frictionFactor={0.88}
-              wheelSensitivity={0.35}
+              wheelSensitivity={0.25}
               gradientIntensity={0.55}
               gradientSize={0.5}
               backgroundBlur={22}
               showBackdrop={false}
-              showLoadingOverlay={false}
+              showLoadingOverlay={true}
             />
             <ProgressiveBlur
               position="left"

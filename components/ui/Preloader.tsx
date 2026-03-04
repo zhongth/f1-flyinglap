@@ -29,6 +29,9 @@ export interface PreloaderProps {
   /** Callback when exit animation completes */
   onLoadingComplete?: () => void;
 
+  /** Callback when exit animation starts */
+  onRevealStart?: () => void;
+
   /** Additional CSS classes */
   className?: string;
 
@@ -99,6 +102,7 @@ const Preloader: React.FC<PreloaderProps> = ({
   onComplete,
   onLoadingStart,
   onLoadingComplete,
+  onRevealStart,
   className = "",
   zIndex = 50,
   bgColor,
@@ -214,6 +218,7 @@ const Preloader: React.FC<PreloaderProps> = ({
       const exitDelay = variant === "percentage" ? 2000 : 0;
 
       timeoutId = setTimeout(() => {
+        onRevealStart?.();
         setShowPreloader(false);
 
         completeTimeoutId = setTimeout(() => {
@@ -235,6 +240,7 @@ const Preloader: React.FC<PreloaderProps> = ({
     duration,
     onComplete,
     onLoadingStart,
+    onRevealStart,
     variant,
     textFadeThreshold,
     showPreloader,

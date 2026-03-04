@@ -852,6 +852,30 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
     onCardChange,
   ]);
 
+  // Support delayed intro trigger (e.g. wait until preloader fully exits).
+  useEffect(() => {
+    if (!introSpin || isLoading) return;
+    if (introPlayedRef.current || introAnimatingRef.current) return;
+
+    const cardCount = cardsRef.current.length;
+    const totalLength = totalTrackLengthRef.current;
+    const step = cardStepRef.current;
+    if (cardCount === 0 || totalLength <= 0 || step <= 0) return;
+
+    const normalizedOffset = wrapValue(scrollOffsetRef.current, totalLength);
+    const roundedIndex = Math.round(normalizedOffset / step);
+    const targetIndex = ((roundedIndex % cardCount) + cardCount) % cardCount;
+
+    introPlayedRef.current = true;
+    setIsReady(false);
+    const started = runIntroSpin(targetIndex);
+    if (!started) {
+      introAnimatingRef.current = false;
+      setIsReady(true);
+      onIntroCompleteRef.current?.();
+    }
+  }, [introSpin, isLoading, runIntroSpin, wrapValue]);
+
   useEffect(() => {
     const handleResize = () => {
       const prevStep = cardStepRef.current || 1;
