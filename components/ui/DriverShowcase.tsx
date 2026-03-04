@@ -39,19 +39,13 @@ export function DriverShowcase({
 
   const isLeft = position === "left";
 
-  // Entry animation
+  // Entry animation — only animate inner elements, NOT the outer div
   useEffect(() => {
     if (!cardRef.current) return;
 
     const dir = isLeft ? -1 : 1;
 
     const ctx = gsap.context(() => {
-      gsap.fromTo(
-        cardRef.current,
-        { x: dir * 80, opacity: 0 },
-        { x: 0, opacity: 1, duration: 0.8, ease: "power3.out", delay: 0.1 }
-      );
-
       if (imageRef.current) {
         gsap.fromTo(
           imageRef.current,

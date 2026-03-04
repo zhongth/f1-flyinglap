@@ -1,11 +1,13 @@
 "use client";
 
 import { useRef, useMemo, useState, useEffect, useCallback } from "react";
+import { motion } from "motion/react";
 import { gsap } from "@/lib/gsap";
 import { useAppStore } from "@/store/useAppStore";
 import { Navbar } from "@/components/ui/Navbar";
 import { VSBadge } from "@/components/ui/VSBadge";
 import { DriverShowcase } from "@/components/ui/DriverShowcase";
+import { DriverDetailModal } from "@/components/ui/DriverDetailModal";
 import { TiltedCard } from "@/components/ui/TiltedCard";
 import {
   getTeamById,
@@ -16,6 +18,12 @@ import {
   getDriverPedigree,
   getPerRaceQualifyingGaps,
 } from "@/data";
+
+const layoutSpring = {
+  type: "spring" as const,
+  stiffness: 180,
+  damping: 24,
+};
 
 export function VersusMode() {
   const leftCardRef = useRef<HTMLDivElement>(null);
@@ -37,6 +45,9 @@ export function VersusMode() {
 
   // Display state: cards update mid-animation, center panel updates immediately
   const [displayTeamId, setDisplayTeamId] = useState(selectedTeamId);
+
+  // Modal state: which driver card is expanded (0 = left, 1 = right, null = none)
+  const [selectedDriverIndex, setSelectedDriverIndex] = useState<number | null>(null);
 
   // Center panel uses selectedTeamId (updates immediately)
   const team = selectedTeamId ? getTeamById(selectedTeamId) : null;
@@ -95,6 +106,22 @@ export function VersusMode() {
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
+  }, []);
+
+  // Initial card entry animation (on wrapper divs, not on the motion.div with layoutId)
+  useEffect(() => {
+    if (!leftCardRef.current || !rightCardRef.current) return;
+
+    gsap.fromTo(
+      leftCardRef.current,
+      { x: -80, opacity: 0 },
+      { x: 0, opacity: 1, duration: 0.8, ease: "power3.out", delay: 0.1 }
+    );
+    gsap.fromTo(
+      rightCardRef.current,
+      { x: 80, opacity: 0 },
+      { x: 0, opacity: 1, duration: 0.8, ease: "power3.out", delay: 0.1 }
+    );
   }, []);
 
   const handleTeamSelect = useCallback(
@@ -269,19 +296,26 @@ export function VersusMode() {
             transformOrigin: "center center",
           }}
         >
-          {/* Left driver — uses displayTeam/displayDrivers (swaps mid-animation) */}
+          {/* Left driver — GSAP wrapper (slide out/in) → motion.div (layoutId) → TiltedCard → DriverShowcase */}
           <div ref={leftCardRef} className="will-change-transform">
             {displayDrivers[0] && displayTeam && (
-              <TiltedCard rotateAmplitude={5} scaleOnHover={1}>
-                <DriverShowcase
-                  driver={displayDrivers[0]}
-                  team={displayTeam}
-                  position="left"
-                  q3Rate={q3Rates?.driver1.q3Rate}
-                  pedigreeLabel={pedigrees?.driver1.text}
-                  pedigreeTier={pedigrees?.driver1.tier}
-                />
-              </TiltedCard>
+              <motion.div
+                key={displayDrivers[0].id}
+                layoutId={`driver-card-${displayDrivers[0].id}`}
+                transition={layoutSpring}
+              >
+                <TiltedCard rotateAmplitude={5} scaleOnHover={1}>
+                  <DriverShowcase
+                    driver={displayDrivers[0]}
+                    team={displayTeam}
+                    position="left"
+                    q3Rate={q3Rates?.driver1.q3Rate}
+                    pedigreeLabel={pedigrees?.driver1.text}
+                    pedigreeTier={pedigrees?.driver1.tier}
+                    onClick={() => setSelectedDriverIndex(0)}
+                  />
+                </TiltedCard>
+              </motion.div>
             )}
           </div>
 
@@ -301,23 +335,63 @@ export function VersusMode() {
             perRaceGaps={perRaceGaps}
           />
 
-          {/* Right driver — uses displayTeam/displayDrivers (swaps mid-animation) */}
+          {/* Right driver — GSAP wrapper (slide out/in) → motion.div (layoutId) → TiltedCard → DriverShowcase */}
           <div ref={rightCardRef} className="will-change-transform">
             {displayDrivers[1] && displayTeam && (
-              <TiltedCard rotateAmplitude={5} scaleOnHover={1}>
-                <DriverShowcase
-                  driver={displayDrivers[1]}
-                  team={displayTeam}
-                  position="right"
-                  q3Rate={q3Rates?.driver2.q3Rate}
-                  pedigreeLabel={pedigrees?.driver2.text}
-                  pedigreeTier={pedigrees?.driver2.tier}
-                />
-              </TiltedCard>
+              <motion.div
+                key={displayDrivers[1].id}
+                layoutId={`driver-card-${displayDrivers[1].id}`}
+                transition={layoutSpring}
+              >
+                <TiltedCard rotateAmplitude={5} scaleOnHover={1}>
+                  <DriverShowcase
+                    driver={displayDrivers[1]}
+                    team={displayTeam}
+                    position="right"
+                    q3Rate={q3Rates?.driver2.q3Rate}
+                    pedigreeLabel={pedigrees?.driver2.text}
+                    pedigreeTier={pedigrees?.driver2.tier}
+                    onClick={() => setSelectedDriverIndex(1)}
+                  />
+                </TiltedCard>
+              </motion.div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Driver detail modal */}
+      <DriverDetailModal
+        driver={
+          selectedDriverIndex !== null
+            ? displayDrivers[selectedDriverIndex] ?? null
+            : null
+        }
+        team={displayTeam ?? null}
+        q3Rate={
+          selectedDriverIndex === 0
+            ? q3Rates?.driver1.q3Rate
+            : selectedDriverIndex === 1
+              ? q3Rates?.driver2.q3Rate
+              : undefined
+        }
+        pedigreeLabel={
+          selectedDriverIndex === 0
+            ? pedigrees?.driver1.text
+            : selectedDriverIndex === 1
+              ? pedigrees?.driver2.text
+              : undefined
+        }
+        pedigreeTier={
+          selectedDriverIndex === 0
+            ? pedigrees?.driver1.tier
+            : selectedDriverIndex === 1
+              ? pedigrees?.driver2.tier
+              : undefined
+        }
+        timeScope={timeScope}
+        onClose={() => setSelectedDriverIndex(null)}
+      />
     </div>
   );
 }
