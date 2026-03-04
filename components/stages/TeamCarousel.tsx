@@ -320,8 +320,8 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
             ref={wheelRef}
             className={
               showIntro
-                ? "relative mx-auto h-[40vh] w-full overflow-hidden opacity-0"
-                : "relative mx-auto h-[40vh] w-full overflow-hidden"
+                ? "relative mx-auto h-[26vh] w-full overflow-hidden opacity-0"
+                : "relative mx-auto h-[26vh] w-full overflow-hidden"
             }
           >
             <GradientCarousel
