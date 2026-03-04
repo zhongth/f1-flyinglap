@@ -1085,6 +1085,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
   return (
     <div
       ref={containerRef}
+      data-cursor-interactive
       className={cn(
         "relative w-full h-full overflow-hidden",
         showBackdrop ? "bg-[#0a0a0a]" : "bg-transparent",

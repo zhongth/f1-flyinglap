@@ -84,7 +84,7 @@ export function DriverDetailModal({
             exit={{ opacity: 0, backdropFilter: "blur(0px)" }}
             transition={{ duration: 0.5, ease: [0.32, 0.72, 0, 1] }}
             onClick={onClose}
-            className="fixed inset-0 z-[9999] cursor-pointer bg-black/70"
+            className="fixed inset-0 z-[9999] cursor-default bg-black/70"
           />
 
           {/* Modal content */}

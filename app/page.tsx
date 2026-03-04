@@ -1,16 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { FiveLightsOut } from "@/components/ui/FiveLightsOut";
-import Preloader from "@/components/ui/Preloader";
 import { TeamCarousel } from "@/components/stages/TeamCarousel";
 import { VersusMode } from "@/components/stages/VersusMode";
+import CustomCursor from "@/components/ui/CustomCursor";
+import { FiveLightsOut } from "@/components/ui/FiveLightsOut";
+import Preloader from "@/components/ui/Preloader";
 import { teams } from "@/data";
 import { getAllModelPaths } from "@/data/teamCarModels";
 import { preloadImages } from "@/lib/imagePreloader";
 import { preloadAllModels } from "@/lib/modelPreloader";
 import { useAppStore } from "@/store/useAppStore";
-import CustomCursor from "@/components/ui/CustomCursor";
 
 export default function Home() {
   const { stage } = useAppStore();
@@ -70,11 +70,9 @@ export default function Home() {
   return (
     <>
       <CustomCursor
-        circleSize={16}
-        circleColor="rgba(255, 255, 255, 0.3)"
+        circleSize={26}
+        circleColor="rgba(107, 114, 128, 0.45)"
         targets={["[data-carousel-index]", "[data-driver-card]"]}
-        targetPadding={12}
-        elastic
       />
 
       <Preloader
