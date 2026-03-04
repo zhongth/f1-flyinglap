@@ -286,12 +286,12 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
       >
         <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/45 px-5 py-2 backdrop-blur-xl">
           <span className="h-1.5 w-1.5 rounded-full bg-[#E10600] shadow-[0_0_10px_rgba(225,6,0,0.8)]" />
-          <p className="font-f1 text-[10px] md:text-xs tracking-[0.26em] text-white/65 uppercase">
-            F1 Flying Lap Experience
+          <p className="font-f1 text-[10px] md:text-xs tracking-[0.1em] text-white/65 uppercase">
+            F1 Flying Lap 飞驰圈
           </p>
         </div>
         <h1 className="mt-5 font-f1-bold text-2xl md:text-4xl lg:text-[48px] tracking-[0.08em] text-white/95 uppercase leading-tight">
-          Build Your Driver Duel
+          Welcome to Flying Lap
         </h1>
         <p className="mt-3 font-f1 text-[11px] md:text-xs tracking-[0.18em] text-white/45 uppercase">
           Now previewing {activeTeam?.name ?? defaultTeam.name}
