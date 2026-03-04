@@ -145,6 +145,15 @@ const CAR_SURFACE_MATTE_CONFIG = {
   },
 } as const;
 
+const MODEL_SWAP_DURATION_MS = 1280;
+const MODEL_SWAP_OUT_PHASE_END = 0.58;
+const MODEL_SWAP_IN_PHASE_START = 0.32;
+const MODEL_SWAP_OUT_END_DEPTH = -2.8;
+const MODEL_SWAP_OUT_END_SCALE = 0.62;
+const MODEL_SWAP_OUT_END_OPACITY = 0.02;
+const MODEL_SWAP_IN_START_DEPTH = -3.2;
+const MODEL_SWAP_IN_START_SCALE = 0.56;
+
 function isLikelyGlassOrTrim(name: string): boolean {
   return /glass|window|windscreen|windshield|visor|mirror|chrome|light|lamp|led/i.test(
     name,
@@ -1351,9 +1360,12 @@ class App {
 
       if (animate && outgoing) {
         const outgoingMaterials = this.collectModelMaterials(outgoing);
+        this.setModelOpacity(outgoingMaterials, 1);
+        this.setModelScaleFactor(outgoing, 1);
+        this.setModelDepthOffset(outgoing, 0);
         this.setModelOpacity(incomingMaterials, 0);
-        this.setModelScaleFactor(incoming, 0.86);
-        incoming.rotation.y = 0.2;
+        this.setModelScaleFactor(incoming, MODEL_SWAP_IN_START_SCALE);
+        this.setModelDepthOffset(incoming, MODEL_SWAP_IN_START_DEPTH);
 
         this.modelTransition = {
           outgoing,
@@ -1361,7 +1373,7 @@ class App {
           outgoingMaterials,
           incomingMaterials,
           startedAt: performance.now(),
-          durationMs: 560,
+          durationMs: MODEL_SWAP_DURATION_MS,
         };
       } else {
         if (outgoing) {
@@ -1369,7 +1381,7 @@ class App {
         }
         this.setModelOpacity(incomingMaterials, 1);
         this.setModelScaleFactor(incoming, 1);
-        incoming.rotation.y = 0;
+        this.setModelDepthOffset(incoming, 0);
         this.modelTransition = null;
       }
 
@@ -1403,7 +1415,7 @@ class App {
     const { outgoing, incoming, incomingMaterials } = this.modelTransition;
     this.setModelOpacity(incomingMaterials, 1);
     this.setModelScaleFactor(incoming, 1);
-    incoming.rotation.y = 0;
+    this.setModelDepthOffset(incoming, 0);
     if (outgoing && outgoing !== incoming) {
       this.removeCarModel(outgoing);
     }
@@ -1435,6 +1447,7 @@ class App {
       -transformedCenter.z,
     );
     model.userData.baseScale = model.scale.clone();
+    model.userData.basePosition = model.position.clone();
 
     // Matte-friendly material response so the car blends into the neon scene.
     model.traverse((child) => {
@@ -1529,6 +1542,19 @@ class App {
     model.scale.setScalar(scaleFactor);
   }
 
+  setModelDepthOffset(model: THREE.Group, depthOffset: number) {
+    const basePosition = model.userData.basePosition as
+      | THREE.Vector3
+      | undefined;
+    if (basePosition) {
+      model.position.copy(basePosition);
+      model.position.z += depthOffset;
+      return;
+    }
+
+    model.position.z += depthOffset;
+  }
+
   updateModelTransition() {
     if (!this.modelTransition) return;
 
@@ -1537,17 +1563,44 @@ class App {
       (performance.now() - transition.startedAt) / transition.durationMs,
       1,
     );
-    const eased = 1 - (1 - progress) ** 3;
 
-    this.setModelOpacity(transition.incomingMaterials, eased);
-    this.setModelScaleFactor(transition.incoming, 0.86 + 0.14 * eased);
-    transition.incoming.rotation.y = 0.2 * (1 - eased);
+    const outgoingT = THREE.MathUtils.clamp(
+      progress / MODEL_SWAP_OUT_PHASE_END,
+      0,
+      1,
+    );
+    const outgoingEase = outgoingT ** 3;
 
     if (transition.outgoing) {
-      this.setModelOpacity(transition.outgoingMaterials, 1 - eased);
-      this.setModelScaleFactor(transition.outgoing, 1 + 0.08 * eased);
-      transition.outgoing.rotation.y = -0.12 * eased;
+      this.setModelOpacity(
+        transition.outgoingMaterials,
+        THREE.MathUtils.lerp(1, MODEL_SWAP_OUT_END_OPACITY, outgoingEase),
+      );
+      this.setModelScaleFactor(
+        transition.outgoing,
+        THREE.MathUtils.lerp(1, MODEL_SWAP_OUT_END_SCALE, outgoingEase),
+      );
+      this.setModelDepthOffset(
+        transition.outgoing,
+        THREE.MathUtils.lerp(0, MODEL_SWAP_OUT_END_DEPTH, outgoingEase),
+      );
     }
+
+    const incomingT = THREE.MathUtils.clamp(
+      (progress - MODEL_SWAP_IN_PHASE_START) / (1 - MODEL_SWAP_IN_PHASE_START),
+      0,
+      1,
+    );
+    const incomingEase = 1 - (1 - incomingT) ** 4;
+    this.setModelOpacity(transition.incomingMaterials, incomingEase);
+    this.setModelScaleFactor(
+      transition.incoming,
+      THREE.MathUtils.lerp(MODEL_SWAP_IN_START_SCALE, 1, incomingEase),
+    );
+    this.setModelDepthOffset(
+      transition.incoming,
+      THREE.MathUtils.lerp(MODEL_SWAP_IN_START_DEPTH, 0, incomingEase),
+    );
 
     if (progress < 1) return;
 
@@ -1556,7 +1609,7 @@ class App {
     }
     this.setModelOpacity(transition.incomingMaterials, 1);
     this.setModelScaleFactor(transition.incoming, 1);
-    transition.incoming.rotation.y = 0;
+    this.setModelDepthOffset(transition.incoming, 0);
     this.carModel = transition.incoming;
     this.modelTransition = null;
   }

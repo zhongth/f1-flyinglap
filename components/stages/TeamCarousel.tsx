@@ -1,9 +1,9 @@
 "use client";
 
-import { Mouse, MoveHorizontal } from "lucide-react";
+import { Mouse, MousePointerClick, MoveHorizontal } from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { GradientCarouselItem } from "@/components/ui/GradientCarousel";
 import { hyperspeedPresets } from "@/components/ui/HyperspeedPresets";
 import { ProgressiveBlur } from "@/components/ui/ProgressiveBlur";
@@ -59,7 +59,6 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     const ferrariIndex = sortedTeams.findIndex((team) => team.id === "ferrari");
     return ferrariIndex < 0 ? 0 : ferrariIndex;
   }, [sortedTeams]);
-  const [hasInteracted, setHasInteracted] = useState(false);
   const selectingRef = useRef(false);
   const activeCarModelPath = useMemo(
     () => getTeamCarModelPath(activeTeam?.id ?? defaultTeam.id),
@@ -191,36 +190,24 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     [isAnimating, selectTeam, setStage, setIsAnimating],
   );
 
-  // Click a card: first click previews car model, second click selects.
+  const handleCardChange = useCallback(
+    (index: number) => {
+      const selectedTeam = sortedTeams[index];
+      if (!selectedTeam) return;
+      setHoveredTeamId(selectedTeam.id);
+    },
+    [setHoveredTeamId, sortedTeams],
+  );
+
+  // Click centered card to select immediately.
   const handleCardClick = useCallback(
     (index: number) => {
       if (isAnimating) return;
       const selectedTeam = sortedTeams[index];
       if (!selectedTeam) return;
-      const teamId = selectedTeam.id;
-
-      if (!hasInteracted) {
-        setHasInteracted(true);
-        setHoveredTeamId(teamId);
-        return;
-      }
-
-      if (hoveredTeamId === teamId) {
-        // Same team clicked again — select it
-        handleTeamSelect(teamId);
-      } else {
-        // Highlight this team
-        setHoveredTeamId(teamId);
-      }
+      handleTeamSelect(selectedTeam.id);
     },
-    [
-      isAnimating,
-      hoveredTeamId,
-      setHoveredTeamId,
-      handleTeamSelect,
-      hasInteracted,
-      sortedTeams,
-    ],
+    [isAnimating, handleTeamSelect, sortedTeams],
   );
 
   // Whether we're still in the intro phase (used for CSS initial states)
@@ -297,11 +284,18 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
         ref={titleRef}
         className={`absolute top-[12%] left-0 right-0 z-40 text-center pointer-events-none ${showIntro ? "opacity-0" : ""}`}
       >
-        <h1 className="font-f1-bold text-2xl md:text-3xl lg:text-[40px] tracking-wider text-white/90 uppercase leading-relaxed">
-          {hasInteracted
-            ? (activeTeam?.name ?? defaultTeam.name)
-            : "Welcome to Flying Lap"}
+        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/45 px-5 py-2 backdrop-blur-xl">
+          <span className="h-1.5 w-1.5 rounded-full bg-[#E10600] shadow-[0_0_10px_rgba(225,6,0,0.8)]" />
+          <p className="font-f1 text-[10px] md:text-xs tracking-[0.26em] text-white/65 uppercase">
+            F1 Flying Lap Experience
+          </p>
+        </div>
+        <h1 className="mt-5 font-f1-bold text-2xl md:text-4xl lg:text-[48px] tracking-[0.08em] text-white/95 uppercase leading-tight">
+          Build Your Driver Duel
         </h1>
+        <p className="mt-3 font-f1 text-[11px] md:text-xs tracking-[0.18em] text-white/45 uppercase">
+          Now previewing {activeTeam?.name ?? defaultTeam.name}
+        </p>
       </div>
 
       {/* Horizontal team selector */}
@@ -310,18 +304,19 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
           ref={hintRef}
           className={`pointer-events-none absolute left-1/2 top-[22%] z-[60] flex -translate-x-1/2 flex-col items-center ${showIntro ? "opacity-0" : ""}`}
         >
-          <p className="font-f1 text-base md:text-lg lg:text-xl tracking-[0.2em] text-white/70 uppercase">
-            Select your team
-          </p>
-          <p className="mt-2 font-f1 text-[10px] tracking-[0.2em] text-white/40 uppercase">
-            Click to preview • Click again to confirm
-          </p>
-          <div className="mt-5 flex flex-col items-center gap-2">
-            <Mouse className="h-5 w-5 text-white/25" strokeWidth={1.5} />
-            <MoveHorizontal
-              className="h-5 w-5 text-white/25"
-              strokeWidth={1.5}
-            />
+          <div className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 backdrop-blur-xl shadow-[0_18px_45px_rgba(0,0,0,0.45)]">
+            <p className="text-center font-f1 text-[11px] md:text-xs tracking-[0.18em] text-white/70 uppercase">
+              Swipe or scroll to browse teams
+            </p>
+            <div className="mt-2 h-px w-full bg-white/10" />
+            <div className="mt-2 flex items-center justify-center gap-2 text-white/50">
+              <Mouse className="h-4 w-4" strokeWidth={1.5} />
+              <MoveHorizontal className="h-4 w-4" strokeWidth={1.5} />
+              <MousePointerClick className="h-4 w-4" strokeWidth={1.5} />
+            </div>
+            <p className="mt-2 text-center font-f1 text-[10px] tracking-[0.17em] text-white/45 uppercase">
+              Click the centered card to enter Versus mode
+            </p>
           </div>
         </div>
 
@@ -345,6 +340,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
               introSpin={introReady && !isIntroComplete}
               introSpinRounds={1}
               introSpinDurationMs={2900}
+              onCardChange={handleCardChange}
               onCardClick={handleCardClick}
               maxRotationDegrees={28}
               maxDepthPx={96}
