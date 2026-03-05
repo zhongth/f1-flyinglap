@@ -67,50 +67,64 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
   // Build team card array for GradientCarousel
   const teamCards: GradientCarouselItem[] = useMemo(
     () =>
-      sortedTeams.map((team) => ({
-        id: team.id,
-        content: (
-          <div className="relative flex flex-col items-center justify-center w-full h-full overflow-hidden">
-            {/* Logo with team-colored glow aura */}
-            <div className="relative z-10 flex items-center justify-center">
-              <div
-                className="absolute inset-[-12px] rounded-full blur-2xl opacity-20"
-                style={{ background: team.primaryColor }}
-              />
-              <div className="relative h-[72px] w-[72px]">
-                <Image
-                  src={team.logoPath}
-                  alt={team.name}
-                  fill
-                  sizes="72px"
-                  className="object-contain drop-shadow-lg"
-                  draggable={false}
+      sortedTeams.map((team) => {
+        const drivers = getDriversByTeamId(team.id);
+        const position = String(team.constructorOrder).padStart(2, "0");
+
+        return {
+          id: team.id,
+          content: (
+            <div className="relative flex flex-col w-full h-full overflow-hidden p-4">
+              {/* Top row: position number + team color accent line */}
+              <div className="flex items-start justify-between">
+                <span
+                  className="font-f1-bold text-[32px] leading-none tracking-tight"
+                  style={{ color: team.primaryColor }}
+                >
+                  {position}
+                </span>
+                <div
+                  className="mt-1.5 h-[3px] w-8 rounded-full"
+                  style={{ backgroundColor: team.primaryColor }}
                 />
               </div>
-            </div>
 
-            {/* Team name + accent divider + position */}
-            <div className="relative z-10 mt-6 flex flex-col items-center gap-3">
-              <span className="text-lg font-f1-bold  text-white/80 uppercase text-center leading-tight">
-                {team.shortName}
-              </span>
+              {/* Center: team logo */}
+              <div className="flex-1 flex items-center justify-center">
+                <div className="relative h-[52px] w-[52px]">
+                  <Image
+                    src={team.logoPath}
+                    alt={team.name}
+                    fill
+                    sizes="52px"
+                    className="object-contain brightness-90"
+                    draggable={false}
+                  />
+                </div>
+              </div>
 
-              <span
-                className="text-xs font-f1-bold uppercase"
-                style={{ color: `${team.primaryColor}99` }}
-              >
-                {getDriversByTeamId(team.id)
-                  .map((d) => d.abbreviation)
-                  .join(" · ")}
-              </span>
+              {/* Bottom section: team name + drivers */}
+              <div className="flex flex-col gap-1.5">
+                <span className="font-f1-bold text-[13px] text-white/90 uppercase tracking-[0.06em] leading-tight">
+                  {team.shortName}
+                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className="font-f1 text-[10px] uppercase tracking-[0.12em]"
+                    style={{ color: `${team.primaryColor}CC` }}
+                  >
+                    {drivers.map((d) => d.abbreviation).join(" · ")}
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
-        ),
-        background: `linear-gradient(165deg, ${team.primaryColor}18 0%, ${team.primaryColor}08 40%, rgba(0,0,0,0.3) 100%)`,
-        activeBackground: `linear-gradient(165deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 100%), linear-gradient(165deg, ${team.primaryColor}A0 0%, ${team.primaryColor}60 100%)`,
-        primaryColor: team.primaryColor,
-        secondaryColor: team.secondaryColor,
-      })),
+          ),
+          background: "rgba(255,255,255,0.03)",
+          activeBackground: "rgba(255,255,255,0.06)",
+          primaryColor: team.primaryColor,
+          secondaryColor: team.secondaryColor,
+        };
+      }),
     [sortedTeams],
   );
 
@@ -287,7 +301,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
             <GradientCarousel
               items={teamCards}
               className="h-full w-full bg-transparent"
-              cardClassName="border-white/5 backdrop-blur-md bg-black/25"
+              cardClassName="border-white/[0.06] bg-black/40 backdrop-blur-sm"
               contentClassName=""
               cardWidthPx={236}
               cardAspectRatio={110 / 140}
