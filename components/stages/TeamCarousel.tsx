@@ -16,10 +16,6 @@ const GradientCarousel = dynamic(
   () => import("@/components/ui/GradientCarousel"),
   { ssr: false },
 );
-const TopDownCarShowcase = dynamic(
-  () => import("@/components/ui/TopDownCarShowcase"),
-  { ssr: false },
-);
 
 interface TeamCarouselProps {
   introReady?: boolean;
@@ -29,8 +25,6 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
-  const carShowcaseRef = useRef<HTMLDivElement>(null);
-  const hintRef = useRef<HTMLDivElement>(null);
 
   const {
     setHoveredTeamId,
@@ -57,6 +51,15 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     const ferrariIndex = sortedTeams.findIndex((team) => team.id === "ferrari");
     return ferrariIndex < 0 ? 0 : ferrariIndex;
   }, [sortedTeams]);
+
+  // When returning from VERSUS, start on the team we were viewing
+  const initialIndex = useMemo(() => {
+    if (hoveredTeamId) {
+      const idx = sortedTeams.findIndex((t) => t.id === hoveredTeamId);
+      if (idx >= 0) return idx;
+    }
+    return ferrariInitialIndex;
+  }, [sortedTeams, hoveredTeamId, ferrariInitialIndex]);
   const selectingRef = useRef(false);
 
   useEffect(() => {
@@ -168,29 +171,6 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
           0.1,
         );
 
-        if (carShowcaseRef.current) {
-          tl.to(
-            carShowcaseRef.current,
-            {
-              opacity: 0,
-              duration: 0.4,
-              ease: "power2.in",
-            },
-            0.1,
-          );
-        }
-
-        // Hint exits downward
-        tl.to(
-          hintRef.current,
-          {
-            y: 20,
-            opacity: 0,
-            duration: 0.2,
-            ease: "power2.in",
-          },
-          0,
-        );
       }, containerRef);
     },
     [isAnimating, selectTeam, setStage, setIsAnimating],
@@ -226,26 +206,20 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     const ctx = gsap.context(() => {
       const title = titleRef.current;
       const wheel = wheelRef.current;
-      const carShowcase = carShowcaseRef.current;
-      const hint = hintRef.current;
-
       // Set initial states (CSS classes handle opacity:0, GSAP adds transforms)
       gsap.set(title, { y: -30 });
       gsap.set(wheel, { y: 0 });
-      gsap.set(hint, { y: 20 });
 
       const tl = gsap.timeline({
         onComplete: () => setIntroComplete(),
       });
 
-      tl.to(carShowcase, { opacity: 1, duration: 1, ease: "power2.out" });
       tl.to(
         title,
         { y: 0, opacity: 1, duration: 0.6, ease: "power2.out" },
         0.12,
       );
       tl.to(wheel, { opacity: 1, duration: 0.8, ease: "power2.out" }, 0);
-      tl.to(hint, { y: 0, opacity: 1, duration: 0.4, ease: "power2.out" }, 0.2);
     }, containerRef);
 
     return () => ctx.revert();
@@ -254,19 +228,8 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
   return (
     <div
       ref={containerRef}
-      className="relative h-screen w-full overflow-hidden bg-[#111113]"
+      className="relative h-screen w-full overflow-hidden"
     >
-      {/* Top-down car showcase — upper portion of screen */}
-      <div
-        ref={carShowcaseRef}
-        className={`absolute inset-0 z-0 pointer-events-none ${showIntro ? "opacity-0" : ""}`}
-      >
-        <TopDownCarShowcase
-          teamId={activeTeam?.id ?? defaultTeam.id}
-          className="h-full w-full"
-        />
-      </div>
-
       {/* Team name — prominent display at top */}
       <div
         ref={titleRef}
@@ -279,7 +242,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
           </p>
         </div>
         <h1 className="mt-5 font-f1-bold text-2xl md:text-4xl lg:text-[48px] tracking-[0.08em] text-white/95 uppercase leading-tight">
-          Welcome to Flying Lap
+          Who is faster?
         </h1>
         <p className="mt-3 font-f1 text-[11px] md:text-xs tracking-[0.18em] text-white/45 uppercase">
           Now previewing {activeTeam?.name ?? defaultTeam.name}
@@ -303,7 +266,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
               contentClassName=""
               cardWidthPx={236}
               cardAspectRatio={110 / 140}
-              initialIndex={ferrariInitialIndex}
+              initialIndex={initialIndex}
               introSpin={introReady && !isIntroComplete}
               introSpinRounds={1}
               introSpinDurationMs={2900}

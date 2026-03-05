@@ -4,6 +4,7 @@ import { create } from "zustand";
 
 export type Stage = "GRID" | "VERSUS" | "DETAIL";
 export type TimeScope = "season" | "last5";
+export type CameraMode = "topDown" | "cinematic";
 const DEFAULT_TEAM_ID = "ferrari";
 
 interface AppState {
@@ -25,6 +26,9 @@ interface AppState {
   isAnimating: boolean;
   isIntroComplete: boolean;
 
+  // 3D camera mode
+  cameraMode: CameraMode;
+
   // Actions
   setStage: (stage: Stage) => void;
   setSelectedTeamId: (teamId: string | null) => void;
@@ -33,6 +37,7 @@ interface AppState {
   setTimeScope: (scope: TimeScope) => void;
   setIsAnimating: (animating: boolean) => void;
   setIntroComplete: () => void;
+  setCameraMode: (mode: CameraMode) => void;
 
   // Complex actions
   selectTeam: (teamId: string) => void;
@@ -51,6 +56,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   timeScope: "season",
   isAnimating: false,
   isIntroComplete: false,
+  cameraMode: "topDown",
 
   // Simple setters
   setStage: (stage) =>
@@ -65,6 +71,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setTimeScope: (scope) => set({ timeScope: scope }),
   setIsAnimating: (animating) => set({ isAnimating: animating }),
   setIntroComplete: () => set({ isIntroComplete: true }),
+  setCameraMode: (mode) => set({ cameraMode: mode }),
 
   // Select a team (GRID -> VERSUS transition)
   selectTeam: (teamId) => {
@@ -74,6 +81,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({
       selectedTeamId: teamId,
       isAnimating: true,
+      cameraMode: "cinematic",
     });
     // Animation component will call setStage("VERSUS") and setIsAnimating(false) when done
   },
@@ -92,7 +100,7 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   // Go back one stage
   goBack: () => {
-    const { stage, isAnimating } = get();
+    const { stage, isAnimating, selectedTeamId } = get();
     if (isAnimating) return;
 
     if (stage === "DETAIL") {
@@ -106,8 +114,9 @@ export const useAppStore = create<AppState>((set, get) => ({
         stage: "GRID",
         previousStage: "VERSUS",
         selectedTeamId: null,
-        hoveredTeamId: DEFAULT_TEAM_ID,
+        hoveredTeamId: selectedTeamId || DEFAULT_TEAM_ID,
         focusedDriverId: null,
+        cameraMode: "topDown",
       });
     }
   },
@@ -121,5 +130,6 @@ export const useAppStore = create<AppState>((set, get) => ({
       hoveredTeamId: DEFAULT_TEAM_ID,
       focusedDriverId: null,
       isAnimating: false,
+      cameraMode: "topDown",
     }),
 }));
