@@ -68,22 +68,76 @@ export function FiveLightsOut({ progress, onComplete }: FiveLightsOutProps) {
 
   return (
     <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black">
-      {/* Five red dots */}
-      <div className="flex items-center gap-4 md:gap-6">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <div
-            key={i}
-            className="h-4 w-4 md:h-5 md:w-5 rounded-full transition-all"
-            style={{
-              backgroundColor: !lightsOut && i < litCount ? "#e10600" : "#1a1a1a",
-              boxShadow:
-                !lightsOut && i < litCount
-                  ? "0 0 12px 2px rgba(225,6,0,.6)"
-                  : "none",
-              transitionDuration: lightsOut ? "150ms" : "200ms",
-            }}
-          />
-        ))}
+      {/* SVG dot-pattern texture for the lit lights */}
+      <svg width="0" height="0" className="absolute">
+        <defs>
+          <pattern
+            id="light-dots"
+            x="0"
+            y="0"
+            width="6"
+            height="6"
+            patternUnits="userSpaceOnUse"
+          >
+            <circle cx="3" cy="3" r="1" fill="rgba(0,0,0,0.18)" />
+          </pattern>
+        </defs>
+      </svg>
+
+      {/* Five lights with bezels */}
+      <div className="flex items-center gap-[2vw] md:gap-[2.5vw]">
+        {Array.from({ length: 5 }).map((_, i) => {
+          const isLit = !lightsOut && i < litCount;
+          return (
+            <div
+              key={i}
+              className="relative flex items-center justify-center"
+            >
+              {/* Outer bezel ring */}
+              <div
+                className="rounded-full border transition-colors"
+                style={{
+                  width: "clamp(60px, 12vw, 160px)",
+                  height: "clamp(60px, 12vw, 160px)",
+                  borderColor: "rgba(255,255,255,0.08)",
+                  backgroundColor: "#0a0a0a",
+                  transitionDuration: "300ms",
+                }}
+              />
+              {/* Inner red light */}
+              <div
+                className="absolute rounded-full transition-all"
+                style={{
+                  width: "clamp(50px, 10.5vw, 140px)",
+                  height: "clamp(50px, 10.5vw, 140px)",
+                  backgroundColor: isLit ? "#c0392b" : "#151515",
+                  boxShadow: isLit
+                    ? "0 0 40px 8px rgba(192,57,43,0.35), inset 0 -4px 12px rgba(0,0,0,0.3)"
+                    : "inset 0 2px 8px rgba(0,0,0,0.5)",
+                  transitionDuration: lightsOut ? "150ms" : "400ms",
+                }}
+              />
+              {/* Dot texture overlay (only when lit) */}
+              {isLit && (
+                <svg
+                  className="absolute rounded-full pointer-events-none"
+                  style={{
+                    width: "clamp(50px, 10.5vw, 140px)",
+                    height: "clamp(50px, 10.5vw, 140px)",
+                  }}
+                >
+                  <rect
+                    width="100%"
+                    height="100%"
+                    fill="url(#light-dots)"
+                    rx="9999"
+                    ry="9999"
+                  />
+                </svg>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Text */}

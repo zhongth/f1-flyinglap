@@ -294,26 +294,6 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
 
       {/* Horizontal team selector */}
       <div className="absolute inset-0 z-50">
-        <div
-          ref={hintRef}
-          className={`pointer-events-none absolute left-1/2 top-[22%] z-[60] flex -translate-x-1/2 flex-col items-center ${showIntro ? "opacity-0" : ""}`}
-        >
-          <div className="rounded-2xl border border-white/10 bg-black/40 px-5 py-3 backdrop-blur-xl shadow-[0_18px_45px_rgba(0,0,0,0.45)]">
-            <p className="text-center font-f1 text-[11px] md:text-xs tracking-[0.18em] text-white/70 uppercase">
-              Swipe or scroll to browse teams
-            </p>
-            <div className="mt-2 h-px w-full bg-white/10" />
-            <div className="mt-2 flex items-center justify-center gap-2 text-white/50">
-              <Mouse className="h-4 w-4" strokeWidth={1.5} />
-              <MoveHorizontal className="h-4 w-4" strokeWidth={1.5} />
-              <MousePointerClick className="h-4 w-4" strokeWidth={1.5} />
-            </div>
-            <p className="mt-2 text-center font-f1 text-[10px] tracking-[0.17em] text-white/45 uppercase">
-              Click any card to highlight and center, then click again to enter
-              Versus mode
-            </p>
-          </div>
-        </div>
 
         <div className="flex h-full items-center justify-center">
           <div
