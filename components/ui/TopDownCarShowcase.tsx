@@ -50,8 +50,8 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     if (!container) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
-    scene.fog = new THREE.FogExp2(0x0a0805, 0.007);
+    scene.background = new THREE.Color(0x111113);
+    scene.fog = new THREE.FogExp2(0x111113, 0.006);
     sceneRef.current = scene;
 
     // Camera — bird's-eye view looking straight down
@@ -76,16 +76,16 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.25;
+    renderer.toneMappingExposure = 1.15;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // Ground plane — dark charcoal
     const groundGeometry = new THREE.PlaneGeometry(120, 120);
     const groundMaterial = new THREE.MeshStandardMaterial({
-      color: 0x0e0c0a,
-      roughness: 0.2,
-      metalness: 0.75,
+      color: 0x141416,
+      roughness: 0.35,
+      metalness: 0.5,
     });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -93,7 +93,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // === Grid Box — clean single-line bracket ===
+    // === Grid Box — clean single-line rectangle ===
     const gridBoxGroup = new THREE.Group();
     gridBoxGroup.position.y = 0.02;
 
@@ -103,6 +103,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       opacity: 0.12,
     });
 
+    // Car faces -X. Front bracket at -X side, like a real F1 grid box.
     const bracketX = -6.0;
     const armLen = 2.8;
     const halfWid = 2.6;
@@ -119,65 +120,60 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
 
     scene.add(gridBoxGroup);
 
-    // === Grid Walk Lighting — dusk floodlights before lights out ===
-
-    // Warm ambient — sunset glow bleeding across the circuit
-    const ambientLight = new THREE.AmbientLight(0xffc880, 0.35);
+    // === Angled Lighting ===
+    const ambientLight = new THREE.AmbientLight(0xc8d0e0, 0.35);
     scene.add(ambientLight);
 
-    // Hemisphere — amber sky above, dark tarmac bounce below
-    const hemiLight = new THREE.HemisphereLight(0xffb060, 0x1a0e05, 0.45);
+    const hemiLight = new THREE.HemisphereLight(0xd0d8f0, 0x060608, 0.4);
     scene.add(hemiLight);
 
-    // Main floodlight — powerful amber overhead, like circuit tower lights
-    const mainFlood = new THREE.SpotLight(0xffb347, 55);
-    mainFlood.position.set(0, 20, 0);
-    mainFlood.target.position.set(0, 0, 0);
-    mainFlood.angle = Math.PI / 3;
-    mainFlood.penumbra = 0.9;
-    mainFlood.decay = 1.1;
-    mainFlood.castShadow = true;
-    mainFlood.shadow.mapSize.width = 1024;
-    mainFlood.shadow.mapSize.height = 1024;
-    mainFlood.shadow.camera.near = 5;
-    mainFlood.shadow.camera.far = 40;
-    mainFlood.shadow.bias = -0.001;
-    scene.add(mainFlood);
-    scene.add(mainFlood.target);
+    // Key light — angled from front-left
+    const keyLight = new THREE.SpotLight(0xeef4ff, 55);
+    keyLight.position.set(-10, 14, -6);
+    keyLight.target.position.set(0, 0, 0);
+    keyLight.angle = Math.PI / 4;
+    keyLight.penumbra = 0.8;
+    keyLight.decay = 1.3;
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 1024;
+    keyLight.shadow.mapSize.height = 1024;
+    keyLight.shadow.camera.near = 4;
+    keyLight.shadow.camera.far = 40;
+    keyLight.shadow.bias = -0.001;
+    scene.add(keyLight);
+    scene.add(keyLight.target);
 
-    // Secondary flood — offset, slightly cooler amber for depth
-    const secondFlood = new THREE.SpotLight(0xffa030, 30);
-    secondFlood.position.set(3, 17, -5);
-    secondFlood.target.position.set(0, 0, -1);
-    secondFlood.angle = Math.PI / 4;
-    secondFlood.penumbra = 1.0;
-    secondFlood.decay = 1.3;
-    scene.add(secondFlood);
-    scene.add(secondFlood.target);
+    // Fill light — from rear-right
+    const fillLight = new THREE.SpotLight(0xfff0e0, 20);
+    fillLight.position.set(8, 12, 5);
+    fillLight.target.position.set(0, 0, 0);
+    fillLight.angle = Math.PI / 3.5;
+    fillLight.penumbra = 1.0;
+    fillLight.decay = 1.5;
+    scene.add(fillLight);
+    scene.add(fillLight.target);
 
-    // Left key — warm amber panel light, like trackside floodlight bank
-    const keyLeft = new THREE.RectAreaLight(0xffcc70, 5, 8, 3);
-    keyLeft.position.set(-8, 8, 0);
+    // Rim light — from behind
+    const rimLight = new THREE.SpotLight(0xd0e0ff, 30);
+    rimLight.position.set(6, 10, -4);
+    rimLight.target.position.set(-2, 0, 0);
+    rimLight.angle = Math.PI / 5;
+    rimLight.penumbra = 0.7;
+    rimLight.decay = 1.4;
+    scene.add(rimLight);
+    scene.add(rimLight.target);
+
+    // Left key — angled RectArea
+    const keyLeft = new THREE.RectAreaLight(0xdde6ff, 5, 6, 3);
+    keyLeft.position.set(-7, 6, -4);
     keyLeft.lookAt(0, 0, 0);
     scene.add(keyLeft);
 
-    // Right key — slightly warmer to break symmetry
-    const keyRight = new THREE.RectAreaLight(0xffc060, 4, 8, 3);
-    keyRight.position.set(8, 7, 1);
+    // Right fill — softer, warmer
+    const keyRight = new THREE.RectAreaLight(0xfff0dd, 3, 6, 3);
+    keyRight.position.set(6, 7, 3);
     keyRight.lookAt(0, 0, 0);
     scene.add(keyRight);
-
-    // Hazy lens flare accent — warm point high up, simulates
-    // light scattering through humid dusk air
-    const flarePt = new THREE.PointLight(0xffdd88, 8);
-    flarePt.position.set(1, 22, -1);
-    flarePt.decay = 1.5;
-    scene.add(flarePt);
-
-    // Subtle deep orange kick from low angle — brake glow / tarmac heat
-    const heatKick = new THREE.PointLight(0xff7030, 2.5);
-    heatKick.position.set(-4, 2, 4);
-    scene.add(heatKick);
 
     // Render loop — only renders when needed
     const animate = (timestamp: number) => {
