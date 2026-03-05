@@ -23,7 +23,7 @@ const CAMERA_CONFIGS = {
   },
   cinematic: {
     position: { x: -12, y: 3, z: 8 },
-    lookAt: { x: 1, y: 1.2, z: 0 },
+    lookAt: { x: 1, y: 1.2, z: -2 },
     bgColor: new THREE.Color(0x08080a),
     fogColor: new THREE.Color(0x08080a),
   },
