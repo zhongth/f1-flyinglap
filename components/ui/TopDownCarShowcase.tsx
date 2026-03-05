@@ -46,7 +46,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x000000);
-    scene.fog = new THREE.FogExp2(0x05050a, 0.008);
+    scene.fog = new THREE.FogExp2(0x0a0805, 0.007);
     sceneRef.current = scene;
 
     // Camera — bird's-eye view looking straight down
@@ -71,16 +71,16 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.25;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
     // Ground plane — polished pit garage floor
     const groundGeometry = new THREE.PlaneGeometry(120, 120);
     const groundMaterial = new THREE.MeshStandardMaterial({
-      color: 0x0c0c0e,
-      roughness: 0.15,
-      metalness: 0.8,
+      color: 0x0e0c0a,
+      roughness: 0.2,
+      metalness: 0.75,
     });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -89,70 +89,71 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     scene.add(ground);
 
     // Subtle grid — clean garage floor markings
-    const gridHelper = new THREE.GridHelper(60, 120, 0x151518, 0x0e0e11);
+    const gridHelper = new THREE.GridHelper(60, 120, 0x1a1510, 0x110e0a);
     gridHelper.position.y = 0;
     (gridHelper.material as THREE.Material).opacity = 0.25;
     (gridHelper.material as THREE.Material).transparent = true;
     scene.add(gridHelper);
 
-    // === F1 Pit Garage Lighting ===
-    // Clean, even, cool-white overhead — like LED panel strips
+    // === Grid Walk Lighting — dusk floodlights before lights out ===
 
-    // High ambient for that clinical, bright garage feel
-    const ambientLight = new THREE.AmbientLight(0xe8edf5, 0.6);
+    // Warm ambient — sunset glow bleeding across the circuit
+    const ambientLight = new THREE.AmbientLight(0xffc880, 0.35);
     scene.add(ambientLight);
 
-    // Hemisphere light — cool sky from above, warm bounce from floor
-    const hemiLight = new THREE.HemisphereLight(0xdce4f0, 0x0a0a0c, 0.5);
+    // Hemisphere — amber sky above, dark tarmac bounce below
+    const hemiLight = new THREE.HemisphereLight(0xffb060, 0x1a0e05, 0.45);
     scene.add(hemiLight);
 
-    // Main overhead LED panel (wide, even, cool white)
-    const mainSpot = new THREE.SpotLight(0xeaf0ff, 50);
-    mainSpot.position.set(0, 18, 0);
-    mainSpot.target.position.set(0, 0, 0);
-    mainSpot.angle = Math.PI / 3;
-    mainSpot.penumbra = 1.0;
-    mainSpot.decay = 1.2;
-    mainSpot.castShadow = true;
-    mainSpot.shadow.mapSize.width = 1024;
-    mainSpot.shadow.mapSize.height = 1024;
-    mainSpot.shadow.camera.near = 5;
-    mainSpot.shadow.camera.far = 40;
-    mainSpot.shadow.bias = -0.001;
-    scene.add(mainSpot);
-    scene.add(mainSpot.target);
+    // Main floodlight — powerful amber overhead, like circuit tower lights
+    const mainFlood = new THREE.SpotLight(0xffb347, 55);
+    mainFlood.position.set(0, 20, 0);
+    mainFlood.target.position.set(0, 0, 0);
+    mainFlood.angle = Math.PI / 3;
+    mainFlood.penumbra = 0.9;
+    mainFlood.decay = 1.1;
+    mainFlood.castShadow = true;
+    mainFlood.shadow.mapSize.width = 1024;
+    mainFlood.shadow.mapSize.height = 1024;
+    mainFlood.shadow.camera.near = 5;
+    mainFlood.shadow.camera.far = 40;
+    mainFlood.shadow.bias = -0.001;
+    scene.add(mainFlood);
+    scene.add(mainFlood.target);
 
-    // Secondary overhead strip — offset forward, slightly warm
-    const stripLight = new THREE.SpotLight(0xfff5e6, 25);
-    stripLight.position.set(0, 16, -4);
-    stripLight.target.position.set(0, 0, -2);
-    stripLight.angle = Math.PI / 4;
-    stripLight.penumbra = 1.0;
-    stripLight.decay = 1.4;
-    scene.add(stripLight);
-    scene.add(stripLight.target);
+    // Secondary flood — offset, slightly cooler amber for depth
+    const secondFlood = new THREE.SpotLight(0xffa030, 30);
+    secondFlood.position.set(3, 17, -5);
+    secondFlood.target.position.set(0, 0, -1);
+    secondFlood.angle = Math.PI / 4;
+    secondFlood.penumbra = 1.0;
+    secondFlood.decay = 1.3;
+    scene.add(secondFlood);
+    scene.add(secondFlood.target);
 
-    // Left key light — cool white, simulates wall-mounted LED bar
-    const keyLeft = new THREE.RectAreaLight(0xdde6ff, 6, 8, 3);
+    // Left key — warm amber panel light, like trackside floodlight bank
+    const keyLeft = new THREE.RectAreaLight(0xffcc70, 5, 8, 3);
     keyLeft.position.set(-8, 8, 0);
     keyLeft.lookAt(0, 0, 0);
     scene.add(keyLeft);
 
-    // Right key light — matching LED bar
-    const keyRight = new THREE.RectAreaLight(0xdde6ff, 6, 8, 3);
-    keyRight.position.set(8, 8, 0);
+    // Right key — slightly warmer to break symmetry
+    const keyRight = new THREE.RectAreaLight(0xffc060, 4, 8, 3);
+    keyRight.position.set(8, 7, 1);
     keyRight.lookAt(0, 0, 0);
     scene.add(keyRight);
 
-    // Subtle blue accent — tech/monitor glow from equipment
-    const accentBlue = new THREE.PointLight(0x4060cc, 3);
-    accentBlue.position.set(-6, 4, 5);
-    scene.add(accentBlue);
+    // Hazy lens flare accent — warm point high up, simulates
+    // light scattering through humid dusk air
+    const flarePt = new THREE.PointLight(0xffdd88, 8);
+    flarePt.position.set(1, 22, -1);
+    flarePt.decay = 1.5;
+    scene.add(flarePt);
 
-    // Subtle warm accent — brake/telemetry screen glow
-    const accentWarm = new THREE.PointLight(0xcc8844, 2);
-    accentWarm.position.set(5, 3, -4);
-    scene.add(accentWarm);
+    // Subtle deep orange kick from low angle — brake glow / tarmac heat
+    const heatKick = new THREE.PointLight(0xff7030, 2.5);
+    heatKick.position.set(-4, 2, 4);
+    scene.add(heatKick);
 
     // Render loop — only renders when needed
     const animate = (timestamp: number) => {
