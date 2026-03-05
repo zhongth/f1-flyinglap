@@ -3,7 +3,7 @@
 import { type FC, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { cloneCachedScene, isModelCached } from "@/lib/modelPreloader";
-import { getTeamCarModelPath } from "@/data/teamCarModels";
+import { getAllModelPaths, getTeamCarModelPath } from "@/data/teamCarModels";
 import { gsap } from "@/lib/gsap";
 import {
   collectWheelSpinTargets,
@@ -32,6 +32,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const rafRef = useRef<number>(0);
   const currentCarRef = useRef<CarState | null>(null);
+  const currentModelPathRef = useRef<string | null>(null);
   const prevTeamIdRef = useRef<string | null>(null);
   const isTransitioningRef = useRef(false);
   const needsRenderRef = useRef(true);
@@ -39,14 +40,18 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   const isAnimatingRef = useRef(false);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Object pool: pre-prepared cars keyed by model path
+  const carPoolRef = useRef<Map<string, CarState>>(new Map());
+  const warmUpDoneRef = useRef(false);
+
   // Initialize Three.js scene
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x000000);
-    scene.fog = new THREE.FogExp2(0x05050a, 0.008);
+    scene.background = new THREE.Color(0x111113);
+    scene.fog = new THREE.FogExp2(0x111113, 0.006);
     sceneRef.current = scene;
 
     // Camera — bird's-eye view looking straight down
@@ -75,12 +80,12 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Ground plane — polished pit garage floor
+    // Ground plane — dark charcoal
     const groundGeometry = new THREE.PlaneGeometry(120, 120);
     const groundMaterial = new THREE.MeshStandardMaterial({
-      color: 0x0c0c0e,
-      roughness: 0.15,
-      metalness: 0.8,
+      color: 0x141416,
+      roughness: 0.35,
+      metalness: 0.5,
     });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -88,71 +93,87 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // Subtle grid — clean garage floor markings
-    const gridHelper = new THREE.GridHelper(60, 120, 0x151518, 0x0e0e11);
-    gridHelper.position.y = 0;
-    (gridHelper.material as THREE.Material).opacity = 0.25;
-    (gridHelper.material as THREE.Material).transparent = true;
-    scene.add(gridHelper);
+    // === Grid Box — clean single-line rectangle ===
+    const gridBoxGroup = new THREE.Group();
+    gridBoxGroup.position.y = 0.02;
 
-    // === F1 Pit Garage Lighting ===
-    // Clean, even, cool-white overhead — like LED panel strips
+    const lineMat = new THREE.LineBasicMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.12,
+    });
 
-    // High ambient for that clinical, bright garage feel
-    const ambientLight = new THREE.AmbientLight(0xe8edf5, 0.6);
+    // Car faces -X. Front bracket at -X side, like a real F1 grid box.
+    const bracketX = -6.0;
+    const armLen = 2.8;
+    const halfWid = 2.6;
+
+    const bracketPts = [
+      new THREE.Vector3(bracketX + armLen, 0, -halfWid),
+      new THREE.Vector3(bracketX, 0, -halfWid),
+      new THREE.Vector3(bracketX, 0, halfWid),
+      new THREE.Vector3(bracketX + armLen, 0, halfWid),
+    ];
+    gridBoxGroup.add(new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(bracketPts), lineMat
+    ));
+
+    scene.add(gridBoxGroup);
+
+    // === Angled Lighting ===
+    const ambientLight = new THREE.AmbientLight(0xc8d0e0, 0.35);
     scene.add(ambientLight);
 
-    // Hemisphere light — cool sky from above, warm bounce from floor
-    const hemiLight = new THREE.HemisphereLight(0xdce4f0, 0x0a0a0c, 0.5);
+    const hemiLight = new THREE.HemisphereLight(0xd0d8f0, 0x060608, 0.4);
     scene.add(hemiLight);
 
-    // Main overhead LED panel (wide, even, cool white)
-    const mainSpot = new THREE.SpotLight(0xeaf0ff, 50);
-    mainSpot.position.set(0, 18, 0);
-    mainSpot.target.position.set(0, 0, 0);
-    mainSpot.angle = Math.PI / 3;
-    mainSpot.penumbra = 1.0;
-    mainSpot.decay = 1.2;
-    mainSpot.castShadow = true;
-    mainSpot.shadow.mapSize.width = 1024;
-    mainSpot.shadow.mapSize.height = 1024;
-    mainSpot.shadow.camera.near = 5;
-    mainSpot.shadow.camera.far = 40;
-    mainSpot.shadow.bias = -0.001;
-    scene.add(mainSpot);
-    scene.add(mainSpot.target);
+    // Key light — angled from front-left
+    const keyLight = new THREE.SpotLight(0xeef4ff, 55);
+    keyLight.position.set(-10, 14, -6);
+    keyLight.target.position.set(0, 0, 0);
+    keyLight.angle = Math.PI / 4;
+    keyLight.penumbra = 0.8;
+    keyLight.decay = 1.3;
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 1024;
+    keyLight.shadow.mapSize.height = 1024;
+    keyLight.shadow.camera.near = 4;
+    keyLight.shadow.camera.far = 40;
+    keyLight.shadow.bias = -0.001;
+    scene.add(keyLight);
+    scene.add(keyLight.target);
 
-    // Secondary overhead strip — offset forward, slightly warm
-    const stripLight = new THREE.SpotLight(0xfff5e6, 25);
-    stripLight.position.set(0, 16, -4);
-    stripLight.target.position.set(0, 0, -2);
-    stripLight.angle = Math.PI / 4;
-    stripLight.penumbra = 1.0;
-    stripLight.decay = 1.4;
-    scene.add(stripLight);
-    scene.add(stripLight.target);
+    // Fill light — from rear-right
+    const fillLight = new THREE.SpotLight(0xfff0e0, 20);
+    fillLight.position.set(8, 12, 5);
+    fillLight.target.position.set(0, 0, 0);
+    fillLight.angle = Math.PI / 3.5;
+    fillLight.penumbra = 1.0;
+    fillLight.decay = 1.5;
+    scene.add(fillLight);
+    scene.add(fillLight.target);
 
-    // Left key light — cool white, simulates wall-mounted LED bar
-    const keyLeft = new THREE.RectAreaLight(0xdde6ff, 6, 8, 3);
-    keyLeft.position.set(-8, 8, 0);
+    // Rim light — from behind
+    const rimLight = new THREE.SpotLight(0xd0e0ff, 30);
+    rimLight.position.set(6, 10, -4);
+    rimLight.target.position.set(-2, 0, 0);
+    rimLight.angle = Math.PI / 5;
+    rimLight.penumbra = 0.7;
+    rimLight.decay = 1.4;
+    scene.add(rimLight);
+    scene.add(rimLight.target);
+
+    // Left key — angled RectArea
+    const keyLeft = new THREE.RectAreaLight(0xdde6ff, 5, 6, 3);
+    keyLeft.position.set(-7, 6, -4);
     keyLeft.lookAt(0, 0, 0);
     scene.add(keyLeft);
 
-    // Right key light — matching LED bar
-    const keyRight = new THREE.RectAreaLight(0xdde6ff, 6, 8, 3);
-    keyRight.position.set(8, 8, 0);
+    // Right fill — softer, warmer
+    const keyRight = new THREE.RectAreaLight(0xfff0dd, 3, 6, 3);
+    keyRight.position.set(6, 7, 3);
     keyRight.lookAt(0, 0, 0);
     scene.add(keyRight);
-
-    // Subtle blue accent — tech/monitor glow from equipment
-    const accentBlue = new THREE.PointLight(0x4060cc, 3);
-    accentBlue.position.set(-6, 4, 5);
-    scene.add(accentBlue);
-
-    // Subtle warm accent — brake/telemetry screen glow
-    const accentWarm = new THREE.PointLight(0xcc8844, 2);
-    accentWarm.position.set(5, 3, -4);
-    scene.add(accentWarm);
 
     // Render loop — only renders when needed
     const animate = (timestamp: number) => {
@@ -197,6 +218,18 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(rafRef.current);
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+
+      // Dispose all pooled cars
+      for (const car of carPoolRef.current.values()) {
+        disposeCar(car);
+      }
+      carPoolRef.current.clear();
+
+      // Dispose current car
+      if (currentCarRef.current) {
+        disposeCar(currentCarRef.current);
+      }
+
       renderer.dispose();
       scene.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
@@ -215,54 +248,11 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       cameraRef.current = null;
       rendererRef.current = null;
       currentCarRef.current = null;
+      currentModelPathRef.current = null;
     };
   }, []);
 
-  // Handle team changes — drive cars in/out
-  useEffect(() => {
-    const scene = sceneRef.current;
-    if (!scene) return;
-    if (teamId === prevTeamIdRef.current) return;
-
-    const modelPath = getTeamCarModelPath(teamId);
-
-    // If model isn't cached yet, poll until ready
-    if (!isModelCached(modelPath)) {
-      // Clear any existing poll
-      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
-      const targetTeamId = teamId;
-      pollIntervalRef.current = setInterval(() => {
-        if (isModelCached(modelPath) && sceneRef.current) {
-          clearInterval(pollIntervalRef.current!);
-          pollIntervalRef.current = null;
-          swapCar(sceneRef.current, targetTeamId, modelPath);
-        }
-      }, 200);
-      return () => {
-        if (pollIntervalRef.current) {
-          clearInterval(pollIntervalRef.current);
-          pollIntervalRef.current = null;
-        }
-      };
-    }
-
-    swapCar(scene, teamId, modelPath);
-  }, [teamId]);
-
-  function disposeCar(scene: THREE.Scene, car: CarState) {
-    scene.remove(car.group);
-    car.group.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.geometry.dispose();
-        if (Array.isArray(child.material)) {
-          child.material.forEach((m: THREE.Material) => m.dispose());
-        } else {
-          child.material.dispose();
-        }
-      }
-    });
-  }
-
+  // Prepare a car from the GLTF cache (clone, scale, center, collect wheels)
   function prepareCar(modelPath: string): CarState | null {
     const model = cloneCachedScene(modelPath);
     if (!model) return null;
@@ -294,7 +284,6 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     );
 
     // Rotate 90 degrees clockwise (from top-down view) so car faces left
-    // Car models face +Z by default; rotate -90deg around Y to face -X
     model.rotation.y = -Math.PI / 2;
 
     // Recalculate after rotation
@@ -310,6 +299,131 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     return { group: carGroup, wheelTargets };
   }
 
+  // Get or create a car from the pool
+  function getPooledCar(modelPath: string): CarState | null {
+    const pool = carPoolRef.current;
+    const existing = pool.get(modelPath);
+    if (existing) {
+      pool.delete(modelPath);
+      // Reset wheel rotation
+      for (const wt of existing.wheelTargets) {
+        wt.totalAngle = 0;
+        wt.object.quaternion.identity();
+      }
+      return existing;
+    }
+    return prepareCar(modelPath);
+  }
+
+  // Return a car to the pool instead of disposing it
+  function returnToPool(scene: THREE.Scene, car: CarState, modelPath: string) {
+    scene.remove(car.group);
+    car.group.position.set(0, 0, 0);
+    carPoolRef.current.set(modelPath, car);
+  }
+
+  // Fully dispose a car (only on unmount)
+  function disposeCar(car: CarState) {
+    car.group.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose();
+        if (Array.isArray(child.material)) {
+          child.material.forEach((m: THREE.Material) => m.dispose());
+        } else {
+          child.material.dispose();
+        }
+      }
+    });
+  }
+
+  // Pre-warm all models: prepare cars + compile GPU shaders during idle time
+  function warmUpAllModels() {
+    if (warmUpDoneRef.current) return;
+    warmUpDoneRef.current = true;
+
+    const renderer = rendererRef.current;
+    const scene = sceneRef.current;
+    const camera = cameraRef.current;
+    if (!renderer || !scene || !camera) return;
+
+    const allPaths = getAllModelPaths();
+    const pool = carPoolRef.current;
+    let idx = 0;
+
+    function warmNext() {
+      // Re-check refs in case component unmounted
+      const s = sceneRef.current;
+      const r = rendererRef.current;
+      const c = cameraRef.current;
+      if (!s || !r || !c || idx >= allPaths.length) return;
+
+      const path = allPaths[idx++];
+      // Skip if already in pool or currently displayed
+      if (pool.has(path) || path === currentModelPathRef.current) {
+        scheduleNext();
+        return;
+      }
+
+      if (!isModelCached(path)) {
+        scheduleNext();
+        return;
+      }
+
+      const car = prepareCar(path);
+      if (car) {
+        // Temporarily add to scene for GPU shader compilation
+        car.group.position.set(0, -1000, 0); // off-screen
+        s.add(car.group);
+        r.compile(s, c);
+        s.remove(car.group);
+        car.group.position.set(0, 0, 0);
+        pool.set(path, car);
+      }
+
+      scheduleNext();
+    }
+
+    function scheduleNext() {
+      if (typeof requestIdleCallback !== "undefined") {
+        requestIdleCallback(() => warmNext(), { timeout: 500 });
+      } else {
+        setTimeout(warmNext, 50);
+      }
+    }
+
+    scheduleNext();
+  }
+
+  // Handle team changes — drive cars in/out
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene) return;
+    if (teamId === prevTeamIdRef.current) return;
+
+    const modelPath = getTeamCarModelPath(teamId);
+
+    // If model isn't cached yet, poll until ready
+    if (!isModelCached(modelPath)) {
+      if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      const targetTeamId = teamId;
+      pollIntervalRef.current = setInterval(() => {
+        if (isModelCached(modelPath) && sceneRef.current) {
+          clearInterval(pollIntervalRef.current!);
+          pollIntervalRef.current = null;
+          swapCar(sceneRef.current, targetTeamId, modelPath);
+        }
+      }, 200);
+      return () => {
+        if (pollIntervalRef.current) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+        }
+      };
+    }
+
+    swapCar(scene, teamId, modelPath);
+  }, [teamId]);
+
   function swapCar(scene: THREE.Scene, newTeamId: string, modelPath: string) {
     const isFirstLoad = prevTeamIdRef.current === null;
     prevTeamIdRef.current = newTeamId;
@@ -319,7 +433,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     isAnimatingRef.current = true;
     needsRenderRef.current = true;
 
-    const newCarState = prepareCar(modelPath);
+    const newCarState = getPooledCar(modelPath);
     if (!newCarState) {
       isTransitioningRef.current = false;
       isAnimatingRef.current = false;
@@ -335,13 +449,17 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     scene.add(newCarState.group);
 
     const oldCar = currentCarRef.current;
+    const oldModelPath = currentModelPathRef.current;
     currentCarRef.current = newCarState;
+    currentModelPathRef.current = modelPath;
 
     const onComplete = () => {
       isTransitioningRef.current = false;
       isAnimatingRef.current = false;
-      // Render one final frame then stop
       needsRenderRef.current = true;
+
+      // Trigger warm-up after first car is shown
+      if (isFirstLoad) warmUpAllModels();
     };
 
     if (isFirstLoad || !oldCar) {
@@ -353,13 +471,13 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
         onComplete,
       });
     } else {
-      // Also spin old car wheels during exit
-      const oldWheelTargets = oldCar.wheelTargets;
-
       const tl = gsap.timeline({
         onUpdate: () => { needsRenderRef.current = true; },
         onComplete: () => {
-          disposeCar(scene, oldCar);
+          // Return old car to pool instead of disposing
+          if (oldModelPath) {
+            returnToPool(scene, oldCar, oldModelPath);
+          }
           onComplete();
         },
       });

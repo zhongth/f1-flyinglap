@@ -254,7 +254,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
   return (
     <div
       ref={containerRef}
-      className="relative h-screen w-full overflow-hidden bg-black"
+      className="relative h-screen w-full overflow-hidden bg-[#111113]"
     >
       {/* Top-down car showcase — upper portion of screen */}
       <div
