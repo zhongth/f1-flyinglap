@@ -279,7 +279,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
           </p>
         </div>
         <h1 className="mt-5 font-f1-bold text-2xl md:text-4xl lg:text-[48px] tracking-[0.08em] text-white/95 uppercase leading-tight">
-          Welcome to Flying Lap
+          Who is faster?
         </h1>
         <p className="mt-3 font-f1 text-[11px] md:text-xs tracking-[0.18em] text-white/45 uppercase">
           Now previewing {activeTeam?.name ?? defaultTeam.name}
