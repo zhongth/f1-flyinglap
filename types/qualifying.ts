@@ -20,7 +20,7 @@ export interface MedianGapResult {
   teamId: string;
   driver1Id: string;
   driver2Id: string;
-  medianGap: number;
+  medianGap: number; // percentage gap × 1000 (e.g. 36 = 0.036%)
   medianGapFormatted: string;
   raceCount: number;
   scope: "season" | "last5";

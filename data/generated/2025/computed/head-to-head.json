@@ -16,8 +16,8 @@
   "mclaren.season": {
     "driver1Id": "lando_norris",
     "driver2Id": "oscar_piastri",
-    "driver1Wins": 12,
-    "driver2Wins": 12,
+    "driver1Wins": 14,
+    "driver2Wins": 10,
     "scope": "season"
   },
   "mercedes.season": {
@@ -44,8 +44,8 @@
   "williams.season": {
     "driver1Id": "carlos_sainz",
     "driver2Id": "alexander_albon",
-    "driver1Wins": 13,
-    "driver2Wins": 10,
+    "driver1Wins": 14,
+    "driver2Wins": 9,
     "scope": "season"
   },
   "racing_bulls.season": {
@@ -58,15 +58,15 @@
   "sauber.season": {
     "driver1Id": "gabriel_bortoleto",
     "driver2Id": "nico_hulkenberg",
-    "driver1Wins": 10,
-    "driver2Wins": 13,
+    "driver1Wins": 12,
+    "driver2Wins": 11,
     "scope": "season"
   },
   "haas.season": {
     "driver1Id": "esteban_ocon",
     "driver2Id": "oliver_bearman",
-    "driver1Wins": 10,
-    "driver2Wins": 12,
+    "driver1Wins": 9,
+    "driver2Wins": 13,
     "scope": "season"
   },
   "red_bull.last5": {

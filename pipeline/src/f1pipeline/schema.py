@@ -66,7 +66,7 @@ class MedianGapResult(BaseModel):
     teamId: str
     driver1Id: str
     driver2Id: str
-    medianGap: float  # milliseconds
+    medianGap: float  # percentage gap × 1000 (e.g. 36 = 0.036%)
     medianGapFormatted: str
     raceCount: int
     scope: str  # "season" | "last5"
