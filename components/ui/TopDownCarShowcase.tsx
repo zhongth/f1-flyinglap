@@ -22,6 +22,41 @@ interface CarState {
   wheelTargets: WheelSpinTarget[];
 }
 
+function createContactShadowTexture(): THREE.CanvasTexture {
+  const size = 256;
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    const fallback = new THREE.CanvasTexture(canvas);
+    fallback.needsUpdate = true;
+    return fallback;
+  }
+
+  const gradient = ctx.createRadialGradient(
+    size * 0.5,
+    size * 0.5,
+    size * 0.06,
+    size * 0.5,
+    size * 0.5,
+    size * 0.5,
+  );
+  gradient.addColorStop(0, "rgba(0,0,0,0.78)");
+  gradient.addColorStop(0.4, "rgba(0,0,0,0.58)");
+  gradient.addColorStop(0.78, "rgba(0,0,0,0.2)");
+  gradient.addColorStop(1, "rgba(0,0,0,0)");
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, size, size);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   teamId,
   className = "",
@@ -43,15 +78,18 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   // Object pool: pre-prepared cars keyed by model path
   const carPoolRef = useRef<Map<string, CarState>>(new Map());
   const warmUpDoneRef = useRef(false);
+  const contactShadowTextureRef = useRef<THREE.CanvasTexture | null>(null);
 
   // Initialize Three.js scene
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
+    contactShadowTextureRef.current = createContactShadowTexture();
+
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x111113);
-    scene.fog = new THREE.FogExp2(0x111113, 0.006);
+    scene.background = new THREE.Color(0x15161a);
+    scene.fog = new THREE.FogExp2(0x15161a, 0.0038);
     sceneRef.current = scene;
 
     // Camera — bird's-eye view looking straight down
@@ -59,7 +97,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       45,
       container.clientWidth / container.clientHeight,
       0.1,
-      200
+      200,
     );
     camera.position.set(0, 18, 2);
     camera.lookAt(0, 0, 0);
@@ -76,20 +114,20 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.34;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Ground plane — dark charcoal
+    // Ground plane — matte cement look (track pit-lane vibe, no glare)
     const groundGeometry = new THREE.PlaneGeometry(120, 120);
     const groundMaterial = new THREE.MeshStandardMaterial({
-      color: 0x141416,
-      roughness: 0.35,
-      metalness: 0.5,
+      color: 0x35363b,
+      roughness: 0.98,
+      metalness: 0.0,
     });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
-    ground.position.y = -0.01;
+    ground.position.y = 0;
     ground.receiveShadow = true;
     scene.add(ground);
 
@@ -100,7 +138,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     const lineMat = new THREE.LineBasicMaterial({
       color: 0xffffff,
       transparent: true,
-      opacity: 0.12,
+      opacity: 0.18,
     });
 
     // Car faces -X. Front bracket at -X side, like a real F1 grid box.
@@ -114,66 +152,90 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       new THREE.Vector3(bracketX, 0, halfWid),
       new THREE.Vector3(bracketX + armLen, 0, halfWid),
     ];
-    gridBoxGroup.add(new THREE.Line(
-      new THREE.BufferGeometry().setFromPoints(bracketPts), lineMat
-    ));
+    gridBoxGroup.add(
+      new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(bracketPts),
+        lineMat,
+      ),
+    );
 
     scene.add(gridBoxGroup);
 
-    // === Angled Lighting ===
-    const ambientLight = new THREE.AmbientLight(0xc8d0e0, 0.35);
+    // Base ambient kept low so corner spots define the shape.
+    const ambientLight = new THREE.AmbientLight(0xdfe4f0, 0.26);
     scene.add(ambientLight);
 
-    const hemiLight = new THREE.HemisphereLight(0xd0d8f0, 0x060608, 0.4);
+    const hemiLight = new THREE.HemisphereLight(0xc9d4e8, 0x17171a, 0.17);
     scene.add(hemiLight);
 
-    // Key light — angled from front-left
-    const keyLight = new THREE.SpotLight(0xeef4ff, 55);
-    keyLight.position.set(-10, 14, -6);
-    keyLight.target.position.set(0, 0, 0);
-    keyLight.angle = Math.PI / 4;
-    keyLight.penumbra = 0.8;
-    keyLight.decay = 1.3;
-    keyLight.castShadow = true;
-    keyLight.shadow.mapSize.width = 1024;
-    keyLight.shadow.mapSize.height = 1024;
-    keyLight.shadow.camera.near = 4;
-    keyLight.shadow.camera.far = 40;
-    keyLight.shadow.bias = -0.001;
-    scene.add(keyLight);
-    scene.add(keyLight.target);
+    // Four-corner car-show rig: top-left, top-right, bottom-left, bottom-right.
+    const cornerLights = [
+      {
+        color: 0xeaf2ff,
+        intensity: 46,
+        position: new THREE.Vector3(-8.4, 16.5, -10.5),
+        castShadow: true,
+      },
+      {
+        color: 0xffecd8,
+        intensity: 46,
+        position: new THREE.Vector3(8.4, 16.5, -10.5),
+        castShadow: true,
+      },
+      {
+        color: 0xd7e6ff,
+        intensity: 30,
+        position: new THREE.Vector3(-9.5, 12, 7.5),
+        castShadow: false,
+      },
+      {
+        color: 0xffdfc2,
+        intensity: 30,
+        position: new THREE.Vector3(9.5, 12, 7.5),
+        castShadow: false,
+      },
+    ];
 
-    // Fill light — from rear-right
-    const fillLight = new THREE.SpotLight(0xfff0e0, 20);
-    fillLight.position.set(8, 12, 5);
-    fillLight.target.position.set(0, 0, 0);
-    fillLight.angle = Math.PI / 3.5;
-    fillLight.penumbra = 1.0;
-    fillLight.decay = 1.5;
-    scene.add(fillLight);
-    scene.add(fillLight.target);
+    for (const config of cornerLights) {
+      const light = new THREE.SpotLight(config.color, config.intensity);
+      light.position.copy(config.position);
+      light.target.position.set(0, 0, 0);
+      light.angle = Math.PI / 5.2;
+      light.penumbra = 0.8;
+      light.decay = 1.3;
+      light.distance = 42;
+      light.castShadow = config.castShadow;
+      if (config.castShadow) {
+        light.shadow.mapSize.width = 2048;
+        light.shadow.mapSize.height = 2048;
+        light.shadow.camera.near = 3.5;
+        light.shadow.camera.far = 46;
+        light.shadow.bias = -0.00028;
+        light.shadow.normalBias = 0.012;
+      }
+      scene.add(light);
+      scene.add(light.target);
+    }
 
-    // Rim light — from behind
-    const rimLight = new THREE.SpotLight(0xd0e0ff, 30);
-    rimLight.position.set(6, 10, -4);
-    rimLight.target.position.set(-2, 0, 0);
-    rimLight.angle = Math.PI / 5;
-    rimLight.penumbra = 0.7;
-    rimLight.decay = 1.4;
-    scene.add(rimLight);
-    scene.add(rimLight.target);
-
-    // Left key — angled RectArea
-    const keyLeft = new THREE.RectAreaLight(0xdde6ff, 5, 6, 3);
-    keyLeft.position.set(-7, 6, -4);
-    keyLeft.lookAt(0, 0, 0);
-    scene.add(keyLeft);
-
-    // Right fill — softer, warmer
-    const keyRight = new THREE.RectAreaLight(0xfff0dd, 3, 6, 3);
-    keyRight.position.set(6, 7, 3);
-    keyRight.lookAt(0, 0, 0);
-    scene.add(keyRight);
+    // Dedicated grounding shadow so the car reads as physically planted on floor.
+    const groundingLight = new THREE.DirectionalLight(0xffffff, 0.28);
+    groundingLight.position.set(2.2, 15, 1.4);
+    groundingLight.target.position.set(0, 0, 0);
+    groundingLight.castShadow = true;
+    groundingLight.shadow.mapSize.width = 2048;
+    groundingLight.shadow.mapSize.height = 2048;
+    groundingLight.shadow.bias = -0.00012;
+    groundingLight.shadow.normalBias = 0.008;
+    const groundingShadowCam = groundingLight.shadow
+      .camera as THREE.OrthographicCamera;
+    groundingShadowCam.left = -8;
+    groundingShadowCam.right = 8;
+    groundingShadowCam.top = 6;
+    groundingShadowCam.bottom = -6;
+    groundingShadowCam.near = 1;
+    groundingShadowCam.far = 36;
+    scene.add(groundingLight);
+    scene.add(groundingLight.target);
 
     // Render loop — only renders when needed
     const animate = (timestamp: number) => {
@@ -181,7 +243,9 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
 
       if (!needsRenderRef.current && !isAnimatingRef.current) return;
 
-      const delta = lastTimeRef.current ? (timestamp - lastTimeRef.current) / 1000 : 0.016;
+      const delta = lastTimeRef.current
+        ? (timestamp - lastTimeRef.current) / 1000
+        : 0.016;
       lastTimeRef.current = timestamp;
 
       // Spin wheels while animating (car in motion)
@@ -249,6 +313,8 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       rendererRef.current = null;
       currentCarRef.current = null;
       currentModelPathRef.current = null;
+      contactShadowTextureRef.current?.dispose();
+      contactShadowTextureRef.current = null;
     };
   }, []);
 
@@ -262,6 +328,30 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       if (child instanceof THREE.Mesh) {
         child.castShadow = true;
         child.receiveShadow = true;
+        const materials = Array.isArray(child.material)
+          ? child.material
+          : [child.material];
+        for (const material of materials) {
+          if (material instanceof THREE.MeshStandardMaterial) {
+            material.roughness = Math.max(material.roughness ?? 0.3, 0.3);
+            material.metalness = Math.min(material.metalness ?? 0.6, 0.55);
+            material.envMapIntensity = Math.min(
+              material.envMapIntensity ?? 1,
+              0.95,
+            );
+            if (material instanceof THREE.MeshPhysicalMaterial) {
+              material.specularIntensity = Math.min(
+                material.specularIntensity ?? 1,
+                0.9,
+              );
+              material.clearcoat = Math.min(material.clearcoat ?? 0, 0.4);
+              material.clearcoatRoughness = Math.max(
+                material.clearcoatRoughness ?? 0.25,
+                0.32,
+              );
+            }
+          }
+        }
       }
     });
 
@@ -279,8 +369,8 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
     model.position.set(
       -scaledCenter.x,
-      -scaledBox.min.y,
-      -scaledCenter.z
+      -scaledBox.min.y - 0.016,
+      -scaledCenter.z,
     );
 
     // Rotate 90 degrees clockwise (from top-down view) so car faces left
@@ -294,6 +384,22 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
 
     // Wrap in group for clean position animation
     const carGroup = new THREE.Group();
+    const contactShadow = new THREE.Mesh(
+      new THREE.PlaneGeometry(12.6, 7.0),
+      new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0.62,
+        alphaMap: contactShadowTextureRef.current ?? undefined,
+        depthWrite: false,
+        depthTest: false,
+        toneMapped: false,
+      }),
+    );
+    contactShadow.rotation.x = -Math.PI / 2;
+    contactShadow.position.set(0, 0.0025, 0);
+    contactShadow.renderOrder = 0;
+    carGroup.add(contactShadow);
     carGroup.add(model);
 
     return { group: carGroup, wheelTargets };
@@ -467,12 +573,16 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
         x: centerX,
         duration: 1.4,
         ease: "power3.out",
-        onUpdate: () => { needsRenderRef.current = true; },
+        onUpdate: () => {
+          needsRenderRef.current = true;
+        },
         onComplete,
       });
     } else {
       const tl = gsap.timeline({
-        onUpdate: () => { needsRenderRef.current = true; },
+        onUpdate: () => {
+          needsRenderRef.current = true;
+        },
         onComplete: () => {
           // Return old car to pool instead of disposing
           if (oldModelPath) {
@@ -497,7 +607,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
           duration: 1.0,
           ease: "power3.out",
         },
-        0.3
+        0.3,
       );
     }
   }
