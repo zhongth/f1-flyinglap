@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { TeamCarousel } from "@/components/stages/TeamCarousel";
 import { VersusMode } from "@/components/stages/VersusMode";
 import CustomCursor from "@/components/ui/CustomCursor";
@@ -10,13 +11,23 @@ import { teams } from "@/data";
 import { getAllModelPaths } from "@/data/teamCarModels";
 import { preloadImages } from "@/lib/imagePreloader";
 import { preloadAllModels } from "@/lib/modelPreloader";
+import { gsap } from "@/lib/gsap";
 import { useAppStore } from "@/store/useAppStore";
 
+const TopDownCarShowcase = dynamic(
+  () => import("@/components/ui/TopDownCarShowcase"),
+  { ssr: false },
+);
+
 export default function Home() {
-  const { stage } = useAppStore();
+  const { stage, hoveredTeamId, selectedTeamId, cameraMode } = useAppStore();
   const [loading, setLoading] = useState(true);
   const [progress, setProgress] = useState(0);
   const [isPreloaderRevealing, setIsPreloaderRevealing] = useState(!loading);
+
+  // Persistent 3D car layer
+  const carContainerRef = useRef<HTMLDivElement>(null);
+  const carTeamId = selectedTeamId || hoveredTeamId || "ferrari";
 
   useEffect(() => {
     let isActive = true;
@@ -54,7 +65,18 @@ export default function Home() {
     };
   }, []);
 
-  // FiveLightsOut calls this after its animation finishes → triggers stairs exit
+  // Fade in the 3D car layer when preloader reveals
+  useEffect(() => {
+    if (isPreloaderRevealing && carContainerRef.current) {
+      gsap.to(carContainerRef.current, {
+        opacity: 1,
+        duration: 1,
+        ease: "power2.out",
+      });
+    }
+  }, [isPreloaderRevealing]);
+
+  // FiveLightsOut calls this after its animation finishes
   const handleLightsOutComplete = useCallback(() => setLoading(false), []);
   const handlePreloaderRevealStart = useCallback(
     () => setIsPreloaderRevealing(true),
@@ -89,6 +111,18 @@ export default function Home() {
         stairsRevealDirection="up"
       >
         <main className="relative w-full min-h-screen overflow-hidden">
+          {/* Persistent 3D car layer — stays across GRID and VERSUS stages */}
+          <div
+            ref={carContainerRef}
+            className="absolute inset-0 z-0 opacity-0"
+          >
+            <TopDownCarShowcase
+              teamId={carTeamId}
+              cameraMode={cameraMode}
+              className="h-full w-full"
+            />
+          </div>
+
           {stage === "GRID" && (
             <TeamCarousel introReady={isPreloaderRevealing} />
           )}

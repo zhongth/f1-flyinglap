@@ -11,10 +11,31 @@ import {
   WHEEL_BASE_ANGULAR_SPEED,
   type WheelSpinTarget,
 } from "@/lib/wheelUtils";
+import type { CameraMode } from "@/store/useAppStore";
+
+/* Camera presets keyed by mode */
+const CAMERA_CONFIGS = {
+  topDown: {
+    position: { x: 0, y: 18, z: 2 },
+    lookAt: { x: 0, y: 0, z: 0 },
+    bgColor: new THREE.Color(0x111113),
+    fogColor: new THREE.Color(0x111113),
+  },
+  cinematic: {
+    position: { x: -12, y: 3, z: 8 },
+    lookAt: { x: 1, y: 1.2, z: 0 },
+    bgColor: new THREE.Color(0x08080a),
+    fogColor: new THREE.Color(0x08080a),
+  },
+} as const;
+
+const CAMERA_TRANSITION_DURATION = 1.4;
 
 interface TopDownCarShowcaseProps {
   teamId: string;
   className?: string;
+  cameraMode?: CameraMode;
+  onCameraTransitionComplete?: () => void;
 }
 
 interface CarState {
@@ -60,6 +81,8 @@ function createContactShadowTexture(): THREE.CanvasTexture {
 const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   teamId,
   className = "",
+  cameraMode = "topDown",
+  onCameraTransitionComplete,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -80,6 +103,14 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   const warmUpDoneRef = useRef(false);
   const contactShadowTextureRef = useRef<THREE.CanvasTexture | null>(null);
 
+  // Camera animation state
+  const lookAtRef = useRef(new THREE.Vector3(0, 0, 0));
+  const isCameraAnimatingRef = useRef(false);
+  const cameraModeRef = useRef<CameraMode>(cameraMode);
+  const cameraTlRef = useRef<gsap.core.Timeline | null>(null);
+  const onCameraCompleteRef = useRef(onCameraTransitionComplete);
+  onCameraCompleteRef.current = onCameraTransitionComplete;
+
   // Initialize Three.js scene
   useEffect(() => {
     const container = containerRef.current;
@@ -88,8 +119,10 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     contactShadowTextureRef.current = createContactShadowTexture();
 
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x15161a);
-    scene.fog = new THREE.FogExp2(0x15161a, 0.0038);
+    const initConfig = CAMERA_CONFIGS[cameraModeRef.current];
+    scene.background = initConfig.bgColor.clone();
+    scene.fog = new THREE.FogExp2(initConfig.fogColor.clone() as unknown as number, 0.0038);
+    (scene.fog as THREE.FogExp2).color.copy(initConfig.fogColor);
     sceneRef.current = scene;
 
     // Camera — bird's-eye view looking straight down
@@ -241,14 +274,18 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     const animate = (timestamp: number) => {
       rafRef.current = requestAnimationFrame(animate);
 
-      if (!needsRenderRef.current && !isAnimatingRef.current) return;
+      const shouldRender =
+        needsRenderRef.current ||
+        isAnimatingRef.current ||
+        isCameraAnimatingRef.current;
+      if (!shouldRender) return;
 
       const delta = lastTimeRef.current
         ? (timestamp - lastTimeRef.current) / 1000
         : 0.016;
       lastTimeRef.current = timestamp;
 
-      // Spin wheels while animating (car in motion)
+      // Spin wheels while car is in motion (not during camera-only animation)
       if (isAnimatingRef.current) {
         const car = currentCarRef.current;
         if (car && car.wheelTargets.length > 0) {
@@ -260,7 +297,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       renderer.render(scene, camera);
 
       // After one idle frame, stop rendering
-      if (!isAnimatingRef.current) {
+      if (!isAnimatingRef.current && !isCameraAnimatingRef.current) {
         needsRenderRef.current = false;
       }
     };
@@ -281,6 +318,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     return () => {
       window.removeEventListener("resize", handleResize);
       cancelAnimationFrame(rafRef.current);
+      cameraTlRef.current?.kill();
       if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
 
       // Dispose all pooled cars
@@ -611,6 +649,95 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       );
     }
   }
+
+  // Camera mode transition
+  useEffect(() => {
+    if (cameraMode === cameraModeRef.current) return;
+    cameraModeRef.current = cameraMode;
+
+    const camera = cameraRef.current;
+    const scene = sceneRef.current;
+    if (!camera || !scene) return;
+
+    cameraTlRef.current?.kill();
+
+    const config = CAMERA_CONFIGS[cameraMode];
+    isCameraAnimatingRef.current = true;
+    needsRenderRef.current = true;
+
+    const tl = gsap.timeline({
+      onUpdate: () => {
+        camera.lookAt(lookAtRef.current);
+        needsRenderRef.current = true;
+      },
+      onComplete: () => {
+        isCameraAnimatingRef.current = false;
+        needsRenderRef.current = true;
+        onCameraCompleteRef.current?.();
+      },
+    });
+    cameraTlRef.current = tl;
+
+    // Camera position
+    tl.to(
+      camera.position,
+      {
+        x: config.position.x,
+        y: config.position.y,
+        z: config.position.z,
+        duration: CAMERA_TRANSITION_DURATION,
+        ease: "power2.inOut",
+      },
+      0,
+    );
+
+    // LookAt target
+    tl.to(
+      lookAtRef.current,
+      {
+        x: config.lookAt.x,
+        y: config.lookAt.y,
+        z: config.lookAt.z,
+        duration: CAMERA_TRANSITION_DURATION,
+        ease: "power2.inOut",
+      },
+      0,
+    );
+
+    // Scene background color
+    if (scene.background instanceof THREE.Color) {
+      tl.to(
+        scene.background,
+        {
+          r: config.bgColor.r,
+          g: config.bgColor.g,
+          b: config.bgColor.b,
+          duration: CAMERA_TRANSITION_DURATION,
+          ease: "power2.inOut",
+        },
+        0,
+      );
+    }
+
+    // Fog color
+    if (scene.fog) {
+      tl.to(
+        scene.fog.color,
+        {
+          r: config.fogColor.r,
+          g: config.fogColor.g,
+          b: config.fogColor.b,
+          duration: CAMERA_TRANSITION_DURATION,
+          ease: "power2.inOut",
+        },
+        0,
+      );
+    }
+
+    return () => {
+      tl.kill();
+    };
+  }, [cameraMode]);
 
   return (
     <div
