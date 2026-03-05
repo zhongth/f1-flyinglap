@@ -286,21 +286,19 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
         </p>
       </div>
 
-      {/* Horizontal team selector — lower portion of screen */}
-      <div className="absolute bottom-0 left-0 right-0 h-[45%] z-50">
-
-        <div className="flex h-full items-center justify-center">
+      {/* Horizontal team selector — anchored to bottom, sizes to content */}
+      <div className="absolute bottom-0 left-0 right-0 z-50 pb-6">
           <div
             ref={wheelRef}
             className={
               showIntro
-                ? "relative mx-auto h-[26vh] w-full overflow-hidden opacity-0"
-                : "relative mx-auto h-[26vh] w-full overflow-hidden"
+                ? "relative mx-auto w-full overflow-x-clip overflow-y-visible opacity-0"
+                : "relative mx-auto w-full overflow-x-clip overflow-y-visible"
             }
           >
             <GradientCarousel
               items={teamCards}
-              className="h-full w-full bg-transparent"
+              className="w-full bg-transparent"
               cardClassName="border-white/[0.06] bg-black/40 backdrop-blur-sm"
               contentClassName=""
               cardWidthPx={236}
@@ -334,7 +332,6 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
               blurLevels={[0.5, 1, 2, 4, 8, 16, 24, 32]}
             />
           </div>
-        </div>
       </div>
     </div>
   );

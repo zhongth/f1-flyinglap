@@ -165,6 +165,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
   const [isReady, setIsReady] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
+  const [measuredCardHeight, setMeasuredCardHeight] = useState(0);
 
   const velocityRef = useRef(0);
   const scrollOffsetRef = useRef(0);
@@ -800,6 +801,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
         cardStepRef.current = cardWidthRef.current + cardGap;
         totalTrackLengthRef.current = stableItems.length * cardStepRef.current;
       }
+      setMeasuredCardHeight(cardHeightRef.current);
 
       viewportHalfRef.current = containerWidth * 0.5;
       colorPaletteRef.current = resolvedPalette;
@@ -903,6 +905,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
           card.position = i * cardStepRef.current;
         });
       }
+      setMeasuredCardHeight(cardHeightRef.current);
       const containerWidth =
         containerRef.current?.clientWidth || window.innerWidth;
       viewportHalfRef.current = containerWidth * 0.5;
@@ -1087,13 +1090,22 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
       ref={containerRef}
       data-cursor-interactive
       className={cn(
-        "relative w-full h-full overflow-hidden",
+        "relative w-full overflow-x-clip overflow-y-visible",
         showBackdrop ? "bg-[#0a0a0a]" : "bg-transparent",
         "touch-none select-none",
         isDragging ? "cursor-grabbing" : "cursor-grab",
         className,
       )}
-      style={{ perspective: "1800px" }}
+      style={(() => {
+        const perspectivePx = 1800;
+        const magnification = (perspectivePx / (perspectivePx - maxDepthPx)) * (minScale + 0.1);
+        return {
+          perspective: `${perspectivePx}px`,
+          minHeight: measuredCardHeight > 0
+            ? `${Math.ceil(measuredCardHeight * magnification)}px`
+            : undefined,
+        };
+      })()}
     >
       {isLoading && showLoadingOverlay && (
         <div
