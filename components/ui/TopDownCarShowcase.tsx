@@ -4,6 +4,7 @@ import { type FC, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { cloneCachedScene, isModelCached } from "@/lib/modelPreloader";
 import { getAllModelPaths, getTeamCarModelPath } from "@/data/teamCarModels";
+import { getTeamById } from "@/data/teams";
 import { gsap } from "@/lib/gsap";
 import {
   collectWheelSpinTargets,
@@ -240,6 +241,15 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   const onCameraCompleteRef = useRef(onCameraTransitionComplete);
   onCameraCompleteRef.current = onCameraTransitionComplete;
 
+  // Dynamic environment refs (team-colored)
+  const rimStripMatRef = useRef<THREE.MeshBasicMaterial | null>(null);
+  const rimGlowMatRef = useRef<THREE.MeshBasicMaterial | null>(null);
+  const rimHaloMatRef = useRef<THREE.MeshBasicMaterial | null>(null);
+  const keyLightRef = useRef<THREE.SpotLight | null>(null);
+  const rimLightRef = useRef<THREE.SpotLight | null>(null);
+  const logoMeshRef = useRef<THREE.Mesh | null>(null);
+  const logoTextureRef = useRef<THREE.CanvasTexture | null>(null);
+
   // Initialize Three.js scene
   useEffect(() => {
     const container = containerRef.current;
@@ -371,6 +381,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       opacity: 0.92,
       toneMapped: false,
     });
+    rimStripMatRef.current = rimStripMat;
     const rimStrip = new THREE.Mesh(rimStripGeo, rimStripMat);
     rimStrip.position.set(2, 0.08, -18.05);
     scene.add(rimStrip);
@@ -383,6 +394,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       opacity: 0.22,
       toneMapped: false,
     });
+    rimGlowMatRef.current = rimGlowMat;
     const rimGlow = new THREE.Mesh(rimGlowGeo, rimGlowMat);
     rimGlow.position.set(2, 0.06, -18.0);
     scene.add(rimGlow);
@@ -395,9 +407,23 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       opacity: 0.08,
       toneMapped: false,
     });
+    rimHaloMatRef.current = rimHaloMat;
     const rimHalo = new THREE.Mesh(rimHaloGeo, rimHaloMat);
     rimHalo.position.set(2, 0.04, -17.8);
     scene.add(rimHalo);
+
+    // Team logo plane — floats in scene, visible from cinematic angle
+    const logoGeo = new THREE.PlaneGeometry(12, 12);
+    const logoMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      toneMapped: false,
+      depthWrite: false,
+    });
+    const logoMesh = new THREE.Mesh(logoGeo, logoMat);
+    logoMesh.position.set(1, 6.5, -10);
+    logoMeshRef.current = logoMesh;
+    scene.add(logoMesh);
 
     // === Lighting — dramatic car-reveal studio ===
 
@@ -410,6 +436,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
 
     // Key light — illuminates cyclorama wall from upper-left (cool wash)
     const keyLight = new THREE.SpotLight(0xc8d4e8, 280);
+    keyLightRef.current = keyLight;
     keyLight.position.set(-6, 24, -4);
     keyLight.target.position.set(8, 6, -26);
     keyLight.angle = Math.PI / 3;
@@ -422,6 +449,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
 
     // Rim accent light — creates the bright horizontal strip glow
     const rimLight = new THREE.SpotLight(0xe0e8f0, 120);
+    rimLightRef.current = rimLight;
     rimLight.position.set(10, 3, -6);
     rimLight.target.position.set(-8, 0, -20);
     rimLight.angle = Math.PI / 4;
@@ -589,6 +617,8 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       currentModelPathRef.current = null;
       contactShadowTextureRef.current?.dispose();
       contactShadowTextureRef.current = null;
+      logoTextureRef.current?.dispose();
+      logoTextureRef.current = null;
     };
   }, []);
 
@@ -985,6 +1015,166 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       tl.kill();
     };
   }, [cameraMode]);
+
+  // Update environment colors + logo when team or camera mode changes
+  useEffect(() => {
+    const team = getTeamById(teamId);
+    const isCinematic = cameraMode === "cinematic";
+    if (!team) return;
+
+    const teamColor = new THREE.Color(team.primaryColor);
+    // Desaturated, lighter version for the wall wash
+    const wallColor = teamColor.clone().lerp(new THREE.Color(0xc8d4e8), 0.55);
+    // Brighter version for the rim strip
+    const stripColor = teamColor.clone().lerp(new THREE.Color(0xffffff), 0.3);
+
+    needsRenderRef.current = true;
+
+    // Animate rim strip to team color (or back to neutral)
+    const targetStrip = isCinematic ? stripColor : new THREE.Color(0xeef2ff);
+    const targetGlow = isCinematic
+      ? teamColor.clone().lerp(new THREE.Color(0xc0c8d8), 0.5)
+      : new THREE.Color(0xc0c8d8);
+    const targetHalo = isCinematic
+      ? teamColor.clone().lerp(new THREE.Color(0x909aac), 0.65)
+      : new THREE.Color(0x909aac);
+
+    if (rimStripMatRef.current) {
+      gsap.to(rimStripMatRef.current.color, {
+        r: targetStrip.r,
+        g: targetStrip.g,
+        b: targetStrip.b,
+        duration: 1.0,
+        ease: "power2.inOut",
+        onUpdate: () => {
+          needsRenderRef.current = true;
+        },
+      });
+    }
+    if (rimGlowMatRef.current) {
+      gsap.to(rimGlowMatRef.current.color, {
+        r: targetGlow.r,
+        g: targetGlow.g,
+        b: targetGlow.b,
+        duration: 1.0,
+        ease: "power2.inOut",
+      });
+    }
+    if (rimHaloMatRef.current) {
+      gsap.to(rimHaloMatRef.current.color, {
+        r: targetHalo.r,
+        g: targetHalo.g,
+        b: targetHalo.b,
+        duration: 1.0,
+        ease: "power2.inOut",
+      });
+    }
+
+    // Animate key light + rim light color
+    const targetKey = isCinematic ? wallColor : new THREE.Color(0xc8d4e8);
+    const targetRim = isCinematic
+      ? teamColor.clone().lerp(new THREE.Color(0xe0e8f0), 0.4)
+      : new THREE.Color(0xe0e8f0);
+
+    if (keyLightRef.current) {
+      gsap.to(keyLightRef.current.color, {
+        r: targetKey.r,
+        g: targetKey.g,
+        b: targetKey.b,
+        duration: 1.0,
+        ease: "power2.inOut",
+        onUpdate: () => {
+          needsRenderRef.current = true;
+        },
+      });
+    }
+    if (rimLightRef.current) {
+      gsap.to(rimLightRef.current.color, {
+        r: targetRim.r,
+        g: targetRim.g,
+        b: targetRim.b,
+        duration: 1.0,
+        ease: "power2.inOut",
+      });
+    }
+
+    // Load and display team logo on wall
+    const logoMesh = logoMeshRef.current;
+    if (!logoMesh) return;
+    const mat = logoMesh.material as THREE.MeshBasicMaterial;
+
+    if (!isCinematic) {
+      // Fade out logo in top-down mode
+      gsap.to(mat, {
+        opacity: 0,
+        duration: 0.6,
+        onUpdate: () => {
+          needsRenderRef.current = true;
+        },
+      });
+      return;
+    }
+
+    // Load new team logo, then transition: fade out old → swap → fade in new
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      const size = 512;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      const scale = Math.min(size / img.width, size / img.height) * 0.7;
+      const w = img.width * scale;
+      const h = img.height * scale;
+      ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+
+      const hasExisting = mat.opacity > 0.01;
+      const tl = gsap.timeline({
+        onUpdate: () => {
+          needsRenderRef.current = true;
+        },
+      });
+
+      if (hasExisting) {
+        // Fade out + scale down old logo
+        tl.to(mat, { opacity: 0, duration: 0.35, ease: "power2.in" });
+        tl.to(
+          logoMesh.scale,
+          { x: 0.85, y: 0.85, duration: 0.35, ease: "power2.in" },
+          "<",
+        );
+        tl.call(() => {
+          logoTextureRef.current?.dispose();
+          logoTextureRef.current = tex;
+          mat.map = tex;
+          mat.needsUpdate = true;
+        });
+      } else {
+        // First appearance — just set the texture, start scaled down
+        logoTextureRef.current?.dispose();
+        logoTextureRef.current = tex;
+        mat.map = tex;
+        mat.needsUpdate = true;
+        logoMesh.scale.set(0.85, 0.85, 1);
+        tl.delay(0.4);
+      }
+
+      // Fade in + scale up new logo
+      tl.to(mat, { opacity: 0.55, duration: 0.6, ease: "power2.out" });
+      tl.to(
+        logoMesh.scale,
+        { x: 1, y: 1, duration: 0.6, ease: "power2.out" },
+        "<",
+      );
+    };
+    img.src = team.logoPath;
+  }, [teamId, cameraMode]);
 
   return (
     <div
