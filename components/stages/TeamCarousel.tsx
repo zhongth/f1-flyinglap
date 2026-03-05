@@ -1,16 +1,14 @@
 "use client";
 
-import { Mouse, MousePointerClick, MoveHorizontal } from "lucide-react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { GradientCarouselItem } from "@/components/ui/GradientCarousel";
-import { hyperspeedPresets } from "@/components/ui/HyperspeedPresets";
 import { ProgressiveBlur } from "@/components/ui/ProgressiveBlur";
 import { teams } from "@/data";
 import { getDriversByTeamId } from "@/data/drivers";
-import { getTeamCarModelPath } from "@/data/teamCarModels";
 import { getTeamById } from "@/data/teams";
+
 import { gsap } from "@/lib/gsap";
 import { useAppStore } from "@/store/useAppStore";
 
@@ -18,8 +16,8 @@ const GradientCarousel = dynamic(
   () => import("@/components/ui/GradientCarousel"),
   { ssr: false },
 );
-const HyperspeedBackground = dynamic(
-  () => import("@/components/ui/HyperspeedBackground"),
+const TopDownCarShowcase = dynamic(
+  () => import("@/components/ui/TopDownCarShowcase"),
   { ssr: false },
 );
 
@@ -31,7 +29,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
-  const hyperspeedRef = useRef<HTMLDivElement>(null);
+  const carShowcaseRef = useRef<HTMLDivElement>(null);
   const hintRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -60,10 +58,6 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     return ferrariIndex < 0 ? 0 : ferrariIndex;
   }, [sortedTeams]);
   const selectingRef = useRef(false);
-  const activeCarModelPath = useMemo(
-    () => getTeamCarModelPath(activeTeam?.id ?? defaultTeam.id),
-    [activeTeam?.id, defaultTeam.id],
-  );
 
   useEffect(() => {
     if (hoveredTeamId && getTeamById(hoveredTeamId)) return;
@@ -160,9 +154,9 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
           0.1,
         );
 
-        if (hyperspeedRef.current) {
+        if (carShowcaseRef.current) {
           tl.to(
-            hyperspeedRef.current,
+            carShowcaseRef.current,
             {
               opacity: 0,
               duration: 0.4,
@@ -210,19 +204,6 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
 
   // Whether we're still in the intro phase (used for CSS initial states)
   const showIntro = !isIntroComplete;
-  const hyperspeedEffectOptions = useMemo(
-    () => ({
-      ...hyperspeedPresets.two,
-      distortion: "xyDistortion" as const,
-      speedUp: 1,
-      fovSpeedUp: 102,
-      lanesPerRoad: 3,
-      lightPairsPerRoadWay: 22,
-      totalSideLightSticks: 18,
-      islandWidth: 12,
-    }),
-    [],
-  );
 
   // Intro animation
   useEffect(() => {
@@ -231,7 +212,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     const ctx = gsap.context(() => {
       const title = titleRef.current;
       const wheel = wheelRef.current;
-      const hyperspeed = hyperspeedRef.current;
+      const carShowcase = carShowcaseRef.current;
       const hint = hintRef.current;
 
       // Set initial states (CSS classes handle opacity:0, GSAP adds transforms)
@@ -243,7 +224,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
         onComplete: () => setIntroComplete(),
       });
 
-      tl.to(hyperspeed, { opacity: 1, duration: 1, ease: "power2.out" });
+      tl.to(carShowcase, { opacity: 1, duration: 1, ease: "power2.out" });
       tl.to(
         title,
         { y: 0, opacity: 1, duration: 0.6, ease: "power2.out" },
@@ -261,14 +242,13 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
       ref={containerRef}
       className="relative h-screen w-full overflow-hidden bg-black"
     >
-      {/* Hyperspeed base background — always rendered */}
+      {/* Top-down car showcase — upper portion of screen */}
       <div
-        ref={hyperspeedRef}
+        ref={carShowcaseRef}
         className={`absolute inset-0 z-0 pointer-events-none ${showIntro ? "opacity-0" : ""}`}
       >
-        <HyperspeedBackground
-          effectOptions={hyperspeedEffectOptions}
-          carModelPath={activeCarModelPath}
+        <TopDownCarShowcase
+          teamId={activeTeam?.id ?? defaultTeam.id}
           className="h-full w-full"
         />
       </div>
@@ -292,8 +272,8 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
         </p>
       </div>
 
-      {/* Horizontal team selector */}
-      <div className="absolute inset-0 z-50">
+      {/* Horizontal team selector — lower portion of screen */}
+      <div className="absolute bottom-0 left-0 right-0 h-[45%] z-50">
 
         <div className="flex h-full items-center justify-center">
           <div
