@@ -176,7 +176,7 @@ DRIVER_EXTRA: dict[str, dict] = {
     "lando_norris": {
         "portraitPath": "/f1_2025_driver_portraits/lando_norris.webp",
         "heightCm": 170,
-        "careerStats": {"polePositions": 8, "wins": 4, "podiums": 26, "fastestLaps": 9, "championships": 0},
+        "careerStats": {"polePositions": 8, "wins": 4, "podiums": 26, "fastestLaps": 9, "championships": 1},
     },
     "oscar_piastri": {
         "portraitPath": "/f1_2025_driver_portraits/oscar_piastri.webp",
