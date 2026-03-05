@@ -5,8 +5,6 @@ import {
   EffectComposer,
   EffectPass,
   RenderPass,
-  SMAAEffect,
-  SMAAPreset,
 } from "postprocessing";
 import { type FC, useEffect, useRef } from "react";
 import * as THREE from "three";
@@ -209,6 +207,11 @@ const deepUniforms = {
   uPowY: { value: new THREE.Vector2(20, 2) },
 };
 
+// Reusable Vector3 objects for getJS calculations (avoids per-frame allocations)
+const _distortionVec = new THREE.Vector3();
+const _lookAtAmpVec = new THREE.Vector3();
+const _lookAtOffsetVec = new THREE.Vector3();
+
 const distortions: Distortions = {
   mountainDistortion: {
     uniforms: mountainUniforms,
@@ -232,7 +235,7 @@ const distortions: Distortions = {
       const movementProgressFix = 0.02;
       const uFreq = mountainUniforms.uFreq.value;
       const uAmp = mountainUniforms.uAmp.value;
-      const distortion = new THREE.Vector3(
+      _distortionVec.set(
         Math.cos(progress * Math.PI * uFreq.x + time) * uAmp.x -
           Math.cos(movementProgressFix * Math.PI * uFreq.x + time) * uAmp.x,
         nsin(progress * Math.PI * uFreq.y + time) * uAmp.y -
@@ -240,9 +243,9 @@ const distortions: Distortions = {
         nsin(progress * Math.PI * uFreq.z + time) * uAmp.z -
           nsin(movementProgressFix * Math.PI * uFreq.z + time) * uAmp.z,
       );
-      const lookAtAmp = new THREE.Vector3(2, 2, 2);
-      const lookAtOffset = new THREE.Vector3(0, 0, -5);
-      return distortion.multiply(lookAtAmp).add(lookAtOffset);
+      _lookAtAmpVec.set(2, 2, 2);
+      _lookAtOffsetVec.set(0, 0, -5);
+      return _distortionVec.multiply(_lookAtAmpVec).add(_lookAtOffsetVec);
     },
   },
   xyDistortion: {
@@ -264,7 +267,7 @@ const distortions: Distortions = {
       const movementProgressFix = 0.02;
       const uFreq = xyUniforms.uFreq.value;
       const uAmp = xyUniforms.uAmp.value;
-      const distortion = new THREE.Vector3(
+      _distortionVec.set(
         Math.cos(progress * Math.PI * uFreq.x + time) * uAmp.x -
           Math.cos(movementProgressFix * Math.PI * uFreq.x + time) * uAmp.x,
         Math.sin(progress * Math.PI * uFreq.y + time + Math.PI / 2) * uAmp.y -
@@ -274,9 +277,9 @@ const distortions: Distortions = {
             uAmp.y,
         0,
       );
-      const lookAtAmp = new THREE.Vector3(2, 0.05, 1);
-      const lookAtOffset = new THREE.Vector3(0, 0, -3);
-      return distortion.multiply(lookAtAmp).add(lookAtOffset);
+      _lookAtAmpVec.set(2, 0.05, 1);
+      _lookAtOffsetVec.set(0, 0, -3);
+      return _distortionVec.multiply(_lookAtAmpVec).add(_lookAtOffsetVec);
     },
   },
   LongRaceDistortion: {
@@ -298,16 +301,16 @@ const distortions: Distortions = {
       const camProgress = 0.0125;
       const uFreq = LongRaceUniforms.uFreq.value;
       const uAmp = LongRaceUniforms.uAmp.value;
-      const distortion = new THREE.Vector3(
+      _distortionVec.set(
         Math.sin(progress * Math.PI * uFreq.x + time) * uAmp.x -
           Math.sin(camProgress * Math.PI * uFreq.x + time) * uAmp.x,
         Math.sin(progress * Math.PI * uFreq.y + time) * uAmp.y -
           Math.sin(camProgress * Math.PI * uFreq.y + time) * uAmp.y,
         0,
       );
-      const lookAtAmp = new THREE.Vector3(1, 1, 0);
-      const lookAtOffset = new THREE.Vector3(0, 0, -5);
-      return distortion.multiply(lookAtAmp).add(lookAtOffset);
+      _lookAtAmpVec.set(1, 1, 0);
+      _lookAtOffsetVec.set(0, 0, -5);
+      return _distortionVec.multiply(_lookAtAmpVec).add(_lookAtOffsetVec);
     },
   },
   turbulentDistortion: {
@@ -352,14 +355,14 @@ const distortions: Distortions = {
         -nsin(Math.PI * p * uFreq.z + time) * uAmp.z -
         nsin(Math.PI * p * uFreq.w + time / (uFreq.z / uFreq.w)) ** 5 * uAmp.w;
 
-      const distortion = new THREE.Vector3(
+      _distortionVec.set(
         getX(progress) - getX(progress + 0.007),
         getY(progress) - getY(progress + 0.007),
         0,
       );
-      const lookAtAmp = new THREE.Vector3(-2, -5, 0);
-      const lookAtOffset = new THREE.Vector3(0, 0, -10);
-      return distortion.multiply(lookAtAmp).add(lookAtOffset);
+      _lookAtAmpVec.set(-2, -5, 0);
+      _lookAtOffsetVec.set(0, 0, -10);
+      return _distortionVec.multiply(_lookAtAmpVec).add(_lookAtOffsetVec);
     },
   },
   turbulentDistortionStill: {
@@ -460,14 +463,14 @@ const distortions: Distortions = {
         (p * uPowY.x) ** uPowY.y +
         Math.sin(p * Math.PI * uFreq.y + time) * uAmp.y;
 
-      const distortion = new THREE.Vector3(
+      _distortionVec.set(
         getX(progress) - getX(progress + 0.01),
         getY(progress) - getY(progress + 0.01),
         0,
       );
-      const lookAtAmp = new THREE.Vector3(-2, -4, 0);
-      const lookAtOffset = new THREE.Vector3(0, 0, -10);
-      return distortion.multiply(lookAtAmp).add(lookAtOffset);
+      _lookAtAmpVec.set(-2, -4, 0);
+      _lookAtOffsetVec.set(0, 0, -10);
+      return _distortionVec.multiply(_lookAtAmpVec).add(_lookAtOffsetVec);
     },
   },
 };
@@ -1081,6 +1084,7 @@ class App {
   carViewOffset: THREE.Vector3;
   carRotationFix: THREE.Quaternion;
   carWorldPosition: THREE.Vector3;
+  rafId: number | null;
 
   constructor(container: HTMLElement, options: HyperspeedOptions) {
     this.options = options;
@@ -1097,7 +1101,7 @@ class App {
       alpha: true,
     });
     this.renderer.setSize(container.offsetWidth, container.offsetHeight, false);
-    this.renderer.setPixelRatio(window.devicePixelRatio);
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.domElement.style.width = "100%";
     this.renderer.domElement.style.height = "100%";
     this.renderer.domElement.style.display = "block";
@@ -1172,6 +1176,7 @@ class App {
       new THREE.Euler(0, Math.PI, 0),
     );
     this.carWorldPosition = new THREE.Vector3();
+    this.rafId = null;
 
     this.tick = this.tick.bind(this);
     this.init = this.init.bind(this);
@@ -1205,50 +1210,19 @@ class App {
         intensity: 0.55,
         luminanceThreshold: 0.32,
         luminanceSmoothing: 0,
-        resolutionScale: 1,
+        resolutionScale: 0.5,
       }),
     );
 
-    const smaaPass = new EffectPass(
-      this.camera,
-      new SMAAEffect({
-        preset: SMAAPreset.MEDIUM,
-      }),
-    );
     this.renderPass.renderToScreen = false;
-    this.bloomPass.renderToScreen = false;
-    smaaPass.renderToScreen = true;
+    this.bloomPass.renderToScreen = true;
 
     this.composer.addPass(this.renderPass);
     this.composer.addPass(this.bloomPass);
-    this.composer.addPass(smaaPass);
   }
 
   loadAssets(): Promise<void> {
-    const assets = this.assets;
-    return new Promise((resolve) => {
-      const manager = new THREE.LoadingManager(resolve);
-
-      const searchImage = new Image();
-      const areaImage = new Image();
-      assets.smaa = {};
-
-      searchImage.addEventListener("load", () => {
-        assets.smaa.search = searchImage;
-        manager.itemEnd("smaa-search");
-      });
-
-      areaImage.addEventListener("load", () => {
-        assets.smaa.area = areaImage;
-        manager.itemEnd("smaa-area");
-      });
-
-      manager.itemStart("smaa-search");
-      manager.itemStart("smaa-area");
-
-      searchImage.src = SMAAEffect.searchImageDataURL;
-      areaImage.src = SMAAEffect.areaImageDataURL;
-    });
+    return Promise.resolve();
   }
 
   init() {
@@ -1962,10 +1936,13 @@ class App {
 
     for (const state of materialStates) {
       state.material.opacity = state.baseOpacity * clampedAlpha;
-      state.material.transparent =
+      const newTransparent =
         state.baseTransparent || clampedAlpha < 0.999;
+      if (state.material.transparent !== newTransparent) {
+        state.material.transparent = newTransparent;
+        state.material.needsUpdate = true;
+      }
       state.material.depthWrite = state.baseDepthWrite;
-      state.material.needsUpdate = true;
     }
   }
 
@@ -2120,11 +2097,9 @@ class App {
     ) {
       const distortion = this.options.distortion.getJS(0.025, time);
       this.camera.lookAt(
-        new THREE.Vector3(
-          this.camera.position.x + distortion.x,
-          this.camera.position.y + distortion.y,
-          this.camera.position.z + distortion.z,
-        ),
+        this.camera.position.x + distortion.x,
+        this.camera.position.y + distortion.y,
+        this.camera.position.z + distortion.z,
       );
       updateCamera = true;
     }
@@ -2144,6 +2119,11 @@ class App {
 
   dispose() {
     this.disposed = true;
+
+    if (this.rafId !== null) {
+      cancelAnimationFrame(this.rafId);
+      this.rafId = null;
+    }
 
     if (this.renderer) {
       this.renderer.dispose();
@@ -2192,7 +2172,7 @@ class App {
     const delta = this.clock.getDelta();
     this.render(delta);
     this.update(delta);
-    requestAnimationFrame(this.tick);
+    this.rafId = requestAnimationFrame(this.tick);
   }
 }
 
