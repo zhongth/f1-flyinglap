@@ -87,80 +87,6 @@ function createCycloramaGeometry(
   return geo;
 }
 
-/** LED panel canvas texture — vertical scan-lines + chevron motif */
-function createLEDPanelTexture(): THREE.CanvasTexture {
-  const w = 2048;
-  const h = 1024;
-  const canvas = document.createElement("canvas");
-  canvas.width = w;
-  canvas.height = h;
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return new THREE.CanvasTexture(canvas);
-
-  // Dark base
-  ctx.fillStyle = "#0e0e12";
-  ctx.fillRect(0, 0, w, h);
-
-  // Fine vertical scan-lines (LED columns)
-  ctx.strokeStyle = "rgba(140, 150, 170, 0.07)";
-  ctx.lineWidth = 1;
-  for (let x = 0; x < w; x += 3) {
-    ctx.beginPath();
-    ctx.moveTo(x + 0.5, 0);
-    ctx.lineTo(x + 0.5, h);
-    ctx.stroke();
-  }
-
-  // Subtle horizontal bands
-  for (let y = 0; y < h; y += 80) {
-    ctx.fillStyle = `rgba(120, 130, 150, ${0.015 + Math.random() * 0.02})`;
-    ctx.fillRect(0, y, w, 2);
-  }
-
-  // Chevron / arrow pattern
-  ctx.save();
-  ctx.globalAlpha = 0.13;
-  ctx.strokeStyle = "#8090a5";
-  ctx.lineWidth = 80;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  const cx = w * 0.42;
-  const cy = h * 0.35;
-  ctx.beginPath();
-  ctx.moveTo(cx - 200, cy + 260);
-  ctx.lineTo(cx + 20, cy);
-  ctx.lineTo(cx + 240, cy + 260);
-  ctx.stroke();
-  ctx.restore();
-
-  // Soft center glow
-  const grad = ctx.createRadialGradient(
-    w * 0.45,
-    h * 0.4,
-    0,
-    w * 0.45,
-    h * 0.4,
-    w * 0.55,
-  );
-  grad.addColorStop(0, "rgba(160, 175, 200, 0.09)");
-  grad.addColorStop(0.6, "rgba(160, 175, 200, 0.03)");
-  grad.addColorStop(1, "rgba(160, 175, 200, 0)");
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, w, h);
-
-  // Light spill at bottom edge
-  const btm = ctx.createLinearGradient(0, h * 0.82, 0, h);
-  btm.addColorStop(0, "rgba(200, 212, 230, 0)");
-  btm.addColorStop(0.5, "rgba(200, 212, 230, 0.06)");
-  btm.addColorStop(1, "rgba(200, 212, 230, 0.14)");
-  ctx.fillStyle = btm;
-  ctx.fillRect(0, h * 0.82, w, h * 0.18);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  return texture;
-}
-
 interface TopDownCarShowcaseProps {
   teamId: string;
   className?: string;
@@ -357,21 +283,6 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     sideCyc.rotation.y = -Math.PI / 2;
     sideCyc.position.set(30, 0, 0);
     scene.add(sideCyc);
-
-    // LED panel inset on back wall
-    const ledTexture = createLEDPanelTexture();
-    const panelGeo = new THREE.PlaneGeometry(32, 18);
-    const panelMat = new THREE.MeshStandardMaterial({
-      map: ledTexture,
-      emissive: new THREE.Color(0x3a4a5e),
-      emissiveIntensity: 0.28,
-      emissiveMap: ledTexture,
-      roughness: 0.55,
-      metalness: 0.1,
-    });
-    const panel = new THREE.Mesh(panelGeo, panelMat);
-    panel.position.set(2, 14, -27.85);
-    scene.add(panel);
 
     // Rim light strip — bright emissive bar at base of back wall
     const rimStripGeo = new THREE.PlaneGeometry(40, 0.18);
