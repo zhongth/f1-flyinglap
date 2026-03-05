@@ -11,6 +11,7 @@ import {
 import { type FC, useEffect, useRef } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 import { cloneCachedScene } from "@/lib/modelPreloader";
 
 interface Distortion {
@@ -129,6 +130,7 @@ interface ModelTransitionState {
 interface WheelSpinTarget {
   object: THREE.Object3D;
   axis: THREE.Vector3;
+  totalAngle: number;
 }
 
 const CAR_SURFACE_MATTE_CONFIG = {
@@ -1158,6 +1160,9 @@ class App {
     this.scene.add(this.carAnchor);
     this.carModel = null;
     this.carLoader = new GLTFLoader();
+    const draco = new DRACOLoader();
+    draco.setDecoderPath("/draco/gltf/");
+    this.carLoader.setDRACOLoader(draco);
     this.modelTransition = null;
     this.carLoadToken = 0;
     this.pendingCarModelPath = null;
@@ -1557,7 +1562,7 @@ class App {
       const entry = byCorner.get(corner);
       if (!entry) continue;
       const pivot = this.wrapInPivot(entry.obj);
-      if (pivot) targets.push({ object: pivot, axis: WHEEL_SPIN_AXIS.clone() });
+      if (pivot) targets.push({ object: pivot, axis: WHEEL_SPIN_AXIS.clone(), totalAngle: 0 });
     }
     return targets;
   }
@@ -1594,7 +1599,7 @@ class App {
         if (seen.has(mesh)) continue;
         seen.add(mesh);
         const pivot = this.wrapInPivot(mesh);
-        if (pivot) targets.push({ object: pivot, axis: WHEEL_SPIN_AXIS.clone() });
+        if (pivot) targets.push({ object: pivot, axis: WHEEL_SPIN_AXIS.clone(), totalAngle: 0 });
       }
       return targets;
     }
@@ -1605,87 +1610,54 @@ class App {
 
   /**
    * Split merged wheel meshes into per-wheel sub-meshes grouped by quadrant.
-   * All sub-meshes for the same wheel corner share a single pivot so they
-   * rotate together.
+   * Each sub-mesh keeps vertices in the original mesh-local coordinate space
+   * and is wrapped with wrapInPivot (the same code path used for uncompressed
+   * models) so that attach() properly handles the transform chain.
    */
   private splitAndCreateWheelTargets(
     meshes: THREE.Mesh[],
     modelCenter: THREE.Vector3,
   ): WheelSpinTarget[] {
-    type QuadrantData = {
-      centroidSum: THREE.Vector3;
-      vertexCount: number;
-    };
+    const parent = meshes[0].parent;
+    if (!parent) return [];
+    parent.updateMatrixWorld(true);
 
-    // First pass: compute wheel center positions across ALL wheel meshes
-    const quadrantCenters = new Map<string, THREE.Vector3>();
-    const quadrantAccum = new Map<string, QuadrantData>();
+    // Inverse of parent world matrix — transforms world coords to parent-local
+    const parentInverse = new THREE.Matrix4().copy(parent.matrixWorld).invert();
 
+    // Convert modelCenter (world space) to parent-local space for quadrant classification
+    const localCenter = modelCenter.clone().applyMatrix4(parentInverse);
+
+    // For each mesh, compute mesh-local → parent-local transform
+    const meshToParentMatrices = new Map<THREE.Mesh, THREE.Matrix4>();
     for (const mesh of meshes) {
-      const geo = mesh.geometry;
-      const posAttr = geo.attributes.position;
-      if (!posAttr) continue;
-
       mesh.updateMatrixWorld(true);
-      const worldMatrix = mesh.matrixWorld;
-      const vertex = new THREE.Vector3();
-
-      for (let i = 0; i < posAttr.count; i++) {
-        vertex.set(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
-        vertex.applyMatrix4(worldMatrix);
-
-        const xSide = vertex.x >= modelCenter.x ? "r" : "l";
-        const zSide = vertex.z >= modelCenter.z ? "f" : "b";
-        const key = `${xSide}${zSide}`;
-
-        let acc = quadrantAccum.get(key);
-        if (!acc) {
-          acc = { centroidSum: new THREE.Vector3(), vertexCount: 0 };
-          quadrantAccum.set(key, acc);
-        }
-        acc.centroidSum.add(vertex);
-        acc.vertexCount++;
-      }
+      const m2p = new THREE.Matrix4().copy(parentInverse).multiply(mesh.matrixWorld);
+      meshToParentMatrices.set(mesh, m2p);
     }
 
-    for (const [key, acc] of quadrantAccum) {
-      if (acc.vertexCount > 0) {
-        quadrantCenters.set(key, acc.centroidSum.divideScalar(acc.vertexCount));
-      }
-    }
-
-    // Create pivots for each quadrant
-    const pivotByQuadrant = new Map<string, THREE.Object3D>();
+    // Classify vertices per mesh and split geometry by quadrant.
+    // Sub-meshes keep vertices in original mesh-local space (no transform applied).
     const targets: WheelSpinTarget[] = [];
 
-    for (const [key, center] of quadrantCenters) {
-      const pivot = new THREE.Object3D();
-      pivot.name = `wheel_pivot_${key}`;
-      pivot.position.copy(center);
-      pivotByQuadrant.set(key, pivot);
-      targets.push({ object: pivot, axis: WHEEL_SPIN_AXIS.clone() });
-    }
-
-    // Second pass: split each mesh's geometry by quadrant
     for (const mesh of meshes) {
-      const parent = mesh.parent;
-      if (!parent) continue;
+      const meshParent = mesh.parent;
+      if (!meshParent) continue;
 
       const geo = mesh.geometry;
       const posAttr = geo.attributes.position;
       if (!posAttr) continue;
 
-      mesh.updateMatrixWorld(true);
-      const worldMatrix = mesh.matrixWorld;
+      const m2p = meshToParentMatrices.get(mesh)!;
 
-      // Classify each vertex into a quadrant
+      // Classify each vertex into a quadrant (in parent-local space)
       const vertexQuadrant = new Array<string>(posAttr.count);
       const vertex = new THREE.Vector3();
       for (let i = 0; i < posAttr.count; i++) {
         vertex.set(posAttr.getX(i), posAttr.getY(i), posAttr.getZ(i));
-        vertex.applyMatrix4(worldMatrix);
-        const xSide = vertex.x >= modelCenter.x ? "r" : "l";
-        const zSide = vertex.z >= modelCenter.z ? "f" : "b";
+        vertex.applyMatrix4(m2p);
+        const xSide = vertex.x >= localCenter.x ? "r" : "l";
+        const zSide = vertex.z >= localCenter.z ? "f" : "b";
         vertexQuadrant[i] = `${xSide}${zSide}`;
       }
 
@@ -1693,14 +1665,13 @@ class App {
       const index = geo.index;
       const triCount = index ? index.count / 3 : posAttr.count / 3;
 
-      // Group triangles by quadrant (use majority vote of 3 vertices)
+      // Group triangles by quadrant (majority vote of 3 vertices)
       const quadrantTriangles = new Map<string, number[]>();
       for (let t = 0; t < triCount; t++) {
         const i0 = index ? index.getX(t * 3) : t * 3;
         const i1 = index ? index.getX(t * 3 + 1) : t * 3 + 1;
         const i2 = index ? index.getX(t * 3 + 2) : t * 3 + 2;
 
-        // Majority vote
         const q0 = vertexQuadrant[i0];
         const q1 = vertexQuadrant[i1];
         const q2 = vertexQuadrant[i2];
@@ -1714,26 +1685,55 @@ class App {
         tris.push(i0, i1, i2);
       }
 
-      // Create a sub-mesh for each quadrant
+      // Create a sub-mesh for each quadrant.
+      // Bake the mesh→parent transform into vertex positions so each sub-mesh
+      // has identity transform. This avoids a large offset between the pivot
+      // center and the sub-mesh origin that the mesh's rotation (e.g. toe
+      // angle) would tilt, producing wobble under X-axis spin.
       for (const [quadrant, triIndices] of quadrantTriangles) {
-        const pivot = pivotByQuadrant.get(quadrant);
-        if (!pivot) continue;
-
-        const subGeo = this.buildSubGeometry(geo, triIndices, worldMatrix, pivot.position);
+        const subGeo = this.buildSubGeometry(geo, triIndices);
         if (!subGeo) continue;
+
+        // Transform vertices from mesh-local to parent-local space
+        const posArr = subGeo.attributes.position as THREE.BufferAttribute;
+        const normalArr = subGeo.attributes.normal as THREE.BufferAttribute | undefined;
+        const v = new THREE.Vector3();
+
+        for (let vi = 0; vi < posArr.count; vi++) {
+          v.set(posArr.getX(vi), posArr.getY(vi), posArr.getZ(vi));
+          v.applyMatrix4(m2p);
+          posArr.setXYZ(vi, v.x, v.y, v.z);
+        }
+
+        if (normalArr) {
+          const normalMatrix = new THREE.Matrix3().getNormalMatrix(m2p);
+          for (let vi = 0; vi < normalArr.count; vi++) {
+            v.set(normalArr.getX(vi), normalArr.getY(vi), normalArr.getZ(vi));
+            v.applyMatrix3(normalMatrix).normalize();
+            normalArr.setXYZ(vi, v.x, v.y, v.z);
+          }
+        }
+
+        posArr.needsUpdate = true;
+        if (normalArr) normalArr.needsUpdate = true;
+        subGeo.computeBoundingSphere();
+
+        // Compute the actual axle direction from the (now parent-local) geometry.
+        // PCA finds the thinnest axis of the disc = the spin axle.
+        const spinAxis = this.computeWheelAxle(posArr);
 
         const subMesh = new THREE.Mesh(subGeo, mesh.material);
         subMesh.name = `${mesh.name}_${quadrant}`;
-        pivot.add(subMesh);
-      }
+        meshParent.add(subMesh);
 
-      // Add pivots to the scene (only once per pivot)
-      for (const pivot of pivotByQuadrant.values()) {
-        if (!pivot.parent) parent.add(pivot);
+        const pivot = this.wrapInPivot(subMesh);
+        if (pivot) {
+          targets.push({ object: pivot, axis: spinAxis, totalAngle: 0 });
+        }
       }
 
       // Remove the original merged mesh
-      parent.remove(mesh);
+      meshParent.remove(mesh);
       mesh.geometry.dispose();
     }
 
@@ -1741,14 +1741,12 @@ class App {
   }
 
   /**
-   * Build a new BufferGeometry from a subset of triangles, with positions
-   * transformed to pivot-local space (world space minus pivot position).
+   * Build a new BufferGeometry from a subset of triangles.
+   * Vertices are kept in the original mesh-local coordinate space (no transform).
    */
   private buildSubGeometry(
     srcGeo: THREE.BufferGeometry,
     triIndices: number[],
-    worldMatrix: THREE.Matrix4,
-    pivotPos: THREE.Vector3,
   ): THREE.BufferGeometry | null {
     if (triIndices.length === 0) return null;
 
@@ -1767,32 +1765,24 @@ class App {
     const srcNormal = srcGeo.attributes.normal as THREE.BufferAttribute | undefined;
     const srcUV = srcGeo.attributes.uv as THREE.BufferAttribute | undefined;
 
-    // Build new position attribute (in pivot-local space)
+    // Copy position attribute as-is (no transform)
     const newPos = new Float32Array(vertCount * 3);
-    const v = new THREE.Vector3();
     for (let i = 0; i < vertCount; i++) {
       const oldIdx = uniqueOldIndices[i];
-      v.set(srcPos.getX(oldIdx), srcPos.getY(oldIdx), srcPos.getZ(oldIdx));
-      v.applyMatrix4(worldMatrix);
-      v.sub(pivotPos);
-      newPos[i * 3] = v.x;
-      newPos[i * 3 + 1] = v.y;
-      newPos[i * 3 + 2] = v.z;
+      newPos[i * 3] = srcPos.getX(oldIdx);
+      newPos[i * 3 + 1] = srcPos.getY(oldIdx);
+      newPos[i * 3 + 2] = srcPos.getZ(oldIdx);
     }
 
-    // Build new normal attribute (transform by normal matrix)
+    // Copy normal attribute as-is
     let newNormal: Float32Array | null = null;
     if (srcNormal) {
-      const normalMatrix = new THREE.Matrix3().getNormalMatrix(worldMatrix);
       newNormal = new Float32Array(vertCount * 3);
-      const n = new THREE.Vector3();
       for (let i = 0; i < vertCount; i++) {
         const oldIdx = uniqueOldIndices[i];
-        n.set(srcNormal.getX(oldIdx), srcNormal.getY(oldIdx), srcNormal.getZ(oldIdx));
-        n.applyMatrix3(normalMatrix).normalize();
-        newNormal[i * 3] = n.x;
-        newNormal[i * 3 + 1] = n.y;
-        newNormal[i * 3 + 2] = n.z;
+        newNormal[i * 3] = srcNormal.getX(oldIdx);
+        newNormal[i * 3 + 1] = srcNormal.getY(oldIdx);
+        newNormal[i * 3 + 2] = srcNormal.getZ(oldIdx);
       }
     }
 
@@ -1823,6 +1813,76 @@ class App {
     return subGeo;
   }
 
+  /**
+   * Compute the axle direction (minimum-variance axis) of a wheel geometry
+   * using PCA on vertex positions. For a disc/cylinder, the thinnest axis
+   * (smallest eigenvalue of the covariance matrix) is the spin axle.
+   */
+  private computeWheelAxle(posAttr: THREE.BufferAttribute): THREE.Vector3 {
+    const n = posAttr.count;
+    if (n < 3) return new THREE.Vector3(1, 0, 0);
+
+    // Compute centroid
+    let cx = 0, cy = 0, cz = 0;
+    for (let i = 0; i < n; i++) {
+      cx += posAttr.getX(i);
+      cy += posAttr.getY(i);
+      cz += posAttr.getZ(i);
+    }
+    cx /= n; cy /= n; cz /= n;
+
+    // Compute 3×3 covariance matrix (symmetric)
+    let c00 = 0, c01 = 0, c02 = 0, c11 = 0, c12 = 0, c22 = 0;
+    for (let i = 0; i < n; i++) {
+      const dx = posAttr.getX(i) - cx;
+      const dy = posAttr.getY(i) - cy;
+      const dz = posAttr.getZ(i) - cz;
+      c00 += dx * dx; c01 += dx * dy; c02 += dx * dz;
+      c11 += dy * dy; c12 += dy * dz;
+      c22 += dz * dz;
+    }
+
+    // Jacobi eigenvalue iteration on symmetric 3×3
+    const a = [[c00, c01, c02], [c01, c11, c12], [c02, c12, c22]];
+    const v = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+
+    for (let iter = 0; iter < 20; iter++) {
+      let maxVal = 0, p = 0, q = 1;
+      for (let i = 0; i < 3; i++)
+        for (let j = i + 1; j < 3; j++)
+          if (Math.abs(a[i][j]) > maxVal) { maxVal = Math.abs(a[i][j]); p = i; q = j; }
+      if (maxVal < 1e-10) break;
+
+      const theta = 0.5 * Math.atan2(2 * a[p][q], a[p][p] - a[q][q]);
+      const cos = Math.cos(theta), sin = Math.sin(theta);
+
+      const app = a[p][p], aqq = a[q][q], apq = a[p][q];
+      a[p][p] = cos * cos * app + 2 * sin * cos * apq + sin * sin * aqq;
+      a[q][q] = sin * sin * app - 2 * sin * cos * apq + cos * cos * aqq;
+      a[p][q] = a[q][p] = 0;
+      for (let r = 0; r < 3; r++) {
+        if (r === p || r === q) continue;
+        const arp = a[r][p], arq = a[r][q];
+        a[r][p] = a[p][r] = cos * arp + sin * arq;
+        a[r][q] = a[q][r] = -sin * arp + cos * arq;
+      }
+      for (let r = 0; r < 3; r++) {
+        const vrp = v[r][p], vrq = v[r][q];
+        v[r][p] = cos * vrp + sin * vrq;
+        v[r][q] = -sin * vrp + cos * vrq;
+      }
+    }
+
+    // Eigenvector with smallest eigenvalue = axle direction
+    let minIdx = 0;
+    if (a[1][1] < a[minIdx][minIdx]) minIdx = 1;
+    if (a[2][2] < a[minIdx][minIdx]) minIdx = 2;
+
+    const axle = new THREE.Vector3(v[0][minIdx], v[1][minIdx], v[2][minIdx]).normalize();
+    if (axle.x < 0) axle.negate(); // consistent direction
+    return axle;
+  }
+
   /** Wrap an object in a pivot positioned at its bounding box center. */
   private wrapInPivot(object: THREE.Object3D): THREE.Object3D | null {
     const parent = object.parent;
@@ -1835,7 +1895,10 @@ class App {
     const pivot = new THREE.Object3D();
     pivot.name = `${object.name || "wheel"}_spin_pivot`;
     pivot.position.copy(parent.worldToLocal(center.clone()));
-    pivot.quaternion.copy(object.quaternion);
+    // Leave pivot quaternion at identity — attach() will adjust the
+    // object's local transform to preserve its world orientation.
+    // This way setFromAxisAngle() applies pure spin without losing
+    // the object's base orientation (preserved in its own local transform).
 
     parent.add(pivot);
     pivot.attach(object);
@@ -1851,9 +1914,10 @@ class App {
       | undefined;
     if (!wheelSpinTargets || wheelSpinTargets.length === 0) return;
 
-    for (const { object, axis } of wheelSpinTargets) {
-      if (!object.parent) continue;
-      object.rotateOnAxis(axis, spinRadians);
+    for (const target of wheelSpinTargets) {
+      if (!target.object.parent) continue;
+      target.totalAngle += spinRadians;
+      target.object.quaternion.setFromAxisAngle(target.axis, target.totalAngle);
     }
   }
 

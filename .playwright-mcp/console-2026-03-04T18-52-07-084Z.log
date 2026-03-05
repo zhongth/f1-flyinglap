@@ -1,0 +1,9 @@
+[    4783ms] [WARNING] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ http://localhost:3000/_next/static/chunks/70955_next_dist_1de4f897._.js:2297
+[    4802ms] [WARNING] THREE.THREE.Clock: This module has been deprecated. Please use THREE.Timer instead. @ http://localhost:3000/_next/static/chunks/70955_next_dist_1de4f897._.js:2297
+[    5439ms] [WARNING] Failed to load F1 car model: /3d-model/375c749c-a34a-4266-9d3c-5e248ea16709.glb Error: THREE.GLTFLoader: No DRACOLoader instance provided.
+    at new GLTFDracoMeshCompressionExtension (http://localhost:3000/_next/static/chunks/c1f3c_three_examples_jsm_354ba22d._.js:2267:19)
+    at GLTFLoader.parse (http://localhost:3000/_next/static/chunks/c1f3c_three_examples_jsm_354ba22d._.js:1438:53)
+    at Object.onLoad (http://localhost:3000/_next/static/chunks/c1f3c_three_examples_jsm_354ba22d._.js:1313:23)
+    at http://localhost:3000/_next/static/chunks/c1f3c_three_build_three_core_9934bd06.js:31749:47 @ http://localhost:3000/_next/static/chunks/70955_next_dist_1de4f897._.js:2297
+[    9848ms] [WARNING] Image with src "/team-logos/Mercedes-Benz_in_Formula_One_logo.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading @ http://localhost:3000/_next/static/chunks/70955_next_dist_1de4f897._.js:2297
