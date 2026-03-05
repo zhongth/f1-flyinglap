@@ -16,20 +16,149 @@ import type { CameraMode } from "@/store/useAppStore";
 /* Camera presets keyed by mode */
 const CAMERA_CONFIGS = {
   topDown: {
-    position: { x: 0, y: 18, z: 2 },
-    lookAt: { x: 0, y: 0, z: 0 },
+    position: { x: 0, y: 18, z: 2.8 },
+    lookAt: { x: 0, y: 0, z: 0.6 },
     bgColor: new THREE.Color(0x111113),
     fogColor: new THREE.Color(0x111113),
+    fogDensity: 0.02,
   },
   cinematic: {
     position: { x: -12, y: 3, z: 8 },
     lookAt: { x: 1, y: 1.2, z: -2 },
     bgColor: new THREE.Color(0x08080a),
     fogColor: new THREE.Color(0x08080a),
+    fogDensity: 0.014,
   },
 } as const;
 
 const CAMERA_TRANSITION_DURATION = 1.4;
+
+/** Quarter-pipe cyclorama geometry (smooth floor-to-wall sweep) */
+function createCycloramaGeometry(
+  wallZ: number,
+  radius: number,
+  wallHeight: number,
+  width: number,
+  curveSegments = 32,
+): THREE.BufferGeometry {
+  const curveStartZ = wallZ + radius;
+  const profileCount = curveSegments + 2; // curve points + wall top
+  const positions: number[] = [];
+  const norms: number[] = [];
+  const uvArr: number[] = [];
+  const indices: number[] = [];
+  const halfW = width / 2;
+
+  for (const xFactor of [0, 1]) {
+    const x = -halfW + xFactor * width;
+    const u = xFactor;
+    for (let i = 0; i <= curveSegments; i++) {
+      const alpha = (i / curveSegments) * (Math.PI / 2);
+      const z = curveStartZ - radius * Math.sin(alpha);
+      const y = radius * (1 - Math.cos(alpha));
+      const v = i / (profileCount - 1);
+      positions.push(x, y, z);
+      norms.push(0, Math.cos(alpha), Math.sin(alpha));
+      uvArr.push(u, v);
+    }
+    // Wall top
+    positions.push(x, radius + wallHeight, wallZ);
+    norms.push(0, 0, 1);
+    uvArr.push(u, 1);
+  }
+
+  for (let yi = 0; yi < profileCount - 1; yi++) {
+    const a = yi;
+    const b = yi + 1;
+    const c = profileCount + yi;
+    const d = profileCount + yi + 1;
+    indices.push(a, c, b, b, c, d);
+  }
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute(
+    "position",
+    new THREE.Float32BufferAttribute(positions, 3),
+  );
+  geo.setAttribute("normal", new THREE.Float32BufferAttribute(norms, 3));
+  geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvArr, 2));
+  geo.setIndex(indices);
+  return geo;
+}
+
+/** LED panel canvas texture — vertical scan-lines + chevron motif */
+function createLEDPanelTexture(): THREE.CanvasTexture {
+  const w = 2048;
+  const h = 1024;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return new THREE.CanvasTexture(canvas);
+
+  // Dark base
+  ctx.fillStyle = "#0e0e12";
+  ctx.fillRect(0, 0, w, h);
+
+  // Fine vertical scan-lines (LED columns)
+  ctx.strokeStyle = "rgba(140, 150, 170, 0.07)";
+  ctx.lineWidth = 1;
+  for (let x = 0; x < w; x += 3) {
+    ctx.beginPath();
+    ctx.moveTo(x + 0.5, 0);
+    ctx.lineTo(x + 0.5, h);
+    ctx.stroke();
+  }
+
+  // Subtle horizontal bands
+  for (let y = 0; y < h; y += 80) {
+    ctx.fillStyle = `rgba(120, 130, 150, ${0.015 + Math.random() * 0.02})`;
+    ctx.fillRect(0, y, w, 2);
+  }
+
+  // Chevron / arrow pattern
+  ctx.save();
+  ctx.globalAlpha = 0.13;
+  ctx.strokeStyle = "#8090a5";
+  ctx.lineWidth = 80;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  const cx = w * 0.42;
+  const cy = h * 0.35;
+  ctx.beginPath();
+  ctx.moveTo(cx - 200, cy + 260);
+  ctx.lineTo(cx + 20, cy);
+  ctx.lineTo(cx + 240, cy + 260);
+  ctx.stroke();
+  ctx.restore();
+
+  // Soft center glow
+  const grad = ctx.createRadialGradient(
+    w * 0.45,
+    h * 0.4,
+    0,
+    w * 0.45,
+    h * 0.4,
+    w * 0.55,
+  );
+  grad.addColorStop(0, "rgba(160, 175, 200, 0.09)");
+  grad.addColorStop(0.6, "rgba(160, 175, 200, 0.03)");
+  grad.addColorStop(1, "rgba(160, 175, 200, 0)");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, w, h);
+
+  // Light spill at bottom edge
+  const btm = ctx.createLinearGradient(0, h * 0.82, 0, h);
+  btm.addColorStop(0, "rgba(200, 212, 230, 0)");
+  btm.addColorStop(0.5, "rgba(200, 212, 230, 0.06)");
+  btm.addColorStop(1, "rgba(200, 212, 230, 0.14)");
+  ctx.fillStyle = btm;
+  ctx.fillRect(0, h * 0.82, w, h * 0.18);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  return texture;
+}
 
 interface TopDownCarShowcaseProps {
   teamId: string;
@@ -121,7 +250,10 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     const scene = new THREE.Scene();
     const initConfig = CAMERA_CONFIGS[cameraModeRef.current];
     scene.background = initConfig.bgColor.clone();
-    scene.fog = new THREE.FogExp2(initConfig.fogColor.clone() as unknown as number, 0.0038);
+    scene.fog = new THREE.FogExp2(
+      initConfig.fogColor.getHex(),
+      initConfig.fogDensity,
+    );
     (scene.fog as THREE.FogExp2).color.copy(initConfig.fogColor);
     sceneRef.current = scene;
 
@@ -132,8 +264,8 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       0.1,
       200,
     );
-    camera.position.set(0, 18, 2);
-    camera.lookAt(0, 0, 0);
+    camera.position.set(0, 18, 2.8);
+    camera.lookAt(0, 0, 0.4);
     cameraRef.current = camera;
 
     // Renderer
@@ -151,12 +283,12 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    // Ground plane — matte cement look (track pit-lane vibe, no glare)
+    // Ground plane — polished dark concrete (reflective for cinematic look)
     const groundGeometry = new THREE.PlaneGeometry(120, 120);
     const groundMaterial = new THREE.MeshStandardMaterial({
-      color: 0x35363b,
-      roughness: 0.98,
-      metalness: 0.0,
+      color: 0x18181d,
+      roughness: 0.4,
+      metalness: 0.35,
     });
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
@@ -194,36 +326,135 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
 
     scene.add(gridBoxGroup);
 
-    // Base ambient kept low so corner spots define the shape.
-    const ambientLight = new THREE.AmbientLight(0xdfe4f0, 0.26);
+    // === Studio Environment — cyclorama + LED panel + rim light strip ===
+
+    // Back cyclorama: smooth quarter-pipe from floor (z ≈ −18) to wall (z = −28)
+    const cycGeo = createCycloramaGeometry(-28, 10, 24, 80);
+    const cycMat = new THREE.MeshStandardMaterial({
+      color: 0x2a2a30,
+      roughness: 0.82,
+      metalness: 0.06,
+      side: THREE.DoubleSide,
+    });
+    const cyclorama = new THREE.Mesh(cycGeo, cycMat);
+    cyclorama.receiveShadow = true;
+    scene.add(cyclorama);
+
+    // Side cyclorama (wraps around the +X side, visible on left of cinematic frame)
+    const sideCycGeo = createCycloramaGeometry(-28, 10, 24, 60);
+    const sideCyc = new THREE.Mesh(sideCycGeo, cycMat);
+    sideCyc.receiveShadow = true;
+    sideCyc.rotation.y = -Math.PI / 2;
+    sideCyc.position.set(30, 0, 0);
+    scene.add(sideCyc);
+
+    // LED panel inset on back wall
+    const ledTexture = createLEDPanelTexture();
+    const panelGeo = new THREE.PlaneGeometry(32, 18);
+    const panelMat = new THREE.MeshStandardMaterial({
+      map: ledTexture,
+      emissive: new THREE.Color(0x3a4a5e),
+      emissiveIntensity: 0.28,
+      emissiveMap: ledTexture,
+      roughness: 0.55,
+      metalness: 0.1,
+    });
+    const panel = new THREE.Mesh(panelGeo, panelMat);
+    panel.position.set(2, 14, -27.85);
+    scene.add(panel);
+
+    // Rim light strip — bright emissive bar at base of back wall
+    const rimStripGeo = new THREE.PlaneGeometry(40, 0.18);
+    const rimStripMat = new THREE.MeshBasicMaterial({
+      color: 0xeef2ff,
+      transparent: true,
+      opacity: 0.92,
+      toneMapped: false,
+    });
+    const rimStrip = new THREE.Mesh(rimStripGeo, rimStripMat);
+    rimStrip.position.set(2, 0.08, -18.05);
+    scene.add(rimStrip);
+
+    // Soft glow plane behind rim strip (wider bloom effect)
+    const rimGlowGeo = new THREE.PlaneGeometry(50, 2.4);
+    const rimGlowMat = new THREE.MeshBasicMaterial({
+      color: 0xc0c8d8,
+      transparent: true,
+      opacity: 0.22,
+      toneMapped: false,
+    });
+    const rimGlow = new THREE.Mesh(rimGlowGeo, rimGlowMat);
+    rimGlow.position.set(2, 0.06, -18.0);
+    scene.add(rimGlow);
+
+    // Secondary glow halo (very wide, subtle)
+    const rimHaloGeo = new THREE.PlaneGeometry(56, 6);
+    const rimHaloMat = new THREE.MeshBasicMaterial({
+      color: 0x909aac,
+      transparent: true,
+      opacity: 0.08,
+      toneMapped: false,
+    });
+    const rimHalo = new THREE.Mesh(rimHaloGeo, rimHaloMat);
+    rimHalo.position.set(2, 0.04, -17.8);
+    scene.add(rimHalo);
+
+    // === Lighting — dramatic car-reveal studio ===
+
+    // Low ambient for moody contrast
+    const ambientLight = new THREE.AmbientLight(0xc0c8d8, 0.14);
     scene.add(ambientLight);
 
-    const hemiLight = new THREE.HemisphereLight(0xc9d4e8, 0x17171a, 0.17);
+    const hemiLight = new THREE.HemisphereLight(0xb0b8c8, 0x080808, 0.1);
     scene.add(hemiLight);
 
-    // Four-corner car-show rig: top-left, top-right, bottom-left, bottom-right.
+    // Key light — illuminates cyclorama wall from upper-left (cool wash)
+    const keyLight = new THREE.SpotLight(0xc8d4e8, 280);
+    keyLight.position.set(-6, 24, -4);
+    keyLight.target.position.set(8, 6, -26);
+    keyLight.angle = Math.PI / 3;
+    keyLight.penumbra = 0.65;
+    keyLight.decay = 1.05;
+    keyLight.distance = 70;
+    keyLight.castShadow = false;
+    scene.add(keyLight);
+    scene.add(keyLight.target);
+
+    // Rim accent light — creates the bright horizontal strip glow
+    const rimLight = new THREE.SpotLight(0xe0e8f0, 120);
+    rimLight.position.set(10, 3, -6);
+    rimLight.target.position.set(-8, 0, -20);
+    rimLight.angle = Math.PI / 4;
+    rimLight.penumbra = 0.85;
+    rimLight.decay = 1.15;
+    rimLight.distance = 35;
+    rimLight.castShadow = false;
+    scene.add(rimLight);
+    scene.add(rimLight.target);
+
+    // Four-corner car-show rig (slightly lower intensity for moodier feel)
     const cornerLights = [
       {
-        color: 0xeaf2ff,
-        intensity: 46,
+        color: 0xdde4f0,
+        intensity: 32,
         position: new THREE.Vector3(-8.4, 16.5, -10.5),
         castShadow: true,
       },
       {
-        color: 0xffecd8,
-        intensity: 46,
+        color: 0xf0e8d8,
+        intensity: 32,
         position: new THREE.Vector3(8.4, 16.5, -10.5),
         castShadow: true,
       },
       {
-        color: 0xd7e6ff,
-        intensity: 30,
+        color: 0xc8d4e8,
+        intensity: 22,
         position: new THREE.Vector3(-9.5, 12, 7.5),
         castShadow: false,
       },
       {
-        color: 0xffdfc2,
-        intensity: 30,
+        color: 0xf0dcc0,
+        intensity: 22,
         position: new THREE.Vector3(9.5, 12, 7.5),
         castShadow: false,
       },
@@ -250,8 +481,8 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       scene.add(light.target);
     }
 
-    // Dedicated grounding shadow so the car reads as physically planted on floor.
-    const groundingLight = new THREE.DirectionalLight(0xffffff, 0.28);
+    // Dedicated grounding shadow
+    const groundingLight = new THREE.DirectionalLight(0xffffff, 0.24);
     groundingLight.position.set(2.2, 15, 1.4);
     groundingLight.target.position.set(0, 0, 0);
     groundingLight.castShadow = true;
@@ -336,10 +567,15 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       scene.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
           obj.geometry.dispose();
-          if (Array.isArray(obj.material)) {
-            obj.material.forEach((m) => m.dispose());
-          } else {
-            obj.material.dispose();
+          const mats = Array.isArray(obj.material)
+            ? obj.material
+            : [obj.material];
+          for (const m of mats) {
+            if (m instanceof THREE.MeshStandardMaterial) {
+              m.map?.dispose();
+              m.emissiveMap?.dispose();
+            }
+            m.dispose();
           }
         }
       });
@@ -719,7 +955,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       );
     }
 
-    // Fog color
+    // Fog color + density
     if (scene.fog) {
       tl.to(
         scene.fog.color,
@@ -732,6 +968,17 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
         },
         0,
       );
+      if (scene.fog instanceof THREE.FogExp2) {
+        tl.to(
+          scene.fog,
+          {
+            density: config.fogDensity,
+            duration: CAMERA_TRANSITION_DURATION,
+            ease: "power2.inOut",
+          },
+          0,
+        );
+      }
     }
 
     return () => {
