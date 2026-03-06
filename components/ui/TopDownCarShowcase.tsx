@@ -591,7 +591,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     const scaledCenter = scaledBox.getCenter(new THREE.Vector3());
     model.position.set(
       -scaledCenter.x,
-      -scaledBox.min.y - 0.016,
+      -scaledBox.min.y - 0.32,
       -scaledCenter.z,
     );
 
