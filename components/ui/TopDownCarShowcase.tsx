@@ -17,25 +17,25 @@ import type { CameraMode } from "@/store/useAppStore";
 /* Camera presets keyed by mode */
 const CAMERA_CONFIGS = {
   topDown: {
-    position: { x: 0, y: 18, z: 2.4 },
+    position: { x: 0, y: 18, z: 2.2 },
     lookAt: { x: 0, y: 0, z: 0 },
     bgColor: new THREE.Color(0x111113),
-    fogColor: new THREE.Color(0x111113),
-    fogDensity: 0.02,
+    fogColor: new THREE.Color(0x262c34),
+    fogDensity: 0.03,
   },
   cinematic: {
     position: { x: -12, y: 3, z: 8 },
     lookAt: { x: 1, y: 1.2, z: -2 },
     bgColor: new THREE.Color(0x08080a),
-    fogColor: new THREE.Color(0x08080a),
-    fogDensity: 0.014,
+    fogColor: new THREE.Color(0x20262f),
+    fogDensity: 0.026,
   },
   sideProfile: {
     position: { x: 0, y: 1.2, z: 16 },
     lookAt: { x: 0, y: 5.2, z: -2 },
     bgColor: new THREE.Color(0x0a0a0c),
-    fogColor: new THREE.Color(0x0a0a0c),
-    fogDensity: 0.012,
+    fogColor: new THREE.Color(0x1e242c),
+    fogDensity: 0.024,
   },
 } as const;
 
@@ -350,9 +350,11 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     scene.add(gridBoxGroup);
 
     // === Studio Environment — cyclorama + LED panel + rim light strip ===
+    const backCycloramaWidth = 120;
+    const sideCycloramaWidth = 120;
 
     // Back cyclorama: smooth quarter-pipe from floor (z ≈ −18) to wall (z = −28)
-    const cycGeo = createCycloramaGeometry(-28, 10, 24, 80);
+    const cycGeo = createCycloramaGeometry(-28, 10, 24, backCycloramaWidth);
     const cycMat = new THREE.MeshStandardMaterial({
       color: 0x2a2a30,
       roughness: 0.82,
@@ -365,15 +367,15 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     scene.add(cyclorama);
 
     // Side cyclorama (wraps around the +X side, visible on left of cinematic frame)
-    const sideCycGeo = createCycloramaGeometry(-28, 10, 24, 60);
+    const sideCycGeo = createCycloramaGeometry(-28, 10, 24, sideCycloramaWidth);
     const sideCyc = new THREE.Mesh(sideCycGeo, cycMat);
     sideCyc.receiveShadow = true;
     sideCyc.rotation.y = -Math.PI / 2;
-    sideCyc.position.set(30, 0, 0);
+    sideCyc.position.set(42, 0, 0);
     scene.add(sideCyc);
 
     // Rim light strip — bright emissive bar at base of back wall
-    const rimStripGeo = new THREE.PlaneGeometry(62, 0.18);
+    const rimStripGeo = new THREE.PlaneGeometry(96, 0.18);
     const rimStripMat = new THREE.MeshBasicMaterial({
       color: 0xeef2ff,
       transparent: true,
@@ -386,7 +388,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     scene.add(rimStrip);
 
     // Soft glow plane behind rim strip (wider bloom effect)
-    const rimGlowGeo = new THREE.PlaneGeometry(78, 2.4);
+    const rimGlowGeo = new THREE.PlaneGeometry(120, 2.4);
     const rimGlowMat = new THREE.MeshBasicMaterial({
       color: 0xc0c8d8,
       transparent: true,
@@ -399,7 +401,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     scene.add(rimGlow);
 
     // Secondary glow halo (very wide, subtle)
-    const rimHaloGeo = new THREE.PlaneGeometry(88, 6);
+    const rimHaloGeo = new THREE.PlaneGeometry(136, 6);
     const rimHaloMat = new THREE.MeshBasicMaterial({
       color: 0x909aac,
       transparent: true,

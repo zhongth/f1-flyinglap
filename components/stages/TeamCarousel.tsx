@@ -253,36 +253,31 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
         className={`absolute top-[8%] left-0 right-0 z-40 pointer-events-none ${showIntro ? "opacity-0" : ""}`}
       >
         <div className="w-full px-5 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
-          <div className="flex items-center justify-between gap-4">
-            <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-black/35 px-4 py-2 backdrop-blur-xl">
-              <span
-                className="h-1.5 w-8 rounded-full shadow-[0_0_16px_currentColor]"
-                style={{
-                  color: activeTeam?.primaryColor,
-                  backgroundColor: activeTeam?.primaryColor,
-                }}
-              />
-              <p className="font-f1 text-[9px] sm:text-[10px] tracking-[0.28em] text-white/55 uppercase">
-                2025 Season
-              </p>
-            </div>
+          <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] xl:items-start xl:gap-x-10">
+            <div className="max-w-[28rem]">
+              <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-black/35 px-4 py-2 backdrop-blur-xl">
+                <span
+                  className="h-1.5 w-8 rounded-full shadow-[0_0_16px_currentColor]"
+                  style={{
+                    color: activeTeam?.primaryColor,
+                    backgroundColor: activeTeam?.primaryColor,
+                  }}
+                />
+                <p className="font-f1 text-[9px] sm:text-[10px] tracking-[0.28em] text-white/55 uppercase">
+                  2025 Season
+                </p>
+              </div>
 
-          </div>
-
-          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] xl:items-start">
-            <div className="xl:col-span-2">
-              <h1 className="grid gap-2 font-f1-bold text-6xl leading-[0.84] tracking-[0.08em] text-white/95 uppercase xl:grid-cols-2 xl:items-end">
+              <h1 className="mt-6 font-f1-bold text-6xl leading-[1.2] tracking-[0.08em] text-white/95 uppercase">
                 <span className="justify-self-start">Who is Faster</span>
               </h1>
-            </div>
 
-            <div className="max-w-[28rem]">
-              <p className="mt-3 max-w-[24rem] font-titillium text-sm md:text-[15px] leading-relaxed text-white/58">
+              <p className="mt-5 max-w-[24rem] font-titillium text-sm md:text-[15px] leading-relaxed text-white/58">
                 来自 117 的客观评价。 by 村长托马斯
               </p>
             </div>
 
-            <div className="w-full max-w-[24rem] justify-self-start rounded-[2rem] border border-white/10 bg-black/45 p-5 text-left backdrop-blur-2xl xl:justify-self-end">
+            <div className="w-full max-w-[24rem] self-start justify-self-start rounded-[2rem] border border-white/10 bg-black/45 p-5 text-left backdrop-blur-2xl xl:justify-self-end">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="font-f1 text-[9px] tracking-[0.3em] text-white/38 uppercase">
