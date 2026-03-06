@@ -189,7 +189,7 @@ DRIVER_EXTRA: dict[str, dict] = {
         "careerStats": {"polePositions": 5, "wins": 3, "podiums": 16, "fastestLaps": 7, "championships": 0},
     },
     "kimi_antonelli": {
-        "portraitPath": "/f1_2025_driver_portraits/kimi_antonelli.webp",
+        "portraitPath": "/f1_2025_driver_portraits/2025mercedesandant01right.webp",
         "heightCm": 175,
         "careerStats": {"polePositions": 0, "wins": 0, "podiums": 0, "fastestLaps": 0, "championships": 0},
     },
@@ -234,12 +234,12 @@ DRIVER_EXTRA: dict[str, dict] = {
         "careerStats": {"polePositions": 0, "wins": 0, "podiums": 0, "fastestLaps": 0, "championships": 0},
     },
     "nico_hulkenberg": {
-        "portraitPath": "/f1_2025_driver_portraits/nico_hulkenberg.webp",
+        "portraitPath": "/f1_2025_driver_portraits/2025kicksaubernichul01right.webp",
         "heightCm": 184,
         "careerStats": {"polePositions": 1, "wins": 0, "podiums": 0, "fastestLaps": 2, "championships": 0},
     },
     "gabriel_bortoleto": {
-        "portraitPath": "/f1_2025_driver_portraits/gabriel_bortoleto.webp",
+        "portraitPath": "/f1_2025_driver_portraits/2025kicksaubergabbor01right.avif",
         "heightCm": 170,
         "careerStats": {"polePositions": 0, "wins": 0, "podiums": 0, "fastestLaps": 0, "championships": 0},
     },
@@ -254,7 +254,7 @@ DRIVER_EXTRA: dict[str, dict] = {
         "careerStats": {"polePositions": 0, "wins": 0, "podiums": 0, "fastestLaps": 0, "championships": 0},
     },
     "yuki_tsunoda": {
-        "portraitPath": "/f1_2025_driver_portraits/yuki_tsunoda.webp",
+        "portraitPath": "/f1_2025_driver_portraits/2025redbullracingyuktsu01right.webp",
         "heightCm": 159,
         "careerStats": {"polePositions": 0, "wins": 0, "podiums": 1, "fastestLaps": 0, "championships": 0},
     },

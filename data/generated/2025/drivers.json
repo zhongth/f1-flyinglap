@@ -115,7 +115,7 @@
     "number": 5,
     "teamId": "sauber",
     "nationality": "Brazil",
-    "portraitPath": "/f1_2025_driver_portraits/gabriel_bortoleto.webp",
+    "portraitPath": "/f1_2025_driver_portraits/2025kicksaubergabbor01right.avif",
     "heightCm": 170,
     "careerStats": {
       "polePositions": 0,
@@ -169,7 +169,7 @@
     "number": 22,
     "teamId": "red_bull",
     "nationality": "Japan",
-    "portraitPath": "/f1_2025_driver_portraits/yuki_tsunoda.webp",
+    "portraitPath": "/f1_2025_driver_portraits/2025redbullracingyuktsu01right.webp",
     "heightCm": 159,
     "careerStats": {
       "polePositions": 0,
@@ -241,7 +241,7 @@
     "number": 12,
     "teamId": "mercedes",
     "nationality": "Italy",
-    "portraitPath": "/f1_2025_driver_portraits/kimi_antonelli.webp",
+    "portraitPath": "/f1_2025_driver_portraits/2025mercedesandant01right.webp",
     "heightCm": 175,
     "careerStats": {
       "polePositions": 0,
@@ -313,7 +313,7 @@
     "number": 27,
     "teamId": "sauber",
     "nationality": "Germany",
-    "portraitPath": "/f1_2025_driver_portraits/nico_hulkenberg.webp",
+    "portraitPath": "/f1_2025_driver_portraits/2025kicksaubernichul01right.webp",
     "heightCm": 184,
     "careerStats": {
       "polePositions": 1,
