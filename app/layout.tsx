@@ -30,6 +30,38 @@ const northwell = localFont({
   display: "swap",
 });
 
+const titillium = localFont({
+  src: [
+    {
+      path: "./assets/fonts/TitilliumWeb-ExtraLight.ttf",
+      weight: "200",
+      style: "normal",
+    },
+    {
+      path: "./assets/fonts/TitilliumWeb-Light.ttf",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "./assets/fonts/TitilliumWeb-Regular.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./assets/fonts/TitilliumWeb-SemiBold.ttf",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "./assets/fonts/TitilliumWeb-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-titillium",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "F1 Flying Lap | Teammate Qualifying Gap",
   description:
@@ -45,7 +77,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body
-        className={`${f1Regular.variable} ${f1Bold.variable} ${f1Wide.variable} ${northwell.variable} antialiased`}
+        className={`${f1Regular.variable} ${f1Bold.variable} ${f1Wide.variable} ${northwell.variable} ${titillium.variable} antialiased`}
       >
         {children}
       </body>
