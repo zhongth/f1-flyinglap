@@ -47,6 +47,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     [sortedTeams],
   );
   const activeTeam = hoveredTeamId ? getTeamById(hoveredTeamId) : defaultTeam;
+  const activeDrivers = activeTeam ? getDriversByTeamId(activeTeam.id) : [];
   const ferrariInitialIndex = useMemo(() => {
     const ferrariIndex = sortedTeams.findIndex((team) => team.id === "ferrari");
     return ferrariIndex < 0 ? 0 : ferrariIndex;
@@ -171,7 +172,6 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
           },
           0.1,
         );
-
       }, containerRef);
     },
     [isAnimating, selectTeam, setStage, setIsAnimating],
@@ -250,68 +250,139 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
       {/* Team name — prominent display at top */}
       <div
         ref={titleRef}
-        className={`absolute top-[12%] left-0 right-0 z-40 text-center pointer-events-none ${showIntro ? "opacity-0" : ""}`}
+        className={`absolute top-[8%] left-0 right-0 z-40 pointer-events-none ${showIntro ? "opacity-0" : ""}`}
       >
-        {/* <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/45 px-5 py-2 backdrop-blur-xl">
-          <span className="h-1.5 w-1.5 rounded-full bg-[#E10600] shadow-[0_0_10px_rgba(225,6,0,0.8)]" />
-          <p className="font-f1 text-[10px] md:text-xs tracking-[0.1em] text-white/65 uppercase">
-            F1 Flying Lap 飞驰圈
-          </p>
-        </div> */}
-        <h1 className="mt-5 font-f1-bold text-3xl md:text-5xl lg:text-6xl tracking-[0.08em] text-white/95 uppercase leading-tight">
-          Who is faster?
-        </h1>
-        <p className="mt-3 font-f1 text-xs md:text-xs tracking-[0.18em] text-white/65 uppercase">
-          2025 Season
-        </p>
+        <div className="w-full px-5 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
+          <div className="flex items-center justify-between gap-4">
+            <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-black/35 px-4 py-2 backdrop-blur-xl">
+              <span
+                className="h-1.5 w-8 rounded-full shadow-[0_0_16px_currentColor]"
+                style={{
+                  color: activeTeam?.primaryColor,
+                  backgroundColor: activeTeam?.primaryColor,
+                }}
+              />
+              <p className="font-f1 text-[9px] sm:text-[10px] tracking-[0.28em] text-white/55 uppercase">
+                2025 Season
+              </p>
+            </div>
+
+          </div>
+
+          <div className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] xl:items-start">
+            <div className="xl:col-span-2">
+              <h1 className="grid gap-2 font-f1-bold text-6xl leading-[0.84] tracking-[0.08em] text-white/95 uppercase xl:grid-cols-2 xl:items-end">
+                <span className="justify-self-start">Who is Faster</span>
+              </h1>
+            </div>
+
+            <div className="max-w-[28rem]">
+              <p className="mt-3 max-w-[24rem] font-titillium text-sm md:text-[15px] leading-relaxed text-white/58">
+                来自 117 的客观评价。 by 村长托马斯
+              </p>
+            </div>
+
+            <div className="w-full max-w-[24rem] justify-self-start rounded-[2rem] border border-white/10 bg-black/45 p-5 text-left backdrop-blur-2xl xl:justify-self-end">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-f1 text-[9px] tracking-[0.3em] text-white/38 uppercase">
+                    Live team
+                  </p>
+                  <p className="mt-3 font-f1-bold text-[1.8rem] leading-none tracking-[0.08em] text-white/92 uppercase">
+                    {activeTeam?.shortName}
+                  </p>
+                </div>
+                <span
+                  className="mt-1 h-9 w-[2px] rounded-full"
+                  style={{ backgroundColor: activeTeam?.primaryColor }}
+                />
+              </div>
+
+              <div className="mt-5 grid grid-cols-2 gap-6 border-t border-white/8 pt-5">
+                <div>
+                  <p className="font-f1 text-[9px] tracking-[0.28em] text-white/32 uppercase">
+                    Constructor
+                  </p>
+                  <p className="mt-2 font-f1-bold text-3xl leading-none text-white/92">
+                    P{activeTeam?.constructorOrder}
+                  </p>
+                </div>
+                <div>
+                  <p className="font-f1 text-[9px] tracking-[0.28em] text-white/32 uppercase">
+                    Points
+                  </p>
+                  <p className="mt-2 font-f1-bold text-3xl leading-none text-white/92">
+                    {activeTeam?.constructorPoints}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 border-t border-white/8 pt-5">
+                <p className="font-f1 text-[9px] tracking-[0.28em] text-white/32 uppercase">
+                  Driver pair
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {activeDrivers.map((driver) => (
+                    <span
+                      key={driver.id}
+                      className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 font-f1 text-[10px] tracking-[0.18em] text-white/68 uppercase"
+                    >
+                      {driver.abbreviation}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Horizontal team selector — anchored to bottom, sizes to content */}
       <div className="absolute bottom-0 left-0 right-0 z-50 pb-10">
-          <div
-            ref={wheelRef}
-            className={
-              showIntro
-                ? "relative mx-auto w-full overflow-x-clip overflow-y-visible opacity-0"
-                : "relative mx-auto w-full overflow-x-clip overflow-y-visible"
-            }
-          >
-            <GradientCarousel
-              items={teamCards}
-              className="w-full bg-transparent"
-              cardClassName="bg-black/15"
-              contentClassName=""
-              cardWidthPx={236}
-              cardAspectRatio={110 / 140}
-              initialIndex={initialIndex}
-              introSpin={introReady && !isIntroComplete}
-              introSpinRounds={1}
-              introSpinDurationMs={2900}
-              onCardChange={handleCardChange}
-              onCardClick={handleCardClick}
-              maxRotationDegrees={28}
-              maxDepthPx={96}
-              cardGap={32}
-              dragSensitivity={0.8}
-              frictionFactor={0.88}
-              wheelSensitivity={0.25}
-              gradientIntensity={0.55}
-              gradientSize={0.5}
-              backgroundBlur={22}
-              showBackdrop={false}
-              showLoadingOverlay={true}
-            />
-            <ProgressiveBlur
-              position="left"
-              size="14%"
-              blurLevels={[0.5, 1, 2, 4, 8, 16, 24, 32]}
-            />
-            <ProgressiveBlur
-              position="right"
-              size="14%"
-              blurLevels={[0.5, 1, 2, 4, 8, 16, 24, 32]}
-            />
-          </div>
+        <div
+          ref={wheelRef}
+          className={
+            showIntro
+              ? "relative mx-auto w-full overflow-x-clip overflow-y-visible opacity-0"
+              : "relative mx-auto w-full overflow-x-clip overflow-y-visible"
+          }
+        >
+          <GradientCarousel
+            items={teamCards}
+            className="w-full bg-transparent"
+            cardClassName="bg-black/15"
+            contentClassName=""
+            cardWidthPx={236}
+            cardAspectRatio={110 / 140}
+            initialIndex={initialIndex}
+            introSpin={introReady && !isIntroComplete}
+            introSpinRounds={1}
+            introSpinDurationMs={2900}
+            onCardChange={handleCardChange}
+            onCardClick={handleCardClick}
+            maxRotationDegrees={28}
+            maxDepthPx={96}
+            cardGap={32}
+            dragSensitivity={0.8}
+            frictionFactor={0.88}
+            wheelSensitivity={0.25}
+            gradientIntensity={0.55}
+            gradientSize={0.5}
+            backgroundBlur={22}
+            showBackdrop={false}
+            showLoadingOverlay={true}
+          />
+          <ProgressiveBlur
+            position="left"
+            size="14%"
+            blurLevels={[0.5, 1, 2, 4, 8, 16, 24, 32]}
+          />
+          <ProgressiveBlur
+            position="right"
+            size="14%"
+            blurLevels={[0.5, 1, 2, 4, 8, 16, 24, 32]}
+          />
+        </div>
       </div>
     </div>
   );

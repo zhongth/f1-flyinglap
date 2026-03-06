@@ -2,10 +2,10 @@
 
 import { type FC, useEffect, useRef } from "react";
 import * as THREE from "three";
-import { cloneCachedScene, isModelCached } from "@/lib/modelPreloader";
 import { getAllModelPaths, getTeamCarModelPath } from "@/data/teamCarModels";
 import { getTeamById } from "@/data/teams";
 import { gsap } from "@/lib/gsap";
+import { cloneCachedScene, isModelCached } from "@/lib/modelPreloader";
 import {
   collectWheelSpinTargets,
   spinWheelTargets,
@@ -17,8 +17,8 @@ import type { CameraMode } from "@/store/useAppStore";
 /* Camera presets keyed by mode */
 const CAMERA_CONFIGS = {
   topDown: {
-    position: { x: 0, y: 18, z: 2.8 },
-    lookAt: { x: 0, y: 0, z: 0.6 },
+    position: { x: 0, y: 18, z: 2.4 },
+    lookAt: { x: 0, y: 0, z: 0 },
     bgColor: new THREE.Color(0x111113),
     fogColor: new THREE.Color(0x111113),
     fogDensity: 0.02,
@@ -84,10 +84,7 @@ function createCycloramaGeometry(
   }
 
   const geo = new THREE.BufferGeometry();
-  geo.setAttribute(
-    "position",
-    new THREE.Float32BufferAttribute(positions, 3),
-  );
+  geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
   geo.setAttribute("normal", new THREE.Float32BufferAttribute(norms, 3));
   geo.setAttribute("uv", new THREE.Float32BufferAttribute(uvArr, 2));
   geo.setIndex(indices);
@@ -141,6 +138,45 @@ function createContactShadowTexture(): THREE.CanvasTexture {
   return texture;
 }
 
+function createFloorTileTexture(maxAnisotropy: number): THREE.CanvasTexture {
+  const size = 1024;
+  const panelRepeat = 12;
+  const panelOffset = new THREE.Vector2(0.173, 0.287);
+  const canvas = document.createElement("canvas");
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext("2d");
+
+  if (!ctx) {
+    const fallback = new THREE.CanvasTexture(canvas);
+    fallback.wrapS = THREE.RepeatWrapping;
+    fallback.wrapT = THREE.RepeatWrapping;
+    fallback.repeat.set(panelRepeat, panelRepeat);
+    fallback.offset.copy(panelOffset);
+    fallback.needsUpdate = true;
+    return fallback;
+  }
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, size, size);
+
+  // Large studio floor panels with a single thin seam per tile.
+  const seamWidth = 2;
+  ctx.fillStyle = "rgba(18,20,26,0.24)";
+  ctx.fillRect(0, 0, size, seamWidth);
+  ctx.fillRect(0, 0, seamWidth, size);
+
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.wrapS = THREE.RepeatWrapping;
+  texture.wrapT = THREE.RepeatWrapping;
+  texture.repeat.set(panelRepeat, panelRepeat);
+  texture.offset.copy(panelOffset);
+  texture.anisotropy = maxAnisotropy;
+  texture.needsUpdate = true;
+  return texture;
+}
+
 const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   teamId,
   className = "",
@@ -179,9 +215,13 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   onCameraCompleteRef.current = onCameraTransitionComplete;
 
   // Dynamic environment refs (team-colored)
+  const groundMatRef = useRef<THREE.MeshStandardMaterial | null>(null);
+  const cycloramaMatRef = useRef<THREE.MeshStandardMaterial | null>(null);
   const rimStripMatRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const rimGlowMatRef = useRef<THREE.MeshBasicMaterial | null>(null);
   const rimHaloMatRef = useRef<THREE.MeshBasicMaterial | null>(null);
+  const stageAmbientLightRef = useRef<THREE.AmbientLight | null>(null);
+  const hemiLightRef = useRef<THREE.HemisphereLight | null>(null);
   const keyLightRef = useRef<THREE.SpotLight | null>(null);
   const rimLightRef = useRef<THREE.SpotLight | null>(null);
   const logoMeshRef = useRef<THREE.Mesh | null>(null);
@@ -230,13 +270,19 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
+    const floorTileTexture = createFloorTileTexture(
+      renderer.capabilities.getMaxAnisotropy(),
+    );
+
     // Ground plane — polished dark concrete (reflective for cinematic look)
     const groundGeometry = new THREE.PlaneGeometry(120, 120);
     const groundMaterial = new THREE.MeshStandardMaterial({
       color: 0x18181d,
       roughness: 0.4,
       metalness: 0.35,
+      map: floorTileTexture,
     });
+    groundMatRef.current = groundMaterial;
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = 0;
@@ -247,29 +293,59 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     const gridBoxGroup = new THREE.Group();
     gridBoxGroup.position.y = 0.02;
 
-    const lineMat = new THREE.LineBasicMaterial({
-      color: 0xffffff,
-      transparent: true,
-      opacity: 0.18,
-    });
-
     // Car faces -X. Front bracket at -X side, like a real F1 grid box.
     const bracketX = -6.0;
     const armLen = 2.8;
     const halfWid = 2.6;
-
-    const bracketPts = [
-      new THREE.Vector3(bracketX + armLen, 0, -halfWid),
-      new THREE.Vector3(bracketX, 0, -halfWid),
-      new THREE.Vector3(bracketX, 0, halfWid),
-      new THREE.Vector3(bracketX + armLen, 0, halfWid),
-    ];
-    gridBoxGroup.add(
-      new THREE.Line(
-        new THREE.BufferGeometry().setFromPoints(bracketPts),
-        lineMat,
-      ),
+    const gridLineLayerCount = 8;
+    const gridLineInsetStep = 0.003;
+    const gridLineLayers = Array.from(
+      { length: gridLineLayerCount },
+      (_, index) => ({
+        inset: index * gridLineInsetStep,
+        opacity: THREE.MathUtils.lerp(
+          0.24,
+          0.1,
+          index / (gridLineLayerCount - 1),
+        ),
+      }),
     );
+
+    for (const [index, layer] of gridLineLayers.entries()) {
+      const bracketPts = [
+        new THREE.Vector3(
+          bracketX + armLen - layer.inset,
+          index * 0.0002,
+          -(halfWid - layer.inset),
+        ),
+        new THREE.Vector3(
+          bracketX + layer.inset,
+          index * 0.0002,
+          -(halfWid - layer.inset),
+        ),
+        new THREE.Vector3(
+          bracketX + layer.inset,
+          index * 0.0002,
+          halfWid - layer.inset,
+        ),
+        new THREE.Vector3(
+          bracketX + armLen - layer.inset,
+          index * 0.0002,
+          halfWid - layer.inset,
+        ),
+      ];
+
+      gridBoxGroup.add(
+        new THREE.Line(
+          new THREE.BufferGeometry().setFromPoints(bracketPts),
+          new THREE.LineBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: layer.opacity,
+          }),
+        ),
+      );
+    }
 
     scene.add(gridBoxGroup);
 
@@ -283,6 +359,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       metalness: 0.06,
       side: THREE.DoubleSide,
     });
+    cycloramaMatRef.current = cycMat;
     const cyclorama = new THREE.Mesh(cycGeo, cycMat);
     cyclorama.receiveShadow = true;
     scene.add(cyclorama);
@@ -353,7 +430,13 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     const ambientLight = new THREE.AmbientLight(0xc0c8d8, 0.14);
     scene.add(ambientLight);
 
+    // Team-tinted ambient wash for stage identity without flattening the car lighting.
+    const stageAmbientLight = new THREE.AmbientLight(0xffffff, 0.06);
+    stageAmbientLightRef.current = stageAmbientLight;
+    scene.add(stageAmbientLight);
+
     const hemiLight = new THREE.HemisphereLight(0xb0b8c8, 0x080808, 0.1);
+    hemiLightRef.current = hemiLight;
     scene.add(hemiLight);
 
     // Key light — illuminates cyclorama wall from upper-left (cool wash)
@@ -501,8 +584,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       if (outgoing && outgoing.wheelTargets.length > 0) {
         const outX = outgoing.group.position.x;
         if (prevOutgoingXRef.current !== null) {
-          const linearSpeed =
-            Math.abs(outX - prevOutgoingXRef.current) / delta;
+          const linearSpeed = Math.abs(outX - prevOutgoingXRef.current) / delta;
           const spinRadians =
             (linearSpeed / 35) * WHEEL_BASE_ANGULAR_SPEED * delta;
           spinWheelTargets(outgoing.wheelTargets, spinRadians);
@@ -985,7 +1067,8 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   // Update environment colors + logo when team or camera mode changes
   useEffect(() => {
     const team = getTeamById(teamId);
-    const isCinematic = cameraMode === "cinematic" || cameraMode === "sideProfile";
+    const isCinematic =
+      cameraMode === "cinematic" || cameraMode === "sideProfile";
     if (!team) return;
 
     const teamColor = new THREE.Color(team.primaryColor);
@@ -1004,6 +1087,26 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     const targetHalo = isCinematic
       ? teamColor.clone().lerp(new THREE.Color(0x909aac), 0.65)
       : new THREE.Color(0x909aac);
+    const targetStageAmbient = teamColor
+      .clone()
+      .lerp(new THREE.Color(0xf2f5fb), isCinematic ? 0.16 : 0.45);
+    const targetStageAmbientIntensity = isCinematic ? 0.22 : 0.08;
+    const targetHemiSky = teamColor
+      .clone()
+      .lerp(new THREE.Color(0xd8e2f2), isCinematic ? 0.28 : 0.6);
+    const targetHemiGround = teamColor
+      .clone()
+      .multiplyScalar(isCinematic ? 0.18 : 0.1)
+      .lerp(new THREE.Color(0x080808), isCinematic ? 0.32 : 0.6);
+    const targetHemiIntensity = isCinematic ? 0.22 : 0.12;
+    const targetGround = new THREE.Color(0x18181d).lerp(
+      teamColor.clone().multiplyScalar(0.42),
+      isCinematic ? 0.32 : 0.12,
+    );
+    const targetCyclorama = new THREE.Color(0x2a2a30).lerp(
+      teamColor.clone().multiplyScalar(0.55),
+      isCinematic ? 0.28 : 0.1,
+    );
 
     if (rimStripMatRef.current) {
       gsap.to(rimStripMatRef.current.color, {
@@ -1033,6 +1136,80 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
         b: targetHalo.b,
         duration: 1.0,
         ease: "power2.inOut",
+      });
+    }
+    if (stageAmbientLightRef.current) {
+      gsap.to(stageAmbientLightRef.current.color, {
+        r: targetStageAmbient.r,
+        g: targetStageAmbient.g,
+        b: targetStageAmbient.b,
+        duration: 1.0,
+        ease: "power2.inOut",
+        onUpdate: () => {
+          needsRenderRef.current = true;
+        },
+      });
+      gsap.to(stageAmbientLightRef.current, {
+        intensity: targetStageAmbientIntensity,
+        duration: 1.0,
+        ease: "power2.inOut",
+        onUpdate: () => {
+          needsRenderRef.current = true;
+        },
+      });
+    }
+    if (hemiLightRef.current) {
+      gsap.to(hemiLightRef.current.color, {
+        r: targetHemiSky.r,
+        g: targetHemiSky.g,
+        b: targetHemiSky.b,
+        duration: 1.0,
+        ease: "power2.inOut",
+        onUpdate: () => {
+          needsRenderRef.current = true;
+        },
+      });
+      gsap.to(hemiLightRef.current.groundColor, {
+        r: targetHemiGround.r,
+        g: targetHemiGround.g,
+        b: targetHemiGround.b,
+        duration: 1.0,
+        ease: "power2.inOut",
+        onUpdate: () => {
+          needsRenderRef.current = true;
+        },
+      });
+      gsap.to(hemiLightRef.current, {
+        intensity: targetHemiIntensity,
+        duration: 1.0,
+        ease: "power2.inOut",
+        onUpdate: () => {
+          needsRenderRef.current = true;
+        },
+      });
+    }
+    if (groundMatRef.current) {
+      gsap.to(groundMatRef.current.color, {
+        r: targetGround.r,
+        g: targetGround.g,
+        b: targetGround.b,
+        duration: 1.0,
+        ease: "power2.inOut",
+        onUpdate: () => {
+          needsRenderRef.current = true;
+        },
+      });
+    }
+    if (cycloramaMatRef.current) {
+      gsap.to(cycloramaMatRef.current.color, {
+        r: targetCyclorama.r,
+        g: targetCyclorama.g,
+        b: targetCyclorama.b,
+        duration: 1.0,
+        ease: "power2.inOut",
+        onUpdate: () => {
+          needsRenderRef.current = true;
+        },
       });
     }
 
