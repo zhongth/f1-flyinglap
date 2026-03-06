@@ -555,19 +555,19 @@ export function GraphMode() {
               <div className="h-px bg-white/[0.06]" />
 
               {/* Recent Results */}
-              <div className="flex flex-col gap-3">
-                <p className="font-f1-bold text-[11px] text-white/30 uppercase tracking-[0.15em]">
-                  Recent Results
+              <div className="flex flex-col gap-3 min-h-0">
+                <p className="font-f1-bold text-[11px] text-white/30 uppercase tracking-[0.15em] shrink-0">
+                  Results
                 </p>
-                <div className="flex flex-col gap-2">
-                  {perRaceGaps.slice(-5).map((gap) => (
+                <div className="flex flex-col gap-2 overflow-y-auto no-scrollbar max-h-[180px]">
+                  {[...perRaceGaps].reverse().map((gap) => (
                     <div
                       key={gap.raceId}
                       className="flex items-center justify-between"
                     >
                       <div className="flex items-center gap-2">
                         <div
-                          className="w-1 h-3 rounded-full"
+                          className="w-1 h-3 rounded-full shrink-0"
                           style={{
                             backgroundColor:
                               gap.gapMs > 0
@@ -575,17 +575,17 @@ export function GraphMode() {
                                 : "rgba(255,255,255,0.15)",
                           }}
                         />
-                        <span className="text-[11px] text-white/50 font-f1">
+                        <span className="text-[13px] text-white/50 font-f1">
                           {gap.country}
                         </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[9px] text-white/25 font-f1">
+                        <span className="text-[10px] text-white/25 font-f1">
                           {gap.session}
                         </span>
                         <span
                           className={cn(
-                            "text-[11px] font-f1-bold tabular-nums",
+                            "text-[12px] font-f1-bold tabular-nums",
                             gap.gapMs > 0 ? "text-white/80" : "text-white/45",
                           )}
                         >
