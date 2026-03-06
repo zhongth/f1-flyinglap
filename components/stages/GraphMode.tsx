@@ -45,6 +45,7 @@ const VB_W = 800;
 const VB_H = 400;
 const GRAPH_PADDING = { left: 56, bottom: 48, top: 36, right: 30 };
 const GRAPH_HEIGHT = 380;
+const GRAPH_CARD_WIDTH = 1460;
 
 /* Compute the 5 grid-line Y-percentages within the container */
 const plotTop = GRAPH_PADDING.top;
@@ -65,11 +66,10 @@ export function GraphMode() {
 
   const [showGraph, setShowGraph] = useState(false);
   const [cardExpanded, setCardExpanded] = useState(false);
+  const analysisScope = "season" as const;
 
   const {
     selectedTeamId,
-    timeScope,
-    setTimeScope,
     setSelectedTeamId,
     setCameraMode,
     setStage,
@@ -80,25 +80,21 @@ export function GraphMode() {
 
   const medianGap = useMemo(() => {
     if (drivers.length !== 2) return null;
-    return calculateMedianQualifyingGap(
-      drivers[0].id,
-      drivers[1].id,
-      timeScope,
-    );
-  }, [drivers, timeScope]);
+    return calculateMedianQualifyingGap(drivers[0].id, drivers[1].id, analysisScope);
+  }, [analysisScope, drivers]);
 
   const headToHead = useMemo(() => {
     if (drivers.length !== 2) return null;
-    return calculateHeadToHead(drivers[0].id, drivers[1].id, timeScope);
-  }, [drivers, timeScope]);
+    return calculateHeadToHead(drivers[0].id, drivers[1].id, analysisScope);
+  }, [analysisScope, drivers]);
 
   const q3Rates = useMemo(() => {
     if (drivers.length !== 2) return null;
     return {
-      driver1: calculateQ3Rate(drivers[0].id, timeScope),
-      driver2: calculateQ3Rate(drivers[1].id, timeScope),
+      driver1: calculateQ3Rate(drivers[0].id, analysisScope),
+      driver2: calculateQ3Rate(drivers[1].id, analysisScope),
     };
-  }, [drivers, timeScope]);
+  }, [analysisScope, drivers]);
 
   // Full season qualifying gaps
   const perRaceGaps = useMemo(() => {
@@ -106,33 +102,65 @@ export function GraphMode() {
     return getPerRaceQualifyingGaps(drivers[0].id, drivers[1].id, 24);
   }, [drivers]);
 
-  // SimpleGraph data with abbreviations + formatted value labels
+  // Signed seconds so the graph can show values above/below the 0 baseline.
   const graphData = useMemo(() => {
     return perRaceGaps.map((gap) => ({
-      value: Math.abs(gap.gapMs),
-      label:
-        COUNTRY_ABBR[gap.country] ||
-        gap.country.slice(0, 3).toUpperCase(),
+      value: gap.gapMs / 1000,
+      label: COUNTRY_ABBR[gap.country] || gap.country.slice(0, 3).toUpperCase(),
       meta: gap.country,
-      valueLabel: `${Math.abs(gap.gapMs)}ms`,
+      valueLabel: `${gap.gapFormatted}s`,
     }));
   }, [perRaceGaps]);
 
-  // Compute Y-axis tick values (must replicate SimpleGraph's padding logic)
-  const yTicks = useMemo(() => {
-    if (graphData.length === 0) return [];
+  const yAxisScale = useMemo(() => {
+    if (graphData.length === 0) return null;
     const values = graphData.map((d) => d.value);
     const minVal = Math.min(...values);
     const maxVal = Math.max(...values);
     const range = maxVal - minVal || 1;
-    const pMin = minVal - range * 0.1;
-    const pMax = maxVal + range * 0.1;
+    const paddedMin = minVal - range * 0.1;
+    const paddedMax = maxVal + range * 0.1;
 
-    return Array.from({ length: 5 }, (_, i) => ({
-      value: pMax - (i / 4) * (pMax - pMin),
-      pct: GRID_LINE_PCTS[i],
-    }));
+    return {
+      min: paddedMin,
+      max: paddedMax,
+      range: paddedMax - paddedMin || 1,
+    };
   }, [graphData]);
+
+  // Compute Y-axis tick values (must replicate SimpleGraph's padding logic)
+  const yTicks = useMemo(() => {
+    if (!yAxisScale) return [];
+    return Array.from({ length: 5 }, (_, i) => {
+      const value =
+        yAxisScale.max - (i / 4) * (yAxisScale.max - yAxisScale.min);
+      return {
+        value,
+        pct: GRID_LINE_PCTS[i],
+        isZero: Math.abs(value) < 0.0005,
+      };
+    });
+  }, [yAxisScale]);
+
+  const zeroLinePct = useMemo(() => {
+    if (!yAxisScale) return null;
+    const zeroRatio = (0 - yAxisScale.min) / yAxisScale.range;
+    if (zeroRatio < 0 || zeroRatio > 1) return null;
+
+    const zeroY = plotTop + graphH - zeroRatio * graphH;
+    return (zeroY / VB_H) * 100;
+  }, [yAxisScale]);
+
+  const hasZeroTick = useMemo(
+    () => yTicks.some((tick) => tick.isZero),
+    [yTicks],
+  );
+
+  const formatSecondsTick = useCallback((seconds: number): string => {
+    if (Math.abs(seconds) < 0.0005) return "0.000";
+    const sign = seconds > 0 ? "+" : "-";
+    return `${sign}${Math.abs(seconds).toFixed(3)}`;
+  }, []);
 
   const formatGapDisplay = (ms: number): string => {
     const absMs = Math.abs(ms);
@@ -274,7 +302,12 @@ export function GraphMode() {
         <div
           ref={cardRef}
           className="rounded-[36px] bg-black/60 backdrop-blur-sm border border-white/[0.06]"
-          style={{ width: 1340, opacity: 0, padding: "40px 56px 48px" }}
+          style={{
+            width: GRAPH_CARD_WIDTH,
+            maxWidth: "calc(100vw - 64px)",
+            opacity: 0,
+            padding: "40px 56px 48px",
+          }}
         >
           {/* ── Header ── */}
           <div className="flex items-start justify-between mb-8">
@@ -293,33 +326,11 @@ export function GraphMode() {
               </h1>
             </div>
 
-            <button
-              onClick={() =>
-                setTimeScope(timeScope === "season" ? "last5" : "season")
-              }
-              className="flex items-center gap-1.5 text-white/60 hover:text-white/90 transition-colors"
-            >
-              <span className="text-[13px] font-semibold capitalize">
-                {timeScope === "season" ? "2025 Season" : "Last 5 Races"}
-              </span>
-              <svg
-                className="w-5 h-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
-            </button>
+            <p className="text-[13px] font-semibold text-white/60">2025 Season</p>
           </div>
 
           {/* ── Content grid ── */}
-          <div className="grid grid-cols-[1fr_300px] gap-12">
+          <div className="grid grid-cols-[minmax(0,1fr)_280px] gap-10">
             {/* ===== Left column: gap number + graph ===== */}
             <div className="flex flex-col gap-5">
               {/* Median gap big number */}
@@ -360,18 +371,27 @@ export function GraphMode() {
                         curved
                         gradientFade
                         showDots
+                        showZeroLine
+                        zeroLineColor="rgba(255,255,255,0.45)"
+                        zeroLineDashArray="0"
                         showXAxisLabels
                         xLabelColor="rgba(255,255,255,0.3)"
-                        xLabelFontSize={9}
+                        xLabelFontSize={8}
                         padding={GRAPH_PADDING}
+                        preserveAspectRatio="none"
                         className="w-full"
                       />
 
                       {/* Y-axis tick values — aligned with the 5 horizontal grid lines */}
-                      {yTicks.map((tick, i) => (
+                      {yTicks.map((tick) => (
                         <div
-                          key={i}
-                          className="absolute pointer-events-none text-[10px] text-white/30 font-f1 text-right pr-1.5 leading-none"
+                          key={tick.pct}
+                          className={cn(
+                            "absolute pointer-events-none text-[10px] font-f1 text-right pr-1.5 leading-none tabular-nums",
+                            tick.isZero
+                              ? "text-white/65 font-f1-bold"
+                              : "text-white/30",
+                          )}
                           style={{
                             top: `${tick.pct}%`,
                             left: 0,
@@ -379,9 +399,23 @@ export function GraphMode() {
                             transform: "translateY(-50%)",
                           }}
                         >
-                          {Math.round(tick.value)}
+                          {formatSecondsTick(tick.value)}
                         </div>
                       ))}
+
+                      {zeroLinePct !== null && !hasZeroTick && (
+                        <div
+                          className="absolute pointer-events-none text-[9px] text-white/75 font-f1-bold text-right pr-1.5 leading-none tabular-nums"
+                          style={{
+                            top: `${zeroLinePct}%`,
+                            left: 0,
+                            width: `${Y_LABEL_RIGHT_PCT}%`,
+                            transform: "translateY(-50%)",
+                          }}
+                        >
+                          0.000
+                        </div>
+                      )}
 
                       {/* Y-axis unit label */}
                       <div
@@ -392,7 +426,7 @@ export function GraphMode() {
                           transform: "translateY(-180%)",
                         }}
                       >
-                        ms
+                        s
                       </div>
                     </>
                   )}
@@ -463,10 +497,7 @@ export function GraphMode() {
                         {drivers[0].abbreviation}
                       </span>
                       <span className="font-f1-bold text-[13px] text-white">
-                        {Math.round(
-                          (q3Rates?.driver1.q3Rate ?? 0) * 100,
-                        )}
-                        %
+                        {Math.round((q3Rates?.driver1.q3Rate ?? 0) * 100)}%
                       </span>
                     </div>
                     <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
@@ -494,10 +525,7 @@ export function GraphMode() {
                         {drivers[1].abbreviation}
                       </span>
                       <span className="font-f1-bold text-[13px] text-white">
-                        {Math.round(
-                          (q3Rates?.driver2.q3Rate ?? 0) * 100,
-                        )}
-                        %
+                        {Math.round((q3Rates?.driver2.q3Rate ?? 0) * 100)}%
                       </span>
                     </div>
                     <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
@@ -558,9 +586,7 @@ export function GraphMode() {
                         <span
                           className={cn(
                             "text-[11px] font-f1-bold tabular-nums",
-                            gap.gapMs > 0
-                              ? "text-white/80"
-                              : "text-white/45",
+                            gap.gapMs > 0 ? "text-white/80" : "text-white/45",
                           )}
                         >
                           {gap.gapFormatted}s

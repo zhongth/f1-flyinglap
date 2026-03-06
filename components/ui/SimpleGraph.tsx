@@ -51,6 +51,7 @@ export interface SimpleGraphProps {
     left?: number;
   };
   className?: string;
+  preserveAspectRatio?: string;
 }
 
 const VIEWBOX_WIDTH = 800;
@@ -90,6 +91,7 @@ const SimpleGraph = ({
   valuePadding = 0.1,
   padding = {},
   className,
+  preserveAspectRatio = "xMidYMid meet",
 }: SimpleGraphProps) => {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
   const [tooltipRotation, setTooltipRotation] = useState(0);
@@ -254,6 +256,7 @@ const SimpleGraph = ({
       <svg
         ref={svgRef}
         viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
+        preserveAspectRatio={preserveAspectRatio}
         className="h-full w-full text-white/30"
         style={{ overflow: "visible" }}
         role="img"

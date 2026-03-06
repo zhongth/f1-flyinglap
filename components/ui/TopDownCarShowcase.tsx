@@ -292,7 +292,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     scene.add(sideCyc);
 
     // Rim light strip — bright emissive bar at base of back wall
-    const rimStripGeo = new THREE.PlaneGeometry(40, 0.18);
+    const rimStripGeo = new THREE.PlaneGeometry(62, 0.18);
     const rimStripMat = new THREE.MeshBasicMaterial({
       color: 0xeef2ff,
       transparent: true,
@@ -305,7 +305,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     scene.add(rimStrip);
 
     // Soft glow plane behind rim strip (wider bloom effect)
-    const rimGlowGeo = new THREE.PlaneGeometry(50, 2.4);
+    const rimGlowGeo = new THREE.PlaneGeometry(78, 2.4);
     const rimGlowMat = new THREE.MeshBasicMaterial({
       color: 0xc0c8d8,
       transparent: true,
@@ -318,7 +318,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     scene.add(rimGlow);
 
     // Secondary glow halo (very wide, subtle)
-    const rimHaloGeo = new THREE.PlaneGeometry(56, 6);
+    const rimHaloGeo = new THREE.PlaneGeometry(88, 6);
     const rimHaloMat = new THREE.MeshBasicMaterial({
       color: 0x909aac,
       transparent: true,
