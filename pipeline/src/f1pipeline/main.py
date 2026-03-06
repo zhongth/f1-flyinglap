@@ -59,6 +59,7 @@ def main() -> None:
     from .fetch_calendar import fetch_calendar
     from .fetch_drivers import fetch_drivers
     from .fetch_qualifying import fetch_all_qualifying
+    from .fetch_standings import fetch_constructor_standings
     from .fetch_teams import build_teams
     from .write_json import write_all
 
@@ -83,13 +84,18 @@ def main() -> None:
     drivers = fetch_drivers(args.season)
     print()
 
-    # Step 4: Build teams
-    print("Step 4: Building teams from driver data + branding...")
-    teams = build_teams(drivers)
+    # Step 4: Fetch constructor standings
+    print("Step 4: Fetching constructor standings...")
+    constructor_standings = fetch_constructor_standings(args.season)
     print()
 
-    # Step 5: Compute stats
-    print("Step 5: Computing statistics...")
+    # Step 5: Build teams
+    print("Step 5: Building teams from driver data + branding...")
+    teams = build_teams(drivers, constructor_standings)
+    print()
+
+    # Step 6: Compute stats
+    print("Step 6: Computing statistics...")
     teammate_gaps, head_to_head, q3_rates = compute_all_stats(
         races, qualifying, teams, drivers
     )
@@ -97,8 +103,8 @@ def main() -> None:
     print(f"  → {len(head_to_head)} head-to-head entries")
     print(f"  → {len(q3_rates)} Q3 rate entries\n")
 
-    # Step 6: Write JSON
-    print("Step 6: Writing JSON files...")
+    # Step 7: Write JSON
+    print("Step 7: Writing JSON files...")
     write_all(
         output_dir=output_dir,
         season=args.season,

@@ -1,33 +1,5 @@
 [
   {
-    "id": "red_bull",
-    "name": "Oracle Red Bull Racing",
-    "shortName": "Red Bull",
-    "primaryColor": "#3671C6",
-    "secondaryColor": "#1E5BC6",
-    "logoPath": "/team-logos/Red_Bull_Racing-Logo.svg",
-    "bgImagePath": "/assets/f1-bg-collection/redbull-bg-2.jpg",
-    "drivers": [
-      "max_verstappen",
-      "yuki_tsunoda"
-    ],
-    "constructorOrder": 1
-  },
-  {
-    "id": "ferrari",
-    "name": "Scuderia Ferrari",
-    "shortName": "Ferrari",
-    "primaryColor": "#E80020",
-    "secondaryColor": "#FFEB00",
-    "logoPath": "/team-logos/Ferrari.svg",
-    "bgImagePath": "/assets/f1-bg-collection/ferrari-bg-1.webp",
-    "drivers": [
-      "charles_leclerc",
-      "lewis_hamilton"
-    ],
-    "constructorOrder": 2
-  },
-  {
     "id": "mclaren",
     "name": "McLaren F1 Team",
     "shortName": "McLaren",
@@ -39,7 +11,8 @@
       "lando_norris",
       "oscar_piastri"
     ],
-    "constructorOrder": 3
+    "constructorOrder": 1,
+    "constructorPoints": 833
   },
   {
     "id": "mercedes",
@@ -53,35 +26,38 @@
       "george_russell",
       "kimi_antonelli"
     ],
-    "constructorOrder": 4
+    "constructorOrder": 2,
+    "constructorPoints": 469
   },
   {
-    "id": "aston_martin",
-    "name": "Aston Martin Aramco F1",
-    "shortName": "Aston Martin",
-    "primaryColor": "#229971",
-    "secondaryColor": "#358C75",
-    "logoPath": "/team-logos/Logo_Aston_Martin_F1_Team.svg",
-    "bgImagePath": "/assets/f1-bg-collection/astonmartin-bg-2.jpg",
+    "id": "red_bull",
+    "name": "Oracle Red Bull Racing",
+    "shortName": "Red Bull",
+    "primaryColor": "#3671C6",
+    "secondaryColor": "#1E5BC6",
+    "logoPath": "/team-logos/Red_Bull_Racing-Logo.svg",
+    "bgImagePath": "/assets/f1-bg-collection/redbull-bg-2.jpg",
     "drivers": [
-      "fernando_alonso",
-      "lance_stroll"
+      "max_verstappen",
+      "yuki_tsunoda"
     ],
-    "constructorOrder": 5
+    "constructorOrder": 3,
+    "constructorPoints": 451
   },
   {
-    "id": "alpine",
-    "name": "BWT Alpine F1 Team",
-    "shortName": "Alpine",
-    "primaryColor": "#FF87BC",
-    "secondaryColor": "#0093CC",
-    "logoPath": "/team-logos/Logo_of_alpine_f1_team_2022.svg",
-    "bgImagePath": "/assets/f1-bg-collection/alpine-bg-2.jpg",
+    "id": "ferrari",
+    "name": "Scuderia Ferrari",
+    "shortName": "Ferrari",
+    "primaryColor": "#E80020",
+    "secondaryColor": "#FFEB00",
+    "logoPath": "/team-logos/Ferrari.svg",
+    "bgImagePath": "/assets/f1-bg-collection/ferrari-bg-1.webp",
     "drivers": [
-      "pierre_gasly",
-      "franco_colapinto"
+      "charles_leclerc",
+      "lewis_hamilton"
     ],
-    "constructorOrder": 6
+    "constructorOrder": 4,
+    "constructorPoints": 398
   },
   {
     "id": "williams",
@@ -95,7 +71,8 @@
       "carlos_sainz",
       "alexander_albon"
     ],
-    "constructorOrder": 7
+    "constructorOrder": 5,
+    "constructorPoints": 137
   },
   {
     "id": "racing_bulls",
@@ -109,21 +86,23 @@
       "isack_hadjar",
       "liam_lawson"
     ],
-    "constructorOrder": 8
+    "constructorOrder": 6,
+    "constructorPoints": 92
   },
   {
-    "id": "sauber",
-    "name": "Stake F1 Team Kick Sauber",
-    "shortName": "Sauber",
-    "primaryColor": "#52E252",
-    "secondaryColor": "#00F800",
-    "logoPath": "/team-logos/Logo_of_Stake_F1_Team_Kick_Sauber.png",
-    "bgImagePath": "/assets/f1-bg-collection/sauber-bg-1.jpg",
+    "id": "aston_martin",
+    "name": "Aston Martin Aramco F1",
+    "shortName": "Aston Martin",
+    "primaryColor": "#229971",
+    "secondaryColor": "#358C75",
+    "logoPath": "/team-logos/Logo_Aston_Martin_F1_Team.svg",
+    "bgImagePath": "/assets/f1-bg-collection/astonmartin-bg-2.jpg",
     "drivers": [
-      "gabriel_bortoleto",
-      "nico_hulkenberg"
+      "fernando_alonso",
+      "lance_stroll"
     ],
-    "constructorOrder": 9
+    "constructorOrder": 7,
+    "constructorPoints": 89
   },
   {
     "id": "haas",
@@ -137,6 +116,37 @@
       "esteban_ocon",
       "oliver_bearman"
     ],
-    "constructorOrder": 10
+    "constructorOrder": 8,
+    "constructorPoints": 79
+  },
+  {
+    "id": "sauber",
+    "name": "Stake F1 Team Kick Sauber",
+    "shortName": "Sauber",
+    "primaryColor": "#52E252",
+    "secondaryColor": "#00F800",
+    "logoPath": "/team-logos/Logo_of_Stake_F1_Team_Kick_Sauber.png",
+    "bgImagePath": "/assets/f1-bg-collection/sauber-bg-1.jpg",
+    "drivers": [
+      "gabriel_bortoleto",
+      "nico_hulkenberg"
+    ],
+    "constructorOrder": 9,
+    "constructorPoints": 70
+  },
+  {
+    "id": "alpine",
+    "name": "BWT Alpine F1 Team",
+    "shortName": "Alpine",
+    "primaryColor": "#FF87BC",
+    "secondaryColor": "#0093CC",
+    "logoPath": "/team-logos/Logo_of_alpine_f1_team_2022.svg",
+    "bgImagePath": "/assets/f1-bg-collection/alpine-bg-2.jpg",
+    "drivers": [
+      "pierre_gasly",
+      "franco_colapinto"
+    ],
+    "constructorOrder": 10,
+    "constructorPoints": 22
   }
 ]

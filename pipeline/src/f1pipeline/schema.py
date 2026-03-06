@@ -39,6 +39,7 @@ class Team(BaseModel):
     bgImagePath: str | None = None
     drivers: tuple[str, str]
     constructorOrder: int
+    constructorPoints: int
 
 
 class RaceWeekend(BaseModel):

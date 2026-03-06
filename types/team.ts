@@ -8,4 +8,5 @@ export interface Team {
   bgImagePath?: string;
   drivers: [string, string];
   constructorOrder: number;
+  constructorPoints: number;
 }

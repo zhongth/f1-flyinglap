@@ -529,20 +529,49 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
       const blurAmount = isCoreCard ? 0 : 2 * Math.abs(norm) ** 1.1;
       card.element.style.filter = `blur(${blurAmount.toFixed(2)}px)`;
 
+      // Expose normalized position for CSS-driven specular highlight
+      card.element.style.setProperty("--card-norm", norm.toFixed(3));
+
       const item = stableItems[i];
       if (card.surface && item) {
-        const defaultBackground = item.background ?? "";
-        const activeBackground = item.activeBackground ?? defaultBackground;
-        card.surface.style.background = isActive
-          ? activeBackground
-          : defaultBackground;
         const teamColor = item.primaryColor ?? "#ffffff";
-        card.surface.style.borderColor = isActive
-          ? `${teamColor}80`
-          : "rgba(255, 255, 255, 0.06)";
-        card.surface.style.boxShadow = isActive
-          ? `0 0 0 1px ${teamColor}30, 0 16px 40px rgba(0, 0, 0, 0.5)`
-          : "0 8px 24px rgba(0, 0, 0, 0.25)";
+        // Specular highlight position shifts with card rotation
+        const specularX = 50 + norm * 30;
+
+        if (isActive) {
+          card.surface.style.background = `
+            linear-gradient(${165 + norm * 20}deg, ${teamColor}10 0%, transparent 45%),
+            linear-gradient(to bottom, rgba(255,255,255,0.04) 0%, transparent 30%),
+            rgba(255,255,255,0.02)
+          `;
+          card.surface.style.borderColor = `rgba(255,255,255,0.18)`;
+          card.surface.style.boxShadow = `
+            inset 0 1px 0 0 rgba(255,255,255,0.22),
+            inset 0 -1px 0 0 rgba(255,255,255,0.04),
+            0 0 0 0.5px rgba(255,255,255,0.06),
+            0 12px 40px rgba(0,0,0,0.6),
+            0 0 80px -15px ${teamColor}15
+          `;
+        } else {
+          card.surface.style.background = `
+            linear-gradient(to bottom, rgba(255,255,255,0.03) 0%, transparent 40%),
+            rgba(255,255,255,0.015)
+          `;
+          card.surface.style.borderColor = "rgba(255,255,255,0.08)";
+          card.surface.style.boxShadow = `
+            inset 0 1px 0 0 rgba(255,255,255,0.1),
+            0 8px 24px rgba(0,0,0,0.3)
+          `;
+        }
+
+        // Specular overlay (the shiny glint that moves with rotation)
+        const specularEl = card.surface.querySelector("[data-specular]") as HTMLElement | null;
+        if (specularEl) {
+          specularEl.style.background = `
+            radial-gradient(ellipse 90% 25% at ${specularX}% 5%, rgba(255,255,255,${isActive ? 0.2 : 0.08}) 0%, transparent 70%),
+            radial-gradient(ellipse 50% 80% at ${50 - norm * 20}% 50%, rgba(255,255,255,${isActive ? 0.03 : 0.015}) 0%, transparent 60%)
+          `;
+        }
       }
     }
 
@@ -1130,6 +1159,18 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
         />
       ) : null}
 
+      {/* Liquid Glass SVG filter — refraction via displacement map */}
+      <svg width="0" height="0" className="absolute" aria-hidden="true">
+        <defs>
+          <filter id="liquid-glass" x="-5%" y="-5%" width="110%" height="110%" colorInterpolationFilters="sRGB">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="blur" />
+            <feTurbulence type="fractalNoise" baseFrequency="0.012" numOctaves="1" seed="5" result="noise" />
+            <feDisplacementMap in="blur" in2="noise" scale="8" xChannelSelector="R" yChannelSelector="G" result="refracted" />
+            <feColorMatrix in="refracted" type="saturate" values="1.8" />
+          </filter>
+        </defs>
+      </svg>
+
       <div
         ref={cardsContainerRef}
         className="absolute inset-0 z-10"
@@ -1164,18 +1205,39 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
                 }
               }}
               className={cn(
-                "w-full h-full rounded-2xl overflow-hidden pointer-events-none select-none shadow-2xl border border-white/10 transition-[background,border-color,box-shadow] duration-300",
+                "relative w-full h-full rounded-2xl overflow-hidden pointer-events-none select-none",
+                "border border-white/[0.12]",
+                "transition-[border-color,box-shadow] duration-300",
                 cardClassName,
                 item.cardClassName,
               )}
-              style={
-                item.background ? { background: item.background } : undefined
-              }
+              style={{
+                backdropFilter: "url(#liquid-glass) brightness(1.12)",
+                WebkitBackdropFilter: "url(#liquid-glass) brightness(1.12)",
+              }}
             >
+              {/* Specular highlight — moves with card rotation */}
+              <div
+                data-specular
+                className="absolute inset-0 z-10 pointer-events-none rounded-2xl"
+              />
+              {/* Edge highlight — top rim glow */}
+              <div className="absolute inset-x-0 top-0 h-[1px] z-10 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+              {/* Side rim highlights */}
+              <div className="absolute inset-y-0 left-0 w-[0.5px] z-10 bg-gradient-to-b from-white/20 via-white/[0.04] to-transparent" />
+              <div className="absolute inset-y-0 right-0 w-[0.5px] z-10 bg-gradient-to-b from-white/20 via-white/[0.04] to-transparent" />
+              {/* Inner depth — top illumination, bottom shadow */}
+              <div
+                className="absolute inset-0 z-[5] pointer-events-none rounded-2xl"
+                style={{
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 30%, transparent 75%, rgba(0,0,0,0.12) 100%)",
+                }}
+              />
+              {/* Content */}
               {item.content ? (
                 <div
                   className={cn(
-                    "w-full h-full flex items-center justify-center",
+                    "relative z-0 w-full h-full flex items-center justify-center",
                     contentClassName,
                   )}
                 >
@@ -1185,7 +1247,7 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
                 <img
                   src={item.image}
                   alt={item.alt ?? `Carousel item ${i + 1}`}
-                  className="w-full h-full object-cover"
+                  className="relative z-0 w-full h-full object-cover"
                   draggable={false}
                   style={{ userSelect: "none" }}
                 />

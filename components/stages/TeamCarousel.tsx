@@ -72,58 +72,59 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     () =>
       sortedTeams.map((team) => {
         const drivers = getDriversByTeamId(team.id);
-        const position = String(team.constructorOrder).padStart(2, "0");
+        const position = `P${team.constructorOrder}`;
 
         return {
           id: team.id,
           content: (
             <div className="relative flex flex-col w-full h-full overflow-hidden p-4">
-              {/* Top row: position number + team color accent line */}
+              {/* Top row: position + points */}
               <div className="flex items-start justify-between">
                 <span
-                  className="font-f1-bold text-[32px] leading-none tracking-tight"
+                  className="font-f1-bold text-[28px] leading-none tracking-tight"
                   style={{ color: team.primaryColor }}
                 >
                   {position}
                 </span>
-                <div
-                  className="mt-1.5 h-[3px] w-8 rounded-full"
-                  style={{ backgroundColor: team.primaryColor }}
-                />
+                <span className="font-f1 text-[10px] tracking-[0.08em] text-white/35 uppercase mt-1">
+                  {team.constructorPoints} pts
+                </span>
               </div>
 
-              {/* Center: team logo */}
+              {/* Center: team logo with subtle glow */}
               <div className="flex-1 flex items-center justify-center">
-                <div className="relative h-[52px] w-[52px]">
-                  <Image
-                    src={team.logoPath}
-                    alt={team.name}
-                    fill
-                    sizes="52px"
-                    className="object-contain brightness-90"
-                    draggable={false}
+                <div className="relative">
+                  <div
+                    className="absolute inset-0 blur-2xl opacity-20 scale-150"
+                    style={{ backgroundColor: team.primaryColor }}
                   />
+                  <div className="relative h-[56px] w-[56px]">
+                    <Image
+                      src={team.logoPath}
+                      alt={team.name}
+                      fill
+                      sizes="56px"
+                      className="object-contain drop-shadow-sm"
+                      draggable={false}
+                    />
+                  </div>
                 </div>
               </div>
 
               {/* Bottom section: team name + drivers */}
-              <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col gap-1">
                 <span className="font-f1-bold text-[13px] text-white/90 uppercase tracking-[0.06em] leading-tight">
                   {team.shortName}
                 </span>
-                <div className="flex items-center gap-2">
-                  <span
-                    className="font-f1 text-[10px] uppercase tracking-[0.12em]"
-                    style={{ color: `${team.primaryColor}CC` }}
-                  >
-                    {drivers.map((d) => d.abbreviation).join(" · ")}
-                  </span>
-                </div>
+                <span
+                  className="font-f1 text-[10px] uppercase tracking-[0.12em]"
+                  style={{ color: `${team.primaryColor}AA` }}
+                >
+                  {drivers.map((d) => d.abbreviation).join(" · ")}
+                </span>
               </div>
             </div>
           ),
-          background: "rgba(255,255,255,0.03)",
-          activeBackground: "rgba(255,255,255,0.06)",
           primaryColor: team.primaryColor,
           secondaryColor: team.secondaryColor,
         };
@@ -278,7 +279,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
             <GradientCarousel
               items={teamCards}
               className="w-full bg-transparent"
-              cardClassName="border-white/[0.06] bg-black/40 backdrop-blur-sm"
+              cardClassName="bg-black/15"
               contentClassName=""
               cardWidthPx={236}
               cardAspectRatio={110 / 140}

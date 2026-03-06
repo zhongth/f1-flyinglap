@@ -6,15 +6,17 @@ from .config import TEAM_ID_MAP, TEAM_BRANDING, TEAM_OFFICIAL_NAMES
 from .schema import Driver, Team
 
 
-def build_teams(drivers: list[Driver]) -> list[Team]:
+def build_teams(
+    drivers: list[Driver],
+    constructor_standings: dict[str, int] | None = None,
+) -> list[Team]:
     """Build team list from driver data and manual branding config.
 
     We derive teams from the driver roster (each team has exactly 2 drivers)
     and merge with the branding data from config.py (colors, logos, bg images).
 
-    Constructor order is assigned based on the order teams appear in branding
-    config (which reflects the previous season's standings). This can be
-    overridden later with actual standings data.
+    Constructor order is assigned from actual standings when available,
+    otherwise from branding config order (previous season's standings).
     """
     # Group drivers by team
     team_drivers: dict[str, list[str]] = {}
@@ -43,6 +45,8 @@ def build_teams(drivers: list[Driver]) -> list[Team]:
             while len(driver_ids) < 2:
                 driver_ids.append("")
 
+        points = (constructor_standings or {}).get(team_id, 0)
+
         teams.append(
             Team(
                 id=team_id,
@@ -54,6 +58,7 @@ def build_teams(drivers: list[Driver]) -> list[Team]:
                 bgImagePath=branding.get("bgImagePath"),
                 drivers=(driver_ids[0], driver_ids[1]),
                 constructorOrder=constructor_order,
+                constructorPoints=points,
             )
         )
         constructor_order += 1
@@ -76,6 +81,7 @@ def build_teams(drivers: list[Driver]) -> list[Team]:
                     logoPath="",
                     drivers=(driver_ids[0], driver_ids[1]),
                     constructorOrder=constructor_order,
+                    constructorPoints=(constructor_standings or {}).get(team_id, 0),
                 )
             )
             constructor_order += 1
