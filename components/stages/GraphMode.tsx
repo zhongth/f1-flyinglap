@@ -352,7 +352,7 @@ export function GraphMode() {
                   Season Qualifying Delta
                 </p>
 
-                <div className="relative">
+                <div className="relative" style={{ minHeight: GRAPH_HEIGHT }}>
                   {showGraph && graphData.length > 0 && (
                     <>
                       <SimpleGraph

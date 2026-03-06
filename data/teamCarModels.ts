@@ -1,5 +1,3 @@
-const DEFAULT_CAR_MODEL_PATH = "/3d-model/2026_f1_car.glb";
-
 const TEAM_CAR_MODEL_PATHS: Record<string, string> = {
   red_bull: "/3d-model/Red Bull 3D Model.glb",
   ferrari: "/3d-model/Ferrari-3d-compressed.glb",
@@ -13,12 +11,14 @@ const TEAM_CAR_MODEL_PATHS: Record<string, string> = {
   haas: "/3d-model/Haas-3d-compressed.glb",
 };
 
+const FALLBACK_MODEL_PATH = TEAM_CAR_MODEL_PATHS.ferrari;
+
 export function getTeamCarModelPath(teamId: string | null | undefined): string {
-  if (!teamId) return DEFAULT_CAR_MODEL_PATH;
-  return TEAM_CAR_MODEL_PATHS[teamId] ?? DEFAULT_CAR_MODEL_PATH;
+  if (!teamId) return FALLBACK_MODEL_PATH;
+  return TEAM_CAR_MODEL_PATHS[teamId] ?? FALLBACK_MODEL_PATH;
 }
 
-/** Every model path the app may need (default + all teams). */
+/** Every model path the app may need (all teams). */
 export function getAllModelPaths(): string[] {
-  return [DEFAULT_CAR_MODEL_PATH, ...Object.values(TEAM_CAR_MODEL_PATHS)];
+  return Object.values(TEAM_CAR_MODEL_PATHS);
 }

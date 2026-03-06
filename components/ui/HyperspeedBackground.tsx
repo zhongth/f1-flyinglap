@@ -74,7 +74,7 @@ const defaultOptions: HyperspeedOptions = {
   onSpeedUp: () => {},
   onSlowDown: () => {},
   distortion: "turbulentDistortion",
-  carModelPath: "/3d-model/2026_f1_car.glb",
+  carModelPath: "/3d-model/Ferrari-3d-compressed.glb",
   length: 400,
   roadWidth: 10,
   islandWidth: 2,
