@@ -339,7 +339,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       depthWrite: false,
     });
     const logoMesh = new THREE.Mesh(logoGeo, logoMat);
-    logoMesh.position.set(0, 10, -7);
+    logoMesh.position.set(0, 8, -5);
     logoMeshRef.current = logoMesh;
     scene.add(logoMesh);
 
