@@ -257,11 +257,11 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
             F1 Flying Lap 飞驰圈
           </p>
         </div>
-        <h1 className="mt-5 font-f1-bold text-2xl md:text-4xl lg:text-[48px] tracking-[0.08em] text-white/95 uppercase leading-tight">
+        <h1 className="mt-5 font-f1-bold text-3xl md:text-5xl lg:text-6xl tracking-[0.08em] text-white/95 uppercase leading-tight">
           Who is faster?
         </h1>
-        <p className="mt-3 font-f1 text-[11px] md:text-xs tracking-[0.18em] text-white/45 uppercase">
-          Now previewing {activeTeam?.name ?? defaultTeam.name}
+        <p className="mt-3 font-f1 text-xs md:text-xs tracking-[0.18em] text-white/65 uppercase">
+          2025 Season
         </p>
       </div>
 

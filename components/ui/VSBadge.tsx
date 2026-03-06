@@ -149,7 +149,7 @@ export function VSBadge({
 
       {/* Gap value + H2H + slider */}
       <div className="flex flex-col items-center gap-7">
-        <p className="font-f1-bold text-[96px] text-white uppercase leading-[1.36] text-center">
+        <p className="font-f1-bold text-7xl text-white uppercase leading-[3] text-center">
           {displayValue}
         </p>
 
@@ -258,6 +258,13 @@ export function VSBadge({
           </div>
         </div>
 
+      </div>
+
+      {/* More info hint */}
+      <div className="flex justify-end w-full">
+        <span className="font-f1 text-[11px] text-white/30 uppercase tracking-[0.1em] group-hover:text-white/50 transition-colors">
+          More Info ›
+        </span>
       </div>
     </div>
   );

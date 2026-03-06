@@ -426,7 +426,7 @@ export function VersusMode() {
           </div>
 
           {/* Center panel — uses selectedTeamId data (updates immediately) */}
-          <div ref={centerRef} onClick={handleGraphView} className="cursor-pointer">
+          <div ref={centerRef} onClick={handleGraphView} className="cursor-pointer group">
             <VSBadge
               value={medianGap?.medianGap ?? 0}
               teamColor={team.primaryColor}
