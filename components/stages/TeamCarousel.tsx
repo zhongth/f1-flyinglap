@@ -251,12 +251,12 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
         ref={titleRef}
         className={`absolute top-[12%] left-0 right-0 z-40 text-center pointer-events-none ${showIntro ? "opacity-0" : ""}`}
       >
-        <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/45 px-5 py-2 backdrop-blur-xl">
+        {/* <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-white/15 bg-black/45 px-5 py-2 backdrop-blur-xl">
           <span className="h-1.5 w-1.5 rounded-full bg-[#E10600] shadow-[0_0_10px_rgba(225,6,0,0.8)]" />
           <p className="font-f1 text-[10px] md:text-xs tracking-[0.1em] text-white/65 uppercase">
             F1 Flying Lap 飞驰圈
           </p>
-        </div>
+        </div> */}
         <h1 className="mt-5 font-f1-bold text-3xl md:text-5xl lg:text-6xl tracking-[0.08em] text-white/95 uppercase leading-tight">
           Who is faster?
         </h1>
@@ -266,7 +266,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
       </div>
 
       {/* Horizontal team selector — anchored to bottom, sizes to content */}
-      <div className="absolute bottom-0 left-0 right-0 z-50 pb-6">
+      <div className="absolute bottom-0 left-0 right-0 z-50 pb-10">
           <div
             ref={wheelRef}
             className={
