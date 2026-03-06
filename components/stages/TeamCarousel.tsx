@@ -230,6 +230,22 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
       ref={containerRef}
       className="relative h-screen w-full overflow-hidden"
     >
+      {/* Podcast link — top right */}
+      <a
+        href="https://www.youtube.com/playlist?list=PL3g6oz4W-l1k0YrzaNaaGoI3MXwx96PoC"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="absolute top-6 right-6 z-50 group"
+      >
+        <Image
+          src="/assets/feichiquan-podcast.jpg"
+          alt="飞驰圈 Podcast"
+          width={40}
+          height={40}
+          className="rounded-full border border-white/10 group-hover:border-white/30 transition-all duration-300 group-hover:scale-110"
+        />
+      </a>
+
       {/* Team name — prominent display at top */}
       <div
         ref={titleRef}

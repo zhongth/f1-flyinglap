@@ -106,31 +106,45 @@ export function VSBadge({
       }}
     >
       {/* Header */}
-      <div className="flex flex-col items-center gap-6">
-        <p className="font-f1-bold text-[24px] text-white uppercase text-center tracking-[0.1em]">
-          medium Quali Gap
+      <div className="flex flex-col items-center gap-5">
+        <p className="font-f1 text-xs text-white/40 uppercase tracking-[0.2em]">
+          2025 Season
         </p>
-        <button
-          onClick={onTimeScopeChange}
-          className="flex items-center gap-1.5 text-white hover:text-white/80 transition-colors"
-        >
-          <span className="text-[16px] font-semibold capitalize">
-            {timeScope === "season" ? "2025 Season" : "Last 5 Races"}
-          </span>
-          <svg
-            className="w-6 h-6"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
+        <p className="font-f1-bold text-3xl text-white uppercase text-center -mt-1">
+          Median Quali Gap
+        </p>
+
+        {/* Scope toggle */}
+        <div className="relative flex rounded-full bg-white/[0.06] p-[3px]" onClick={(e) => e.stopPropagation()}>
+          {/* Sliding indicator */}
+          <div
+            className="absolute top-[3px] bottom-[3px] rounded-full transition-all duration-300 ease-out"
+            style={{
+              backgroundColor: `${teamColor}25`,
+              border: `1px solid ${teamColor}50`,
+              width: "calc(50% - 3px)",
+              left: timeScope === "season" ? 3 : "calc(50%)",
+            }}
+          />
+          <button
+            onClick={() => timeScope !== "season" && onTimeScopeChange()}
+            className={cn(
+              "relative z-10 px-5 py-1.5 rounded-full text-[11px] font-f1 uppercase transition-colors duration-300",
+              timeScope === "season" ? "text-white" : "text-white/35 hover:text-white/55",
+            )}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9 5l7 7-7 7"
-            />
-          </svg>
-        </button>
+            Whole Season
+          </button>
+          <button
+            onClick={() => timeScope !== "last5" && onTimeScopeChange()}
+            className={cn(
+              "relative z-10 px-5 py-1.5 rounded-full text-[11px] font-f1 uppercase transition-colors duration-300",
+              timeScope === "last5" ? "text-white" : "text-white/35 hover:text-white/55",
+            )}
+          >
+            Last 5 Races
+          </button>
+        </div>
       </div>
 
       {/* Gap value + H2H + slider */}

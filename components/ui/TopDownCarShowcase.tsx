@@ -159,6 +159,10 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   const needsRenderRef = useRef(true);
   const lastTimeRef = useRef(0);
   const isAnimatingRef = useRef(false);
+  const wheelAngularSpeedRef = useRef(0);
+  const prevCarXRef = useRef<number | null>(null);
+  const outgoingCarRef = useRef<CarState | null>(null);
+  const prevOutgoingXRef = useRef<number | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Object pool: pre-prepared cars keyed by model path
@@ -462,19 +466,58 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
         : 0.016;
       lastTimeRef.current = timestamp;
 
-      // Spin wheels while car is in motion (not during camera-only animation)
-      if (isAnimatingRef.current) {
-        const car = currentCarRef.current;
-        if (car && car.wheelTargets.length > 0) {
-          const spinRadians = WHEEL_BASE_ANGULAR_SPEED * delta;
-          spinWheelTargets(car.wheelTargets, spinRadians);
+      // Spin wheels — velocity-coupled while car moves, then coast-to-stop
+      const car = currentCarRef.current;
+      if (car && car.wheelTargets.length > 0) {
+        const carX = car.group.position.x;
+
+        if (isAnimatingRef.current) {
+          // Derive wheel speed from the car's linear velocity
+          if (prevCarXRef.current !== null) {
+            const linearSpeed = Math.abs(carX - prevCarXRef.current) / delta;
+            wheelAngularSpeedRef.current =
+              (linearSpeed / 35) * WHEEL_BASE_ANGULAR_SPEED;
+          }
+          prevCarXRef.current = carX;
+        } else if (wheelAngularSpeedRef.current > 0.05) {
+          // Car stopped — wheels decelerate like braking friction
+          wheelAngularSpeedRef.current *= Math.exp(-4 * delta);
+          needsRenderRef.current = true;
+        } else {
+          wheelAngularSpeedRef.current = 0;
+          prevCarXRef.current = null;
         }
+
+        if (wheelAngularSpeedRef.current > 0) {
+          spinWheelTargets(
+            car.wheelTargets,
+            wheelAngularSpeedRef.current * delta,
+          );
+        }
+      }
+
+      // Spin outgoing car's wheels (accelerating out)
+      const outgoing = outgoingCarRef.current;
+      if (outgoing && outgoing.wheelTargets.length > 0) {
+        const outX = outgoing.group.position.x;
+        if (prevOutgoingXRef.current !== null) {
+          const linearSpeed =
+            Math.abs(outX - prevOutgoingXRef.current) / delta;
+          const spinRadians =
+            (linearSpeed / 35) * WHEEL_BASE_ANGULAR_SPEED * delta;
+          spinWheelTargets(outgoing.wheelTargets, spinRadians);
+        }
+        prevOutgoingXRef.current = outX;
       }
 
       renderer.render(scene, camera);
 
-      // After one idle frame, stop rendering
-      if (!isAnimatingRef.current && !isCameraAnimatingRef.current) {
+      // After one idle frame, stop rendering (keep going while wheels decelerate)
+      if (
+        !isAnimatingRef.current &&
+        !isCameraAnimatingRef.current &&
+        wheelAngularSpeedRef.current <= 0.05
+      ) {
         needsRenderRef.current = false;
       }
     };
@@ -780,6 +823,9 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     const oldModelPath = currentModelPathRef.current;
     currentCarRef.current = newCarState;
     currentModelPathRef.current = modelPath;
+    prevCarXRef.current = null;
+    outgoingCarRef.current = oldCar;
+    prevOutgoingXRef.current = null;
 
     const onComplete = () => {
       isTransitioningRef.current = false;
@@ -810,6 +856,8 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
           if (oldModelPath) {
             returnToPool(scene, oldCar, oldModelPath);
           }
+          outgoingCarRef.current = null;
+          prevOutgoingXRef.current = null;
           onComplete();
         },
       });

@@ -53,6 +53,10 @@ export function VersusMode() {
   // Modal state: which driver card is expanded (0 = left, 1 = right, null = none)
   const [selectedDriverIndex, setSelectedDriverIndex] = useState<number | null>(null);
 
+  // Audio for Max Verstappen easter egg
+  const maxAudioRef = useRef<HTMLAudioElement | null>(null);
+  const [isMaxMuted, setIsMaxMuted] = useState(false);
+
   // Center panel uses selectedTeamId (updates immediately)
   const team = selectedTeamId ? getTeamById(selectedTeamId) : null;
   const drivers = selectedTeamId ? getDriversByTeamId(selectedTeamId) : [];
@@ -170,6 +174,40 @@ export function VersusMode() {
     },
     [selectedTeamId, setSelectedTeamId]
   );
+
+  const handleDriverClick = useCallback(
+    (index: number) => {
+      setSelectedDriverIndex(index);
+      const driver = displayDrivers[index];
+      if (driver?.id === "max_verstappen") {
+        if (!maxAudioRef.current) {
+          maxAudioRef.current = new Audio("/assets/music/Max33 Dub.mov");
+          maxAudioRef.current.volume = 0.5;
+        }
+        setIsMaxMuted(false);
+        maxAudioRef.current.muted = false;
+        maxAudioRef.current.currentTime = 0;
+        maxAudioRef.current.play().catch(() => {});
+      }
+    },
+    [displayDrivers],
+  );
+
+  const handleToggleMaxMute = useCallback(() => {
+    setIsMaxMuted((prev) => {
+      const next = !prev;
+      if (maxAudioRef.current) maxAudioRef.current.muted = next;
+      return next;
+    });
+  }, []);
+
+  const handleDriverModalClose = useCallback(() => {
+    setSelectedDriverIndex(null);
+    if (maxAudioRef.current) {
+      maxAudioRef.current.pause();
+      maxAudioRef.current.currentTime = 0;
+    }
+  }, []);
 
   const handleTimeScopeToggle = useCallback(() => {
     setTimeScope(timeScope === "season" ? "last5" : "season");
@@ -380,7 +418,7 @@ export function VersusMode() {
                     q3Rate={q3Rates?.driver1.q3Rate}
                     pedigreeLabel={pedigrees?.driver1.text}
                     pedigreeTier={pedigrees?.driver1.tier}
-                    onClick={() => setSelectedDriverIndex(0)}
+                    onClick={() => handleDriverClick(0)}
                   />
                 </TiltedCard>
               </motion.div>
@@ -420,7 +458,7 @@ export function VersusMode() {
                     q3Rate={q3Rates?.driver2.q3Rate}
                     pedigreeLabel={pedigrees?.driver2.text}
                     pedigreeTier={pedigrees?.driver2.tier}
-                    onClick={() => setSelectedDriverIndex(1)}
+                    onClick={() => handleDriverClick(1)}
                   />
                 </TiltedCard>
               </motion.div>
@@ -459,7 +497,14 @@ export function VersusMode() {
               : undefined
         }
         timeScope={timeScope}
-        onClose={() => setSelectedDriverIndex(null)}
+        onClose={handleDriverModalClose}
+        isMuted={isMaxMuted}
+        onToggleMute={
+          selectedDriverIndex !== null &&
+          displayDrivers[selectedDriverIndex]?.id === "max_verstappen"
+            ? handleToggleMaxMute
+            : undefined
+        }
       />
     </div>
   );
