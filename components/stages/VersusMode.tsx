@@ -16,7 +16,6 @@ import {
   calculateHeadToHead,
   calculateQ3Rate,
   getDriverPedigree,
-  getPerRaceQualifyingGaps,
 } from "@/data";
 
 const layoutSpring = {
@@ -85,10 +84,6 @@ export function VersusMode() {
     };
   }, [displayDrivers, timeScope]);
 
-  const perRaceGaps = useMemo(() => {
-    if (drivers.length !== 2) return [];
-    return getPerRaceQualifyingGaps(drivers[0].id, drivers[1].id, 5);
-  }, [drivers]);
 
   // Pedigree is a career stat — doesn't change with timeScope
   const pedigrees = useMemo(() => {
@@ -179,6 +174,57 @@ export function VersusMode() {
   const handleTimeScopeToggle = useCallback(() => {
     setTimeScope(timeScope === "season" ? "last5" : "season");
   }, [timeScope, setTimeScope]);
+
+  // Navigate to GRAPH stage: animate out and switch camera + stage
+  const handleGraphView = useCallback(() => {
+    if (isExitingRef.current) return;
+    isExitingRef.current = true;
+
+    setCameraMode("sideProfile");
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        setStage("GRAPH");
+        isExitingRef.current = false;
+      },
+    });
+
+    tl.to(
+      leftCardRef.current,
+      { x: -100, opacity: 0, duration: 0.4, ease: "power2.in" },
+      0,
+    );
+    tl.to(
+      rightCardRef.current,
+      { x: 100, opacity: 0, duration: 0.4, ease: "power2.in" },
+      0,
+    );
+    tl.to(
+      centerRef.current,
+      { opacity: 0, scale: 0.85, duration: 0.35, ease: "power2.in" },
+      0.05,
+    );
+    tl.to(
+      navRef.current,
+      { opacity: 0, y: 40, duration: 0.3, ease: "power2.in" },
+      0.05,
+    );
+    tl.to(
+      backBtnRef.current,
+      { opacity: 0, duration: 0.25, ease: "power2.in" },
+      0,
+    );
+    tl.to(
+      overlayRef.current,
+      { opacity: 0, duration: 0.5, ease: "power2.inOut" },
+      0.1,
+    );
+    tl.to(
+      patternRef.current,
+      { opacity: 0, duration: 0.3, ease: "power2.in" },
+      0,
+    );
+  }, [setCameraMode, setStage]);
 
   // Animated back transition: exit content, start camera return, then switch stage
   const handleBack = useCallback(() => {
@@ -342,7 +388,7 @@ export function VersusMode() {
           </div>
 
           {/* Center panel — uses selectedTeamId data (updates immediately) */}
-          <div ref={centerRef}>
+          <div ref={centerRef} onClick={handleGraphView} className="cursor-pointer">
             <VSBadge
               value={medianGap?.medianGap ?? 0}
               teamColor={team.primaryColor}
@@ -355,7 +401,6 @@ export function VersusMode() {
               raceCount={medianGap?.raceCount ?? 0}
               timeScope={timeScope}
               onTimeScopeChange={handleTimeScopeToggle}
-              perRaceGaps={perRaceGaps}
             />
           </div>
 

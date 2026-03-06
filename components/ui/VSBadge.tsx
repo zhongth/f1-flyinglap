@@ -3,7 +3,6 @@
 import { useRef, useEffect, useState } from "react";
 import { gsap } from "@/lib/gsap";
 import { cn } from "@/lib/utils";
-import { QualifyingGapChart } from "@/components/ui/QualifyingGapChart";
 import type { PerRaceGap } from "@/types";
 
 interface VSBadgeProps {
@@ -245,15 +244,6 @@ export function VSBadge({
           </div>
         </div>
 
-        {/* Per-race qualifying gap chart */}
-        {perRaceGaps && perRaceGaps.length > 0 && (
-          <QualifyingGapChart
-            data={perRaceGaps}
-            teamColor={teamColor}
-            driver1Abbreviation={driver1Abbreviation}
-            driver2Abbreviation={driver2Abbreviation}
-          />
-        )}
       </div>
     </div>
   );

@@ -2,9 +2,9 @@
 
 import { create } from "zustand";
 
-export type Stage = "GRID" | "VERSUS" | "DETAIL";
+export type Stage = "GRID" | "VERSUS" | "GRAPH" | "DETAIL";
 export type TimeScope = "season" | "last5";
-export type CameraMode = "topDown" | "cinematic";
+export type CameraMode = "topDown" | "cinematic" | "sideProfile";
 const DEFAULT_TEAM_ID = "ferrari";
 
 interface AppState {
@@ -108,6 +108,12 @@ export const useAppStore = create<AppState>((set, get) => ({
         stage: "VERSUS",
         previousStage: "DETAIL",
         focusedDriverId: null,
+      });
+    } else if (stage === "GRAPH") {
+      set({
+        stage: "VERSUS",
+        previousStage: "GRAPH",
+        cameraMode: "cinematic",
       });
     } else if (stage === "VERSUS") {
       set({

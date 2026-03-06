@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { TeamCarousel } from "@/components/stages/TeamCarousel";
 import { VersusMode } from "@/components/stages/VersusMode";
+import { GraphMode } from "@/components/stages/GraphMode";
 import CustomCursor from "@/components/ui/CustomCursor";
 import { FiveLightsOut } from "@/components/ui/FiveLightsOut";
 import Preloader from "@/components/ui/Preloader";
@@ -127,6 +128,7 @@ export default function Home() {
             <TeamCarousel introReady={isPreloaderRevealing} />
           )}
           {stage === "VERSUS" && <VersusMode />}
+          {stage === "GRAPH" && <GraphMode />}
         </main>
       </Preloader>
 

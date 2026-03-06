@@ -30,6 +30,13 @@ const CAMERA_CONFIGS = {
     fogColor: new THREE.Color(0x08080a),
     fogDensity: 0.014,
   },
+  sideProfile: {
+    position: { x: 0, y: 1.2, z: 16 },
+    lookAt: { x: 0, y: 5.2, z: -2 },
+    bgColor: new THREE.Color(0x0a0a0c),
+    fogColor: new THREE.Color(0x0a0a0c),
+    fogDensity: 0.012,
+  },
 } as const;
 
 const CAMERA_TRANSITION_DURATION = 1.4;
@@ -930,7 +937,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   // Update environment colors + logo when team or camera mode changes
   useEffect(() => {
     const team = getTeamById(teamId);
-    const isCinematic = cameraMode === "cinematic";
+    const isCinematic = cameraMode === "cinematic" || cameraMode === "sideProfile";
     if (!team) return;
 
     const teamColor = new THREE.Color(team.primaryColor);
