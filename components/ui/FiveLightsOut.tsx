@@ -67,10 +67,30 @@ export function FiveLightsOut({ progress, onComplete }: FiveLightsOutProps) {
   if (!visible) return null;
 
   return (
-    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-black">
-      {/* SVG dot-pattern texture for the lit lights */}
-      <svg width="0" height="0" className="absolute">
+    <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center bg-[#1a1a1a]">
+      {/* Kraft paper grain + scratch texture overlay */}
+      <svg className="absolute inset-0 w-full h-full pointer-events-none">
         <defs>
+          <filter id="kraft-grain">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.65"
+              numOctaves="4"
+              stitchTiles="stitch"
+              seed="2"
+            />
+            <feColorMatrix type="saturate" values="0" />
+          </filter>
+          <filter id="kraft-scratches">
+            <feTurbulence
+              type="turbulence"
+              baseFrequency="0.01 0.3"
+              numOctaves="2"
+              stitchTiles="stitch"
+              seed="5"
+            />
+            <feColorMatrix type="saturate" values="0" />
+          </filter>
           <pattern
             id="light-dots"
             x="0"
@@ -82,6 +102,10 @@ export function FiveLightsOut({ progress, onComplete }: FiveLightsOutProps) {
             <circle cx="3" cy="3" r="1" fill="rgba(0,0,0,0.18)" />
           </pattern>
         </defs>
+        {/* Fine grain layer */}
+        <rect width="100%" height="100%" filter="url(#kraft-grain)" opacity="0.06" />
+        {/* Directional scratch layer */}
+        <rect width="100%" height="100%" filter="url(#kraft-scratches)" opacity="0.04" />
       </svg>
 
       {/* Five lights with bezels */}
