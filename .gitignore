@@ -52,3 +52,8 @@ pipeline/.venv/
 __pycache__/
 *.pyc
 *.pyo
+
+# Playwright temp files
+.playwright-cli/
+.playwright-mcp/
+output/playwright/
