@@ -78,51 +78,67 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
         return {
           id: team.id,
           content: (
-            <div className="relative flex flex-col w-full h-full overflow-hidden p-4">
-              {/* Top row: position + points */}
-              <div className="flex items-start justify-between">
-                <span
-                  className="font-f1-bold text-[28px] leading-none tracking-tight"
-                  style={{ color: team.primaryColor }}
-                >
-                  {position}
-                </span>
-                <span className="font-f1 text-[10px] tracking-[0.08em] text-white/35 uppercase mt-1">
-                  {team.constructorPoints} pts
-                </span>
+            <div className="relative flex flex-col w-full h-full overflow-hidden p-5">
+              {/* Eyebrow + position */}
+              <div className="space-y-1.5">
+                <div className="text-[10px] uppercase tracking-[0.16em] text-black/35 font-f1">
+                  Constructor
+                </div>
+                <div className="flex items-end gap-1.5">
+                  <span
+                    className="text-[32px] font-light leading-none tracking-[-0.06em]"
+                    style={{ color: team.primaryColor }}
+                  >
+                    {position}
+                  </span>
+                  <span className="pb-0.5 text-[12px] tracking-[-0.02em] text-black/40 font-f1">
+                    {team.constructorPoints} pts
+                  </span>
+                </div>
+                {/* Accent micro line */}
+                <div
+                  className="h-px w-12 rounded-full"
+                  style={{
+                    background: `linear-gradient(to right, ${team.primaryColor}cc, ${team.primaryColor}33, transparent)`,
+                  }}
+                />
               </div>
 
-              {/* Center: team logo with subtle glow */}
+              {/* Center: team logo */}
               <div className="flex-1 flex items-center justify-center">
                 <div className="relative">
                   <div
-                    className="absolute inset-0 blur-2xl opacity-20 scale-150"
+                    className="absolute inset-0 blur-3xl opacity-10 scale-[2]"
                     style={{ backgroundColor: team.primaryColor }}
                   />
-                  <div className="relative h-[56px] w-[56px]">
+                  <div className="relative h-[52px] w-[52px]">
                     <Image
                       src={team.logoPath}
                       alt={team.name}
                       fill
-                      sizes="56px"
-                      className="object-contain drop-shadow-sm"
+                      sizes="52px"
+                      className="object-contain"
                       draggable={false}
                     />
                   </div>
                 </div>
               </div>
 
-              {/* Bottom section: team name + drivers */}
-              <div className="flex flex-col gap-1">
-                <span className="font-f1-bold text-[13px] text-white/90 uppercase tracking-[0.06em] leading-tight">
+              {/* Bottom: team name + drivers */}
+              <div className="space-y-2">
+                <span className="block text-[14px] font-f1-bold tracking-[-0.02em] text-black/82">
                   {team.shortName}
                 </span>
-                <span
-                  className="font-f1 text-[10px] uppercase tracking-[0.12em]"
-                  style={{ color: `${team.primaryColor}AA` }}
-                >
-                  {drivers.map((d) => d.abbreviation).join(" · ")}
-                </span>
+                <div className="flex items-center gap-1.5">
+                  {drivers.map((d) => (
+                    <span
+                      key={d.id}
+                      className="rounded-full border border-black/8 bg-black/[0.04] px-2 py-0.5 text-[9px] tracking-[0.1em] text-black/50 uppercase font-f1-bold"
+                    >
+                      {d.abbreviation}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
           ),
@@ -255,76 +271,86 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
         <div className="w-full px-5 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] xl:items-start xl:gap-x-10">
             <div className="max-w-[28rem]">
-              <div className="inline-flex items-center gap-3 rounded-full border border-white/10 bg-black/35 px-4 py-2 backdrop-blur-xl">
+              <div className="inline-flex items-center gap-2.5 rounded-full border border-white/8 bg-white/[0.04] px-4 py-2 backdrop-blur-xl">
                 <span
-                  className="h-1.5 w-8 rounded-full shadow-[0_0_16px_currentColor]"
-                  style={{
-                    color: activeTeam?.primaryColor,
-                    backgroundColor: activeTeam?.primaryColor,
-                  }}
+                  className="h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: activeTeam?.primaryColor }}
                 />
-                <p className="font-f1 text-[9px] sm:text-[10px] tracking-[0.28em] text-white/55 uppercase">
+                <p className="text-xs font-semibold tracking-[0.16em] text-white/42 uppercase">
                   2025 Season
                 </p>
               </div>
 
-              <h1 className="mt-6 font-f1-bold text-6xl leading-[1.2] tracking-[0.08em] text-white/95 uppercase">
-                <span className="justify-self-start">Who is Faster</span>
+              <h1 className="mt-6 text-[42px] md:text-[52px] font-f1-bold leading-none tracking-[-0.04em] text-white">
+                Who is Faster
               </h1>
 
-              <p className="mt-5 max-w-[24rem] font-titillium text-sm md:text-[15px] leading-relaxed text-white/58">
+              <p className="mt-5 max-w-[24rem] text-[14px] leading-[1.45] tracking-[-0.01em] text-white/56">
                 来自 117 的客观评价。 by 村长托马斯
               </p>
             </div>
 
-            <div className="w-full max-w-[24rem] self-start justify-self-start rounded-[2rem] border border-white/10 bg-black/45 p-5 text-left backdrop-blur-2xl xl:justify-self-end">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="font-f1 text-[9px] tracking-[0.3em] text-white/38 uppercase">
-                    Live team
-                  </p>
-                  <p className="mt-3 font-f1-bold text-[1.8rem] leading-none tracking-[0.08em] text-white/92 uppercase">
-                    {activeTeam?.shortName}
-                  </p>
+            <div className="relative w-full max-w-[24rem] self-start justify-self-start overflow-hidden rounded-[28px] border border-white/8 bg-black/15 p-6 text-left backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.05)] xl:justify-self-end">
+              {/* Atmospheric overlay */}
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-x-0 top-0 h-px bg-white/10" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_34%)]" />
+              </div>
+
+              <div className="relative space-y-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="space-y-0.5">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-white/38">
+                      Constructor
+                    </p>
+                    <p className="text-2xl font-f1-bold tracking-[-0.04em] text-white">
+                      {activeTeam?.shortName}
+                    </p>
+                  </div>
                 </div>
-                <span
-                  className="mt-1 h-9 w-[2px] rounded-full"
-                  style={{ backgroundColor: activeTeam?.primaryColor }}
+
+                <div
+                  className="h-px w-20"
+                  style={{
+                    background: `linear-gradient(to right, ${activeTeam?.primaryColor}cc, ${activeTeam?.primaryColor}33, transparent)`,
+                  }}
                 />
-              </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-6 border-t border-white/8 pt-5">
-                <div>
-                  <p className="font-f1 text-[9px] tracking-[0.28em] text-white/32 uppercase">
-                    Constructor
-                  </p>
-                  <p className="mt-2 font-f1-bold text-3xl leading-none text-white/92">
-                    P{activeTeam?.constructorOrder}
-                  </p>
+                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                  <div className="rounded-[20px] border border-white/6 bg-white/[0.03] px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-white/38">
+                      Constructor
+                    </p>
+                    <p className="mt-2 text-[28px] font-f1-bold leading-none text-white">
+                      P{activeTeam?.constructorOrder}
+                    </p>
+                  </div>
+                  <div className="rounded-[20px] border border-white/6 bg-white/[0.03] px-4 py-3">
+                    <p className="text-[11px] uppercase tracking-[0.14em] text-white/38">
+                      Points
+                    </p>
+                    <p className="mt-2 text-[28px] font-f1-bold leading-none text-white">
+                      {activeTeam?.constructorPoints}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-f1 text-[9px] tracking-[0.28em] text-white/32 uppercase">
-                    Points
-                  </p>
-                  <p className="mt-2 font-f1-bold text-3xl leading-none text-white/92">
-                    {activeTeam?.constructorPoints}
-                  </p>
-                </div>
-              </div>
 
-              <div className="mt-5 border-t border-white/8 pt-5">
-                <p className="font-f1 text-[9px] tracking-[0.28em] text-white/32 uppercase">
-                  Driver pair
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {activeDrivers.map((driver) => (
-                    <span
-                      key={driver.id}
-                      className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 font-f1 text-[10px] tracking-[0.18em] text-white/68 uppercase"
-                    >
-                      {driver.abbreviation}
-                    </span>
-                  ))}
+                <div className="h-px bg-white/8" />
+
+                <div>
+                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/38">
+                    Driver pair
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {activeDrivers.map((driver) => (
+                      <span
+                        key={driver.id}
+                        className="rounded-full border border-white/8 bg-white/[0.04] px-3 py-1.5 text-[11px] font-f1-bold text-white/72 uppercase"
+                      >
+                        {driver.abbreviation}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
@@ -345,7 +371,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
           <GradientCarousel
             items={teamCards}
             className="w-full bg-transparent"
-            cardClassName="bg-black/15"
+            cardClassName=""
             contentClassName=""
             cardWidthPx={236}
             cardAspectRatio={110 / 140}

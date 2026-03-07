@@ -540,36 +540,33 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
 
         if (isActive) {
           card.surface.style.background = `
-            linear-gradient(${165 + norm * 20}deg, ${teamColor}10 0%, transparent 45%),
-            linear-gradient(to bottom, rgba(255,255,255,0.04) 0%, transparent 30%),
-            rgba(255,255,255,0.02)
+            linear-gradient(${165 + norm * 20}deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.08) 100%),
+            ${teamColor}20
           `;
-          card.surface.style.borderColor = `rgba(255,255,255,0.18)`;
+          card.surface.style.borderColor = `rgba(255,255,255,0.35)`;
           card.surface.style.boxShadow = `
-            inset 0 1px 0 0 rgba(255,255,255,0.22),
-            inset 0 -1px 0 0 rgba(255,255,255,0.04),
-            0 0 0 0.5px rgba(255,255,255,0.06),
-            0 12px 40px rgba(0,0,0,0.6),
-            0 0 80px -15px ${teamColor}15
+            inset 0 1px 0 0 rgba(255,255,255,0.45),
+            inset 0 0 30px ${teamColor}10,
+            0 14px 50px rgba(0,0,0,0.12),
+            0 0 0 0.5px rgba(255,255,255,0.2)
           `;
         } else {
           card.surface.style.background = `
-            linear-gradient(to bottom, rgba(255,255,255,0.03) 0%, transparent 40%),
-            rgba(255,255,255,0.015)
+            linear-gradient(180deg, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.06) 100%),
+            ${teamColor}14
           `;
-          card.surface.style.borderColor = "rgba(255,255,255,0.08)";
+          card.surface.style.borderColor = "rgba(255,255,255,0.22)";
           card.surface.style.boxShadow = `
-            inset 0 1px 0 0 rgba(255,255,255,0.1),
-            0 8px 24px rgba(0,0,0,0.3)
+            inset 0 1px 0 0 rgba(255,255,255,0.35),
+            0 10px 40px rgba(0,0,0,0.08)
           `;
         }
 
-        // Specular overlay (the shiny glint that moves with rotation)
+        // Specular overlay — frosted glass top glint
         const specularEl = card.surface.querySelector("[data-specular]") as HTMLElement | null;
         if (specularEl) {
           specularEl.style.background = `
-            radial-gradient(ellipse 90% 25% at ${specularX}% 5%, rgba(255,255,255,${isActive ? 0.2 : 0.08}) 0%, transparent 70%),
-            radial-gradient(ellipse 50% 80% at ${50 - norm * 20}% 50%, rgba(255,255,255,${isActive ? 0.03 : 0.015}) 0%, transparent 60%)
+            radial-gradient(ellipse 80% 20% at ${specularX}% 0%, rgba(255,255,255,${isActive ? 0.25 : 0.12}) 0%, transparent 70%)
           `;
         }
       }
@@ -1205,34 +1202,28 @@ const GradientCarousel: React.FC<GradientCarouselProps> = ({
                 }
               }}
               className={cn(
-                "relative w-full h-full rounded-2xl overflow-hidden pointer-events-none select-none",
-                "border border-white/[0.12]",
+                "relative w-full h-full rounded-[28px] overflow-hidden pointer-events-none select-none",
+                "border border-white/25",
                 "transition-[border-color,box-shadow] duration-300",
                 cardClassName,
                 item.cardClassName,
               )}
               style={{
-                backdropFilter: "url(#liquid-glass) brightness(1.12)",
-                WebkitBackdropFilter: "url(#liquid-glass) brightness(1.12)",
+                backdropFilter: "blur(24px) saturate(1.4) brightness(1.1)",
+                WebkitBackdropFilter: "blur(24px) saturate(1.4) brightness(1.1)",
               }}
             >
               {/* Specular highlight — moves with card rotation */}
               <div
                 data-specular
-                className="absolute inset-0 z-10 pointer-events-none rounded-2xl"
+                className="absolute inset-0 z-10 pointer-events-none rounded-[28px]"
               />
-              {/* Edge highlight — top rim glow */}
-              <div className="absolute inset-x-0 top-0 h-[1px] z-10 bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-              {/* Side rim highlights */}
-              <div className="absolute inset-y-0 left-0 w-[0.5px] z-10 bg-gradient-to-b from-white/20 via-white/[0.04] to-transparent" />
-              <div className="absolute inset-y-0 right-0 w-[0.5px] z-10 bg-gradient-to-b from-white/20 via-white/[0.04] to-transparent" />
-              {/* Inner depth — top illumination, bottom shadow */}
-              <div
-                className="absolute inset-0 z-[5] pointer-events-none rounded-2xl"
-                style={{
-                  background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, transparent 30%, transparent 75%, rgba(0,0,0,0.12) 100%)",
-                }}
-              />
+              {/* Atmospheric overlay — frosted glass surface */}
+              <div className="pointer-events-none absolute inset-0 z-[5] rounded-[28px]">
+                <div className="absolute inset-x-0 top-0 h-px bg-white/40" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.18),transparent_50%)]" />
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),transparent_40%,transparent_70%,rgba(0,0,0,0.03))]" />
+              </div>
               {/* Content */}
               {item.content ? (
                 <div
