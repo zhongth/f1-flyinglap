@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GradientCarouselItem } from "@/components/ui/GradientCarousel";
 import { ProgressiveBlur } from "@/components/ui/ProgressiveBlur";
 import { teams } from "@/data";
@@ -25,6 +25,8 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
+  const podcastRef = useRef<HTMLAnchorElement>(null);
+  const [uiHidden, setUiHidden] = useState(false);
 
   const {
     setHoveredTeamId,
@@ -79,23 +81,23 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
           id: team.id,
           content: (
             <div className="relative flex flex-col w-full h-full overflow-hidden p-5">
+              {/* Atmospheric overlay */}
+              <div className="pointer-events-none absolute inset-0">
+                <div className="absolute inset-x-0 top-0 h-px bg-white/10" />
+                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_34%)]" />
+              </div>
+
               {/* Eyebrow + position */}
-              <div className="space-y-1.5">
-                <div className="text-[10px] uppercase tracking-[0.16em] text-black/35 font-f1">
+              <div className="relative space-y-1.5">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-white/38">
                   Constructor
-                </div>
-                <div className="flex items-end gap-1.5">
-                  <span
-                    className="text-[32px] font-light leading-none tracking-[-0.06em]"
-                    style={{ color: team.primaryColor }}
-                  >
-                    {position}
-                  </span>
-                  <span className="pb-0.5 text-[12px] tracking-[-0.02em] text-black/40 font-f1">
-                    {team.constructorPoints} pts
-                  </span>
-                </div>
-                {/* Accent micro line */}
+                </p>
+                <p
+                  className="text-[32px] font-f1-bold leading-none tracking-[-0.04em]"
+                  style={{ color: team.primaryColor }}
+                >
+                  {position}
+                </p>
                 <div
                   className="h-px w-12 rounded-full"
                   style={{
@@ -105,7 +107,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
               </div>
 
               {/* Center: team logo */}
-              <div className="flex-1 flex items-center justify-center">
+              <div className="relative flex-1 flex items-center justify-center">
                 <div className="relative">
                   <div
                     className="absolute inset-0 blur-3xl opacity-10 scale-[2]"
@@ -125,15 +127,16 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
               </div>
 
               {/* Bottom: team name + drivers */}
-              <div className="space-y-2">
-                <span className="block text-[14px] font-f1-bold tracking-[-0.02em] text-black/82">
+              <div className="relative space-y-2.5">
+                <div className="h-px bg-white/8" />
+                <p className="text-[14px] font-f1-bold tracking-[-0.02em] text-white">
                   {team.shortName}
-                </span>
+                </p>
                 <div className="flex items-center gap-1.5">
                   {drivers.map((d) => (
                     <span
                       key={d.id}
-                      className="rounded-full border border-black/8 bg-black/[0.04] px-2 py-0.5 text-[9px] tracking-[0.1em] text-black/50 uppercase font-f1-bold"
+                      className="rounded-full border border-white/8 bg-white/[0.04] px-2 py-0.5 text-[9px] tracking-[0.1em] text-white/60 uppercase font-f1-bold"
                     >
                       {d.abbreviation}
                     </span>
@@ -242,6 +245,30 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     return () => ctx.revert();
   }, [introReady, isIntroComplete, setIntroComplete]);
 
+  const toggleUI = useCallback(() => {
+    if (isAnimating || !isIntroComplete) return;
+    const hiding = !uiHidden;
+    setUiHidden(hiding);
+
+    gsap.to(titleRef.current, {
+      y: hiding ? -60 : 0,
+      opacity: hiding ? 0 : 1,
+      duration: 0.5,
+      ease: hiding ? "power2.in" : "power2.out",
+    });
+    gsap.to(wheelRef.current, {
+      y: hiding ? 120 : 0,
+      opacity: hiding ? 0 : 1,
+      duration: 0.5,
+      ease: hiding ? "power2.in" : "power2.out",
+      delay: hiding ? 0.05 : 0,
+    });
+    gsap.to(podcastRef.current, {
+      opacity: hiding ? 0 : 1,
+      duration: 0.3,
+    });
+  }, [uiHidden, isAnimating, isIntroComplete]);
+
   return (
     <div
       ref={containerRef}
@@ -249,6 +276,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     >
       {/* Podcast link — top right */}
       <a
+        ref={podcastRef}
         href="https://www.youtube.com/playlist?list=PL3g6oz4W-l1k0YrzaNaaGoI3MXwx96PoC"
         target="_blank"
         rel="noopener noreferrer"
@@ -290,7 +318,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
               </p>
             </div>
 
-            <div className="relative w-full max-w-[24rem] self-start justify-self-start overflow-hidden rounded-[28px] border border-white/8 bg-black/15 p-6 text-left backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.05)] xl:justify-self-end">
+            <div className="relative w-full max-w-[24rem] self-start justify-self-start overflow-hidden rounded-[28px] border border-white/8 bg-white/15 p-6 text-left backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.05)] xl:justify-self-end">
               {/* Atmospheric overlay */}
               <div className="pointer-events-none absolute inset-0">
                 <div className="absolute inset-x-0 top-0 h-px bg-white/10" />
@@ -316,7 +344,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
                   }}
                 />
 
-                <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-4">
                   <div className="rounded-[20px] border border-white/6 bg-white/[0.03] px-4 py-3">
                     <p className="text-[11px] uppercase tracking-[0.14em] text-white/38">
                       Constructor
@@ -357,6 +385,26 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
           </div>
         </div>
       </div>
+
+      {/* Clean-view toggle */}
+      <button
+        type="button"
+        onClick={toggleUI}
+        className="absolute bottom-6 left-6 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-xl transition-all duration-300 hover:border-white/25 hover:bg-white/10"
+        aria-label={uiHidden ? "Show UI" : "Hide UI"}
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 16 16"
+          fill="none"
+          className="text-white/70 transition-transform duration-300"
+          style={{ transform: uiHidden ? "rotate(45deg)" : "rotate(0deg)" }}
+        >
+          <rect x="2" y="4" width="12" height="1.5" rx="0.75" fill="currentColor" />
+          <rect x="2" y="10.5" width="12" height="1.5" rx="0.75" fill="currentColor" />
+        </svg>
+      </button>
 
       {/* Horizontal team selector — anchored to bottom, sizes to content */}
       <div className="absolute bottom-0 left-0 right-0 z-50 pb-10">

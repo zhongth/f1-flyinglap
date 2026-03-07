@@ -19,23 +19,23 @@ const CAMERA_CONFIGS = {
   topDown: {
     position: { x: 0, y: 18, z: 2.2 },
     lookAt: { x: 0, y: 0, z: 0 },
-    bgColor: new THREE.Color(0x111113),
-    fogColor: new THREE.Color(0x262c34),
-    fogDensity: 0.03,
+    bgColor: new THREE.Color(0xfafafa),
+    fogColor: new THREE.Color(0xf5f5f5),
+    fogDensity: 0.012,
   },
   cinematic: {
     position: { x: -12, y: 3, z: 8 },
     lookAt: { x: 1, y: 1.2, z: -2 },
-    bgColor: new THREE.Color(0x08080a),
-    fogColor: new THREE.Color(0x20262f),
-    fogDensity: 0.026,
+    bgColor: new THREE.Color(0xf6f6f6),
+    fogColor: new THREE.Color(0xf0f0f0),
+    fogDensity: 0.01,
   },
   sideProfile: {
     position: { x: 0, y: 1.2, z: 16 },
     lookAt: { x: 0, y: 5.2, z: -2 },
-    bgColor: new THREE.Color(0x0a0a0c),
-    fogColor: new THREE.Color(0x1e242c),
-    fogDensity: 0.024,
+    bgColor: new THREE.Color(0xf8f8f8),
+    fogColor: new THREE.Color(0xf2f2f2),
+    fogDensity: 0.01,
   },
 } as const;
 
@@ -140,10 +140,10 @@ function configureFloorTexture(
   return texture;
 }
 
-function createFluidCementTextures(maxAnisotropy: number): FluidCementTextures {
+function createGarageTileTextures(maxAnisotropy: number): FluidCementTextures {
   const size = 512;
-  const repeat = 4.5;
-  const offset = new THREE.Vector2(0.137, 0.211);
+  const repeat = 6;
+  const offset = new THREE.Vector2(0.0, 0.0);
   const createCanvas = () => {
     const canvas = document.createElement("canvas");
     canvas.width = size;
@@ -185,83 +185,35 @@ function createFluidCementTextures(maxAnisotropy: number): FluidCementTextures {
   const colorImage = colorCtx.createImageData(size, size);
   const roughnessImage = roughnessCtx.createImageData(size, size);
   const bumpImage = bumpCtx.createImageData(size, size);
-  const base = new THREE.Color("#e9e5dd");
-  const warm = new THREE.Color("#d7d0c4");
-  const cool = new THREE.Color("#f7f5f1");
-  const streak = new THREE.Color("#c9c1b4");
-  const tau = Math.PI * 2;
 
+  // Clean white polypropylene surface — no tile grid, just subtle noise
   for (let y = 0; y < size; y++) {
-    const v = y / size;
     for (let x = 0; x < size; x++) {
-      const u = x / size;
       const index = (y * size + x) * 4;
-      const warpA = Math.sin((u * 1.8 + v * 0.62) * tau);
-      const warpB = Math.cos((v * 1.55 - u * 0.48) * tau);
-      const swash = Math.sin(
-        (u * 3.4 + warpB * 0.08) * tau + Math.cos(v * tau * 2.2) * 0.42,
-      );
-      const swirl = Math.sin((v * 2.6 + warpA * 0.1) * tau + swash * 0.58);
-      const marbling =
-        Math.sin((u + v) * tau * 3.1 + swash * 0.65) * 0.52 +
-        Math.cos((u - v) * tau * 2.1 + swirl * 0.32) * 0.48;
-      const cloud = warpA * 0.46 + warpB * 0.34 + marbling * 0.2;
-      const trowel = 1 - Math.abs(swirl);
-      const grain =
-        Math.sin((u * 26 + v * 13) * tau) * Math.cos((v * 23 - u * 9) * tau);
-      const flow = THREE.MathUtils.clamp(0.5 + swash * 0.5, 0, 1);
-      const toneMix = THREE.MathUtils.clamp(
-        0.5 + cloud * 0.12 + trowel * 0.08 + grain * 0.015,
-        0,
-        1,
-      );
-      const highlightMix = THREE.MathUtils.clamp(
-        0.42 + flow * 0.34 - marbling * 0.06,
-        0,
-        1,
-      );
-      const streakMix =
-        THREE.MathUtils.smoothstep(flow, 0.72, 0.98) * 0.18 +
-        THREE.MathUtils.clamp(grain * 0.025, -0.01, 0.025);
-      const roughness = THREE.MathUtils.clamp(
-        0.6 + (1 - trowel) * 0.14 + cloud * 0.03 - highlightMix * 0.1,
-        0.48,
-        0.74,
-      );
-      const bump = THREE.MathUtils.clamp(
-        0.5 + marbling * 0.18 + grain * 0.04 + (trowel - 0.5) * 0.16,
-        0,
-        1,
-      );
-      const r =
-        THREE.MathUtils.lerp(base.r, warm.r, toneMix * 0.4) +
-        (cool.r - base.r) * highlightMix * 0.16 +
-        (streak.r - base.r) * streakMix;
-      const g =
-        THREE.MathUtils.lerp(base.g, warm.g, toneMix * 0.4) +
-        (cool.g - base.g) * highlightMix * 0.16 +
-        (streak.g - base.g) * streakMix;
-      const b =
-        THREE.MathUtils.lerp(base.b, warm.b, toneMix * 0.4) +
-        (cool.b - base.b) * highlightMix * 0.16 +
-        (streak.b - base.b) * streakMix;
 
-      colorImage.data[index] = Math.round(THREE.MathUtils.clamp(r, 0, 1) * 255);
+      // Subtle per-pixel noise for surface variation
+      const noise =
+        ((Math.sin(x * 127.1 + y * 311.7) * 43758.5453) % 1) * 0.008 - 0.004;
+
+      const baseTone = 0.94 + noise;
+      colorImage.data[index] = Math.round(
+        THREE.MathUtils.clamp(baseTone, 0, 1) * 255,
+      );
       colorImage.data[index + 1] = Math.round(
-        THREE.MathUtils.clamp(g, 0, 1) * 255,
+        THREE.MathUtils.clamp(baseTone, 0, 1) * 255,
       );
       colorImage.data[index + 2] = Math.round(
-        THREE.MathUtils.clamp(b, 0, 1) * 255,
+        THREE.MathUtils.clamp(baseTone + 0.003, 0, 1) * 255,
       );
       colorImage.data[index + 3] = 255;
 
-      const roughValue = Math.round(roughness * 255);
+      const roughValue = Math.round(0.58 * 255);
       roughnessImage.data[index] = roughValue;
       roughnessImage.data[index + 1] = roughValue;
       roughnessImage.data[index + 2] = roughValue;
       roughnessImage.data[index + 3] = 255;
 
-      const bumpValue = Math.round(bump * 255);
+      const bumpValue = Math.round(0.5 * 255);
       bumpImage.data[index] = bumpValue;
       bumpImage.data[index + 1] = bumpValue;
       bumpImage.data[index + 2] = bumpValue;
@@ -396,29 +348,29 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.0;
+    renderer.toneMappingExposure = 1.15;
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    const floorTextures = createFluidCementTextures(
+    const floorTextures = createGarageTileTextures(
       renderer.capabilities.getMaxAnisotropy(),
     );
 
-    // Ground plane — white sealed cement with a soft studio sheen.
+    // Ground plane — F1 garage polypropylene interlocking tiles
     const groundGeometry = new THREE.PlaneGeometry(
       STAGE_WORLD_SIZE,
       STAGE_WORLD_SIZE,
     );
     const groundMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x1a1a1e,
-      roughness: 0.45,
-      metalness: 0.08,
-      clearcoat: 0.2,
-      clearcoatRoughness: 0.6,
+      color: 0xf0f0f2,
+      roughness: 0.55,
+      metalness: 0.02,
+      clearcoat: 0.08,
+      clearcoatRoughness: 0.7,
       map: floorTextures.colorMap,
       roughnessMap: floorTextures.roughnessMap,
       bumpMap: floorTextures.bumpMap,
-      bumpScale: 0.02,
+      bumpScale: 0.03,
     });
     groundMatRef.current = groundMaterial;
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
@@ -499,9 +451,9 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       backCycloramaWidth,
     );
     const cycMat = new THREE.MeshStandardMaterial({
-      color: 0x2a2a30,
+      color: 0xf0f0f2,
       roughness: 0.82,
-      metalness: 0.06,
+      metalness: 0.02,
       side: THREE.DoubleSide,
     });
     cycloramaMatRef.current = cycMat;
@@ -577,15 +529,15 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     // === Lighting — F1 garage overhead panel ===
 
     // Minimal ambient so underside isn't pure black
-    const ambientLight = new THREE.AmbientLight(0xc0b8a8, 0.1);
+    const ambientLight = new THREE.AmbientLight(0xf0f0f4, 0.6);
     scene.add(ambientLight);
 
     // Main panel SpotLight — wide, soft, overhead (simulates large panel)
-    const panelLight = new THREE.SpotLight(0xf0e4d4, 90);
+    const panelLight = new THREE.SpotLight(0xf8f5f0, 35);
     panelLight.position.set(0, PANEL_HEIGHT, -2);
     panelLight.target.position.set(0, 0, -2);
-    panelLight.angle = Math.PI / 3;
-    panelLight.penumbra = 0.7;
+    panelLight.angle = Math.PI / 2.8;
+    panelLight.penumbra = 0.8;
     panelLight.decay = 1.2;
     panelLight.distance = 50;
     panelLight.castShadow = true;
@@ -604,7 +556,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
 
     // Visible panel mesh (emissive white rectangle — shows up in scene + reflections)
     const panelMeshMat = new THREE.MeshBasicMaterial({
-      color: 0xf0e4d4,
+      color: 0xf8f6f2,
       toneMapped: false,
       side: THREE.FrontSide,
     });
@@ -1142,13 +1094,13 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     const targetHalo = isCinematic
       ? teamColor.clone().lerp(new THREE.Color(0x909aac), 0.65)
       : new THREE.Color(0x909aac);
-    const targetGround = new THREE.Color(0x1a1a1e).lerp(
-      teamColor.clone().multiplyScalar(0.15),
-      isCinematic ? 0.12 : 0.04,
+    const targetGround = new THREE.Color(0xf0f0f2).lerp(
+      teamColor.clone().multiplyScalar(0.3),
+      isCinematic ? 0.15 : 0.05,
     );
-    const targetCyclorama = new THREE.Color(0x2a2a30).lerp(
-      teamColor.clone().multiplyScalar(0.55),
-      isCinematic ? 0.28 : 0.1,
+    const targetCyclorama = new THREE.Color(0xf0f0f2).lerp(
+      teamColor.clone().multiplyScalar(0.4),
+      isCinematic ? 0.15 : 0.05,
     );
 
     if (rimStripMatRef.current) {
@@ -1208,8 +1160,8 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
 
     // Subtly tint the panel light toward team color in cinematic mode
     const targetPanel = isCinematic
-      ? teamColor.clone().lerp(new THREE.Color(0xf0e4d4), 0.7)
-      : new THREE.Color(0xf0e4d4);
+      ? teamColor.clone().lerp(new THREE.Color(0xf8f6f2), 0.7)
+      : new THREE.Color(0xf8f6f2);
     if (panelLightRef.current) {
       gsap.to(panelLightRef.current.color, {
         r: targetPanel.r,
