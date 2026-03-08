@@ -352,7 +352,7 @@ export function VersusMode() {
         className="absolute inset-0 pointer-events-none z-[1]"
         style={{
           background:
-            "radial-gradient(ellipse 90% 80% at 50% 50%, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.7) 100%)",
+            "radial-gradient(ellipse 90% 80% at 50% 50%, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.45) 100%)",
         }}
       />
 

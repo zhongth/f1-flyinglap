@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { TeamCarousel } from "@/components/stages/TeamCarousel";
 import { VersusMode } from "@/components/stages/VersusMode";
 import { GraphMode } from "@/components/stages/GraphMode";
-import CustomCursor from "@/components/ui/CustomCursor";
 import { FiveLightsOut } from "@/components/ui/FiveLightsOut";
 import Preloader from "@/components/ui/Preloader";
 import { teams } from "@/data";
@@ -92,12 +91,6 @@ export default function Home() {
 
   return (
     <>
-      <CustomCursor
-        circleSize={26}
-        circleColor="rgba(107, 114, 128, 0.45)"
-        targets={["[data-carousel-index]", "[data-driver-card]"]}
-      />
-
       <Preloader
         loading={loading}
         variant="stairs"
@@ -121,6 +114,8 @@ export default function Home() {
               teamId={carTeamId}
               cameraMode={cameraMode}
               className="h-full w-full"
+              onCarSwapStart={() => useAppStore.getState().setIsCarAnimating(true)}
+              onCarSwapComplete={() => useAppStore.getState().setIsCarAnimating(false)}
             />
           </div>
 

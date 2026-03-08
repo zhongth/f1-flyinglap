@@ -24,6 +24,7 @@ interface AppState {
 
   // Animation states
   isAnimating: boolean;
+  isCarAnimating: boolean;
   isIntroComplete: boolean;
 
   // 3D camera mode
@@ -36,6 +37,7 @@ interface AppState {
   setFocusedDriverId: (driverId: string | null) => void;
   setTimeScope: (scope: TimeScope) => void;
   setIsAnimating: (animating: boolean) => void;
+  setIsCarAnimating: (animating: boolean) => void;
   setIntroComplete: () => void;
   setCameraMode: (mode: CameraMode) => void;
 
@@ -55,6 +57,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   focusedDriverId: null,
   timeScope: "season",
   isAnimating: false,
+  isCarAnimating: false,
   isIntroComplete: false,
   cameraMode: "topDown",
 
@@ -70,6 +73,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setFocusedDriverId: (driverId) => set({ focusedDriverId: driverId }),
   setTimeScope: (scope) => set({ timeScope: scope }),
   setIsAnimating: (animating) => set({ isAnimating: animating }),
+  setIsCarAnimating: (animating) => set({ isCarAnimating: animating }),
   setIntroComplete: () => set({ isIntroComplete: true }),
   setCameraMode: (mode) => set({ cameraMode: mode }),
 
@@ -136,6 +140,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       hoveredTeamId: DEFAULT_TEAM_ID,
       focusedDriverId: null,
       isAnimating: false,
+      isCarAnimating: false,
       cameraMode: "topDown",
     }),
 }));

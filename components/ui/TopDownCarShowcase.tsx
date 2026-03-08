@@ -17,15 +17,17 @@ import type { CameraMode } from "@/store/useAppStore";
 /* Camera presets keyed by mode */
 const CAMERA_CONFIGS = {
   topDown: {
-    position: { x: 0, y: 18, z: 2.2 },
+    position: { x: 0, y: 18, z: 0 },
     lookAt: { x: 0, y: 0, z: 0 },
-    bgColor: new THREE.Color(0x111113),
-    fogColor: new THREE.Color(0x262c34),
-    fogDensity: 0.03,
+    up: { x: 0, y: 0, z: -1 },
+    bgColor: new THREE.Color(0x1c1c1e),
+    fogColor: new THREE.Color(0x1c1c1e),
+    fogDensity: 0.016,
   },
   cinematic: {
     position: { x: -12, y: 3, z: 8 },
     lookAt: { x: 1, y: 1.2, z: -2 },
+    up: { x: 0, y: 1, z: 0 },
     bgColor: new THREE.Color(0x08080a),
     fogColor: new THREE.Color(0x20262f),
     fogDensity: 0.026,
@@ -33,6 +35,7 @@ const CAMERA_CONFIGS = {
   sideProfile: {
     position: { x: 0, y: 1.2, z: 16 },
     lookAt: { x: 0, y: 5.2, z: -2 },
+    up: { x: 0, y: 1, z: 0 },
     bgColor: new THREE.Color(0x0a0a0c),
     fogColor: new THREE.Color(0x1e242c),
     fogDensity: 0.024,
@@ -103,6 +106,8 @@ interface TopDownCarShowcaseProps {
   className?: string;
   cameraMode?: CameraMode;
   onCameraTransitionComplete?: () => void;
+  onCarSwapStart?: () => void;
+  onCarSwapComplete?: () => void;
 }
 
 interface CarState {
@@ -110,191 +115,10 @@ interface CarState {
   wheelTargets: WheelSpinTarget[];
 }
 
-interface FluidCementTextures {
-  colorMap: THREE.CanvasTexture;
-  roughnessMap: THREE.CanvasTexture;
-  bumpMap: THREE.CanvasTexture;
-}
-
 /** Panel light dimensions for the F1 garage overhead light */
 const PANEL_WIDTH = 28;
 const PANEL_DEPTH = 16;
 const PANEL_HEIGHT = 20;
-
-function configureFloorTexture(
-  texture: THREE.CanvasTexture,
-  repeat: number,
-  offset: THREE.Vector2,
-  maxAnisotropy: number,
-  isColor = false,
-): THREE.CanvasTexture {
-  if (isColor) {
-    texture.colorSpace = THREE.SRGBColorSpace;
-  }
-  texture.wrapS = THREE.RepeatWrapping;
-  texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(repeat, repeat);
-  texture.offset.copy(offset);
-  texture.anisotropy = maxAnisotropy;
-  texture.needsUpdate = true;
-  return texture;
-}
-
-function createFluidCementTextures(maxAnisotropy: number): FluidCementTextures {
-  const size = 512;
-  const repeat = 4.5;
-  const offset = new THREE.Vector2(0.137, 0.211);
-  const createCanvas = () => {
-    const canvas = document.createElement("canvas");
-    canvas.width = size;
-    canvas.height = size;
-    return canvas;
-  };
-
-  const colorCanvas = createCanvas();
-  const roughnessCanvas = createCanvas();
-  const bumpCanvas = createCanvas();
-  const colorCtx = colorCanvas.getContext("2d");
-  const roughnessCtx = roughnessCanvas.getContext("2d");
-  const bumpCtx = bumpCanvas.getContext("2d");
-
-  if (!colorCtx || !roughnessCtx || !bumpCtx) {
-    return {
-      colorMap: configureFloorTexture(
-        new THREE.CanvasTexture(colorCanvas),
-        repeat,
-        offset,
-        maxAnisotropy,
-        true,
-      ),
-      roughnessMap: configureFloorTexture(
-        new THREE.CanvasTexture(roughnessCanvas),
-        repeat,
-        offset,
-        maxAnisotropy,
-      ),
-      bumpMap: configureFloorTexture(
-        new THREE.CanvasTexture(bumpCanvas),
-        repeat,
-        offset,
-        maxAnisotropy,
-      ),
-    };
-  }
-
-  const colorImage = colorCtx.createImageData(size, size);
-  const roughnessImage = roughnessCtx.createImageData(size, size);
-  const bumpImage = bumpCtx.createImageData(size, size);
-  const base = new THREE.Color("#e9e5dd");
-  const warm = new THREE.Color("#d7d0c4");
-  const cool = new THREE.Color("#f7f5f1");
-  const streak = new THREE.Color("#c9c1b4");
-  const tau = Math.PI * 2;
-
-  for (let y = 0; y < size; y++) {
-    const v = y / size;
-    for (let x = 0; x < size; x++) {
-      const u = x / size;
-      const index = (y * size + x) * 4;
-      const warpA = Math.sin((u * 1.8 + v * 0.62) * tau);
-      const warpB = Math.cos((v * 1.55 - u * 0.48) * tau);
-      const swash = Math.sin(
-        (u * 3.4 + warpB * 0.08) * tau + Math.cos(v * tau * 2.2) * 0.42,
-      );
-      const swirl = Math.sin((v * 2.6 + warpA * 0.1) * tau + swash * 0.58);
-      const marbling =
-        Math.sin((u + v) * tau * 3.1 + swash * 0.65) * 0.52 +
-        Math.cos((u - v) * tau * 2.1 + swirl * 0.32) * 0.48;
-      const cloud = warpA * 0.46 + warpB * 0.34 + marbling * 0.2;
-      const trowel = 1 - Math.abs(swirl);
-      const grain =
-        Math.sin((u * 26 + v * 13) * tau) * Math.cos((v * 23 - u * 9) * tau);
-      const flow = THREE.MathUtils.clamp(0.5 + swash * 0.5, 0, 1);
-      const toneMix = THREE.MathUtils.clamp(
-        0.5 + cloud * 0.12 + trowel * 0.08 + grain * 0.015,
-        0,
-        1,
-      );
-      const highlightMix = THREE.MathUtils.clamp(
-        0.42 + flow * 0.34 - marbling * 0.06,
-        0,
-        1,
-      );
-      const streakMix =
-        THREE.MathUtils.smoothstep(flow, 0.72, 0.98) * 0.18 +
-        THREE.MathUtils.clamp(grain * 0.025, -0.01, 0.025);
-      const roughness = THREE.MathUtils.clamp(
-        0.6 + (1 - trowel) * 0.14 + cloud * 0.03 - highlightMix * 0.1,
-        0.48,
-        0.74,
-      );
-      const bump = THREE.MathUtils.clamp(
-        0.5 + marbling * 0.18 + grain * 0.04 + (trowel - 0.5) * 0.16,
-        0,
-        1,
-      );
-      const r =
-        THREE.MathUtils.lerp(base.r, warm.r, toneMix * 0.4) +
-        (cool.r - base.r) * highlightMix * 0.16 +
-        (streak.r - base.r) * streakMix;
-      const g =
-        THREE.MathUtils.lerp(base.g, warm.g, toneMix * 0.4) +
-        (cool.g - base.g) * highlightMix * 0.16 +
-        (streak.g - base.g) * streakMix;
-      const b =
-        THREE.MathUtils.lerp(base.b, warm.b, toneMix * 0.4) +
-        (cool.b - base.b) * highlightMix * 0.16 +
-        (streak.b - base.b) * streakMix;
-
-      colorImage.data[index] = Math.round(THREE.MathUtils.clamp(r, 0, 1) * 255);
-      colorImage.data[index + 1] = Math.round(
-        THREE.MathUtils.clamp(g, 0, 1) * 255,
-      );
-      colorImage.data[index + 2] = Math.round(
-        THREE.MathUtils.clamp(b, 0, 1) * 255,
-      );
-      colorImage.data[index + 3] = 255;
-
-      const roughValue = Math.round(roughness * 255);
-      roughnessImage.data[index] = roughValue;
-      roughnessImage.data[index + 1] = roughValue;
-      roughnessImage.data[index + 2] = roughValue;
-      roughnessImage.data[index + 3] = 255;
-
-      const bumpValue = Math.round(bump * 255);
-      bumpImage.data[index] = bumpValue;
-      bumpImage.data[index + 1] = bumpValue;
-      bumpImage.data[index + 2] = bumpValue;
-      bumpImage.data[index + 3] = 255;
-    }
-  }
-
-  colorCtx.putImageData(colorImage, 0, 0);
-  roughnessCtx.putImageData(roughnessImage, 0, 0);
-  bumpCtx.putImageData(bumpImage, 0, 0);
-
-  return {
-    colorMap: configureFloorTexture(
-      new THREE.CanvasTexture(colorCanvas),
-      repeat,
-      offset,
-      maxAnisotropy,
-      true,
-    ),
-    roughnessMap: configureFloorTexture(
-      new THREE.CanvasTexture(roughnessCanvas),
-      repeat,
-      offset,
-      maxAnisotropy,
-    ),
-    bumpMap: configureFloorTexture(
-      new THREE.CanvasTexture(bumpCanvas),
-      repeat,
-      offset,
-      maxAnisotropy,
-    ),
-  };
-}
 
 function disposeCar(car: CarState) {
   car.group.traverse((child) => {
@@ -317,6 +141,8 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   className = "",
   cameraMode = "topDown",
   onCameraTransitionComplete,
+  onCarSwapStart,
+  onCarSwapComplete,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
@@ -347,6 +173,10 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   const cameraTlRef = useRef<gsap.core.Timeline | null>(null);
   const onCameraCompleteRef = useRef(onCameraTransitionComplete);
   onCameraCompleteRef.current = onCameraTransitionComplete;
+  const onCarSwapStartRef = useRef(onCarSwapStart);
+  onCarSwapStartRef.current = onCarSwapStart;
+  const onCarSwapCompleteRef = useRef(onCarSwapComplete);
+  onCarSwapCompleteRef.current = onCarSwapComplete;
 
   // Dynamic environment refs (team-colored)
   const groundMatRef = useRef<THREE.MeshPhysicalMaterial | null>(null);
@@ -381,8 +211,9 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       0.1,
       200,
     );
-    camera.position.set(0, 18, 2.8);
-    camera.lookAt(0, 0, 0.4);
+    camera.up.set(0, 0, -1);
+    camera.position.set(0, 18, 0);
+    camera.lookAt(0, 0, 0);
     cameraRef.current = camera;
 
     // Renderer
@@ -400,25 +231,17 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
-    const floorTextures = createFluidCementTextures(
-      renderer.capabilities.getMaxAnisotropy(),
-    );
-
-    // Ground plane — white sealed cement with a soft studio sheen.
+    // Ground plane — smooth dark studio floor
     const groundGeometry = new THREE.PlaneGeometry(
       STAGE_WORLD_SIZE,
       STAGE_WORLD_SIZE,
     );
     const groundMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x1a1a1e,
-      roughness: 0.45,
-      metalness: 0.08,
-      clearcoat: 0.2,
-      clearcoatRoughness: 0.6,
-      map: floorTextures.colorMap,
-      roughnessMap: floorTextures.roughnessMap,
-      bumpMap: floorTextures.bumpMap,
-      bumpScale: 0.02,
+      color: 0x1e1e22,
+      roughness: 0.55,
+      metalness: 0.03,
+      clearcoat: 0.12,
+      clearcoatRoughness: 0.5,
     });
     groundMatRef.current = groundMaterial;
     const ground = new THREE.Mesh(groundGeometry, groundMaterial);
@@ -427,65 +250,70 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     ground.receiveShadow = true;
     scene.add(ground);
 
-    // === Grid Box — clean single-line rectangle ===
-    const gridBoxGroup = new THREE.Group();
-    gridBoxGroup.position.y = 0.02;
-
-    // Car faces -X. Front bracket at -X side, like a real F1 grid box.
-    const bracketX = -6.0;
-    const armLen = 2.8;
-    const halfWid = 2.6;
-    const gridLineLayerCount = 8;
-    const gridLineInsetStep = 0.003;
-    const gridLineLayers = Array.from(
-      { length: gridLineLayerCount },
-      (_, index) => ({
-        inset: index * gridLineInsetStep,
-        opacity: THREE.MathUtils.lerp(
-          0.24,
-          0.1,
-          index / (gridLineLayerCount - 1),
-        ),
-      }),
-    );
-
-    for (const [index, layer] of gridLineLayers.entries()) {
-      const bracketPts = [
-        new THREE.Vector3(
-          bracketX + armLen - layer.inset,
-          index * 0.0002,
-          -(halfWid - layer.inset),
-        ),
-        new THREE.Vector3(
-          bracketX + layer.inset,
-          index * 0.0002,
-          -(halfWid - layer.inset),
-        ),
-        new THREE.Vector3(
-          bracketX + layer.inset,
-          index * 0.0002,
-          halfWid - layer.inset,
-        ),
-        new THREE.Vector3(
-          bracketX + armLen - layer.inset,
-          index * 0.0002,
-          halfWid - layer.inset,
-        ),
-      ];
-
-      gridBoxGroup.add(
-        new THREE.Line(
-          new THREE.BufferGeometry().setFromPoints(bracketPts),
-          new THREE.LineBasicMaterial({
-            color: 0xffffff,
-            transparent: true,
-            opacity: layer.opacity,
-          }),
-        ),
+    // === Vignette overlay — darkens edges for studio light-pool effect ===
+    {
+      const vignetteSize = 50;
+      const vignetteCanvas = document.createElement("canvas");
+      vignetteCanvas.width = 512;
+      vignetteCanvas.height = 512;
+      const vCtx = vignetteCanvas.getContext("2d");
+      if (vCtx) {
+        const grad = vCtx.createRadialGradient(256, 256, 0, 256, 256, 256);
+        grad.addColorStop(0, "rgba(0, 0, 0, 0)");
+        grad.addColorStop(0.3, "rgba(0, 0, 0, 0)");
+        grad.addColorStop(0.5, "rgba(0, 0, 0, 0.12)");
+        grad.addColorStop(0.7, "rgba(0, 0, 0, 0.35)");
+        grad.addColorStop(0.85, "rgba(0, 0, 0, 0.6)");
+        grad.addColorStop(1, "rgba(0, 0, 0, 0.8)");
+        vCtx.fillStyle = grad;
+        vCtx.fillRect(0, 0, 512, 512);
+      }
+      const vignetteTex = new THREE.CanvasTexture(vignetteCanvas);
+      const vignetteMat = new THREE.MeshBasicMaterial({
+        map: vignetteTex,
+        transparent: true,
+        depthWrite: false,
+        toneMapped: false,
+      });
+      const vignetteMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(vignetteSize, vignetteSize),
+        vignetteMat,
       );
+      vignetteMesh.rotation.x = -Math.PI / 2;
+      vignetteMesh.position.y = 0.015;
+      scene.add(vignetteMesh);
     }
 
-    scene.add(gridBoxGroup);
+    // === Grid Box — commented out for clean studio look ===
+    // const gridBoxGroup = new THREE.Group();
+    // gridBoxGroup.position.y = 0.02;
+    // const bracketX = -6.0;
+    // const armLen = 2.8;
+    // const halfWid = 2.6;
+    // const gridLineLayerCount = 8;
+    // const gridLineInsetStep = 0.003;
+    // const gridLineLayers = Array.from(
+    //   { length: gridLineLayerCount },
+    //   (_, index) => ({
+    //     inset: index * gridLineInsetStep,
+    //     opacity: THREE.MathUtils.lerp(0.24, 0.1, index / (gridLineLayerCount - 1)),
+    //   }),
+    // );
+    // for (const [index, layer] of gridLineLayers.entries()) {
+    //   const bracketPts = [
+    //     new THREE.Vector3(bracketX + armLen - layer.inset, index * 0.0002, -(halfWid - layer.inset)),
+    //     new THREE.Vector3(bracketX + layer.inset, index * 0.0002, -(halfWid - layer.inset)),
+    //     new THREE.Vector3(bracketX + layer.inset, index * 0.0002, halfWid - layer.inset),
+    //     new THREE.Vector3(bracketX + armLen - layer.inset, index * 0.0002, halfWid - layer.inset),
+    //   ];
+    //   gridBoxGroup.add(
+    //     new THREE.Line(
+    //       new THREE.BufferGeometry().setFromPoints(bracketPts),
+    //       new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: layer.opacity }),
+    //     ),
+    //   );
+    // }
+    // scene.add(gridBoxGroup);
 
     // === Studio Environment — cyclorama + LED panel + rim light strip ===
     const backCycloramaWidth = STAGE_CYCLO_WIDTH;
@@ -576,22 +404,26 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
 
     // === Lighting — F1 garage overhead panel ===
 
-    // Minimal ambient so underside isn't pure black
-    const ambientLight = new THREE.AmbientLight(0xe0e0e0, 0.1);
+    // Soft ambient to fill shadows and prevent pure-black undersides
+    const ambientLight = new THREE.AmbientLight(0xe0e0e0, 0.2);
     scene.add(ambientLight);
 
+    // Hemisphere light for natural, soft fill (reduces harsh shadow contrast)
+    const hemiLight = new THREE.HemisphereLight(0x2a2a30, 0x0a0a0e, 0.18);
+    scene.add(hemiLight);
+
     // Main panel SpotLight — wide, soft, overhead (simulates large panel)
-    const panelLight = new THREE.SpotLight(0xf0f0f0, 90);
+    const panelLight = new THREE.SpotLight(0xf0f0f0, 120);
     panelLight.position.set(0, PANEL_HEIGHT, -2);
     panelLight.target.position.set(0, 0, -2);
-    panelLight.angle = Math.PI / 2.5;
-    panelLight.penumbra = 0.7;
+    panelLight.angle = Math.PI / 2.2;
+    panelLight.penumbra = 0.88;
     panelLight.decay = 1.2;
     panelLight.distance = 50;
     panelLight.castShadow = true;
-    panelLight.shadow.mapSize.width = 2048;
-    panelLight.shadow.mapSize.height = 2048;
-    panelLight.shadow.radius = 4;
+    panelLight.shadow.mapSize.width = 4096;
+    panelLight.shadow.mapSize.height = 4096;
+    panelLight.shadow.radius = 20;
     panelLight.shadow.bias = -0.0001;
     panelLight.shadow.normalBias = 0.02;
     const shadowCam = panelLight.shadow
@@ -909,6 +741,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       isTransitioningRef.current = true;
       isAnimatingRef.current = true;
       needsRenderRef.current = true;
+      onCarSwapStartRef.current?.();
 
       const newCarState = getPooledCar(modelPath);
       if (!newCarState) {
@@ -937,6 +770,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
         isTransitioningRef.current = false;
         isAnimatingRef.current = false;
         needsRenderRef.current = true;
+        onCarSwapCompleteRef.current?.();
 
         // Trigger warm-up after first car is shown
         if (isFirstLoad) warmUpAllModels();
@@ -1076,6 +910,19 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
       0,
     );
 
+    // Camera up vector (avoids gimbal lock when looking straight down)
+    tl.to(
+      camera.up,
+      {
+        x: config.up.x,
+        y: config.up.y,
+        z: config.up.z,
+        duration: CAMERA_TRANSITION_DURATION,
+        ease: "power2.inOut",
+      },
+      0,
+    );
+
     // Scene background color
     if (scene.background instanceof THREE.Color) {
       tl.to(
@@ -1142,7 +989,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     const targetHalo = isCinematic
       ? teamColor.clone().lerp(new THREE.Color(0x909aac), 0.65)
       : new THREE.Color(0x909aac);
-    const targetGround = new THREE.Color(0x1a1a1e).lerp(
+    const targetGround = new THREE.Color(0x1e1e22).lerp(
       teamColor.clone().multiplyScalar(0.15),
       isCinematic ? 0.12 : 0.04,
     );
