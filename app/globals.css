@@ -32,13 +32,6 @@
   --team-sauber: #52e252;
   --team-haas: #b6babd;
 
-  /* Font families */
-  --font-f1: var(--font-f1-regular), system-ui, sans-serif;
-  --font-f1-bold: var(--font-f1-bold), system-ui, sans-serif;
-  --font-f1-wide: var(--font-f1-wide), system-ui, sans-serif;
-  --font-northwell: var(--font-northwell), cursive;
-  --font-titillium: var(--font-titillium), system-ui, sans-serif;
-
   /* Spacing */
   --navbar-height: 80px;
 
@@ -86,30 +79,30 @@ html {
 }
 
 body {
-  font-family: var(--font-titillium);
+  font-family: var(--font-titillium), system-ui, sans-serif;
   overflow: hidden;
   min-height: 100vh;
 }
 
-/* Font utility classes */
+/* Font utility classes — reference Next.js font variables directly (set on <body>) */
 .font-f1 {
-  font-family: var(--font-f1);
+  font-family: var(--font-f1-regular), system-ui, sans-serif;
 }
 
 .font-f1-bold {
-  font-family: var(--font-f1-bold);
+  font-family: var(--font-f1-bold), system-ui, sans-serif;
 }
 
 .font-f1-wide {
-  font-family: var(--font-f1-wide);
+  font-family: var(--font-f1-wide), system-ui, sans-serif;
 }
 
 .font-northwell {
-  font-family: var(--font-northwell);
+  font-family: var(--font-northwell), cursive;
 }
 
 .font-titillium {
-  font-family: var(--font-titillium);
+  font-family: var(--font-titillium), system-ui, sans-serif;
 }
 
 /* Team color utilities */

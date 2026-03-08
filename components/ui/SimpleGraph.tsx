@@ -360,183 +360,200 @@ const SimpleGraph = ({
           transition={{ duration: animationDuration, ease: "easeInOut" }}
         />
 
+        {/* Voronoi-column hit areas — each dot owns the strip from midpoint-to-prev to midpoint-to-next.
+             Zero overlap, so the nearest dot always captures the event. */}
         {showDots &&
-          points.map((point, index) => (
-            /* biome-ignore lint/a11y/useSemanticElements: SVG groups are required here for grouped pointer/focus interactions. */
-            <g
-              key={`${point.x}-${point.y}`}
-              role="button"
-              tabIndex={0}
-              aria-label={
-                data[index].label
-                  ? `${data[index].label}: ${data[index].valueLabel ?? data[index].value.toFixed(3)}`
-                  : `Point ${index + 1}: ${data[index].valueLabel ?? data[index].value.toFixed(3)}`
-              }
-              onMouseEnter={() => {
-                setHoveredIndex(index);
-                setTooltipRotation(0);
-                setTooltipOffsetX(0);
-              }}
-              onMouseLeave={() => setHoveredIndex(null)}
-              onMouseMove={(event) => handleMouseMove(event, index)}
-              onFocus={() => {
-                setHoveredIndex(index);
-                setTooltipRotation(0);
-                setTooltipOffsetX(0);
-              }}
-              onBlur={() => setHoveredIndex(null)}
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  setHoveredIndex(null);
-                }
-              }}
-              style={{ cursor: "pointer" }}
-            >
-              <circle
-                cx={point.x}
-                cy={point.y}
-                r="52"
-                fill="transparent"
-                style={{ pointerEvents: "all" }}
-              />
+          points.map((point, index) => {
+            const prevX = index > 0 ? points[index - 1].x : plotLeft;
+            const nextX =
+              index < points.length - 1 ? points[index + 1].x : plotRight;
+            const hitLeft = index > 0 ? (prevX + point.x) / 2 : plotLeft;
+            const hitRight =
+              index < points.length - 1 ? (point.x + nextX) / 2 : plotRight;
 
-              {dotHoverGlow && hoveredIndex === index && (
+            return (
+              /* biome-ignore lint/a11y/useSemanticElements: SVG groups are required here for grouped pointer/focus interactions. */
+              <g
+                key={`${point.x}-${point.y}`}
+                role="button"
+                tabIndex={0}
+                aria-label={
+                  data[index].label
+                    ? `${data[index].label}: ${data[index].valueLabel ?? data[index].value.toFixed(3)}`
+                    : `Point ${index + 1}: ${data[index].valueLabel ?? data[index].value.toFixed(3)}`
+                }
+                onMouseEnter={() => {
+                  setHoveredIndex(index);
+                  setTooltipRotation(0);
+                  setTooltipOffsetX(0);
+                }}
+                onMouseLeave={() => setHoveredIndex(null)}
+                onMouseMove={(event) => handleMouseMove(event, index)}
+                onFocus={() => {
+                  setHoveredIndex(index);
+                  setTooltipRotation(0);
+                  setTooltipOffsetX(0);
+                }}
+                onBlur={() => setHoveredIndex(null)}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    setHoveredIndex(null);
+                  }
+                }}
+                style={{ cursor: "pointer" }}
+              >
+                <rect
+                  x={hitLeft}
+                  y={plotTop - 10}
+                  width={hitRight - hitLeft}
+                  height={plotBottom - plotTop + 20}
+                  fill="transparent"
+                  style={{ pointerEvents: "all" }}
+                />
+
+                {dotHoverGlow && hoveredIndex === index && (
+                  <motion.circle
+                    cx={point.x}
+                    cy={point.y}
+                    r={dotSize * 2}
+                    fill={dotColor}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.3 }}
+                    transition={{ duration: 0.2 }}
+                    style={{ filter: "blur(8px)", pointerEvents: "none" }}
+                  />
+                )}
+
                 <motion.circle
                   cx={point.x}
                   cy={point.y}
-                  r={dotSize * 2}
+                  r={dotSize}
                   fill={dotColor}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 0.3 }}
-                  transition={{ duration: 0.2 }}
-                  style={{ filter: "blur(8px)", pointerEvents: "none" }}
+                  stroke="rgba(0,0,0,0.45)"
+                  strokeWidth="1.5"
+                  style={{ pointerEvents: "none" }}
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{
+                    scale: hoveredIndex === index ? 1.45 : 1,
+                    opacity: shouldAnimate ? 1 : 0,
+                  }}
+                  transition={{
+                    scale: { type: "spring", stiffness: 400, damping: 25 },
+                    opacity: {
+                      duration: 0.3,
+                      delay:
+                        (index / (points.length - 1 || 1)) * animationDuration,
+                    },
+                  }}
                 />
-              )}
+              </g>
+            );
+          })}
 
-              <motion.circle
-                cx={point.x}
-                cy={point.y}
-                r={dotSize}
-                fill={dotColor}
-                stroke="rgba(0,0,0,0.45)"
-                strokeWidth="1.5"
-                style={{ pointerEvents: "none" }}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{
-                  scale: hoveredIndex === index ? 1.45 : 1,
-                  opacity: shouldAnimate ? 1 : 0,
-                }}
-                transition={{
-                  scale: { type: "spring", stiffness: 400, damping: 25 },
-                  opacity: {
-                    duration: 0.3,
-                    delay:
-                      (index / (points.length - 1 || 1)) * animationDuration,
-                  },
-                }}
-              />
-            </g>
-          ))}
+      </svg>
 
-        <AnimatePresence>
-          {hoveredIndex !== null &&
-            points[hoveredIndex] &&
-            !(calculatePercentageDifference && hoveredIndex === 0) &&
-            (() => {
-              const hoveredPoint = data[hoveredIndex];
-              return (
-                <foreignObject
-                  key={hoveredIndex}
-                  x={points[hoveredIndex].x - 82}
-                  y={points[hoveredIndex].y - 92}
-                  width="164"
-                  height="92"
-                  style={{ overflow: "visible", pointerEvents: "none" }}
+      {/* Tooltip — HTML layer so SVG scaling (preserveAspectRatio) can't distort it.
+          Percentage positioning maps 1:1 with SVG viewBox when using preserveAspectRatio="none". */}
+      <AnimatePresence>
+        {hoveredIndex !== null &&
+          points[hoveredIndex] &&
+          !(calculatePercentageDifference && hoveredIndex === 0) &&
+          (() => {
+            const hoveredPoint = data[hoveredIndex];
+            const leftPct = (points[hoveredIndex].x / VIEWBOX_WIDTH) * 100;
+            const topPct = (points[hoveredIndex].y / VIEWBOX_HEIGHT) * 100;
+            return (
+              <div
+                key={hoveredIndex}
+                className="absolute pointer-events-none z-10"
+                style={{
+                  left: `${leftPct}%`,
+                  top: `${topPct}%`,
+                  transform: "translate(-50%, -100%)",
+                  paddingBottom: 8,
+                }}
+              >
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.82 }}
+                  animate={{
+                    opacity: 1,
+                    scale: 1,
+                    x: tooltipOffsetX,
+                    rotate: tooltipRotation,
+                  }}
+                  exit={{ opacity: 0, scale: 0.82 }}
+                  transition={{
+                    duration: 0.16,
+                    x: { type: "spring", stiffness: 300, damping: 30 },
+                    rotate: { type: "spring", stiffness: 300, damping: 30 },
+                  }}
                 >
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.82, x: 0 }}
-                    animate={{
-                      opacity: 1,
-                      scale: 1,
-                      x: tooltipOffsetX,
-                      rotate: tooltipRotation,
-                    }}
-                    exit={{ opacity: 0, scale: 0.82 }}
-                    transition={{
-                      duration: 0.16,
-                      x: { type: "spring", stiffness: 300, damping: 30 },
-                      rotate: { type: "spring", stiffness: 300, damping: 30 },
-                    }}
-                    className="flex items-center justify-center"
-                    style={{ pointerEvents: "none" }}
-                  >
-                    <div className="relative">
-                      <div className="whitespace-nowrap rounded-lg border border-white/10 bg-black/85 px-3 py-2 text-white shadow-xl backdrop-blur-xs">
-                        {calculatePercentageDifference && hoveredIndex > 0 ? (
-                          (() => {
-                            const diff = getPercentageDifference(hoveredIndex);
-                            if (!diff) {
-                              return (
-                                <div className="text-sm font-semibold">
-                                  {hoveredPoint.valueLabel ??
-                                    `${points[hoveredIndex].value.toFixed(3)}`}
-                                </div>
-                              );
-                            }
-
+                  <div className="relative">
+                    <div className="whitespace-nowrap rounded-lg border border-white/10 bg-black/85 px-3 py-2 text-white shadow-xl backdrop-blur-xs">
+                      {calculatePercentageDifference && hoveredIndex > 0 ? (
+                        (() => {
+                          const diff = getPercentageDifference(hoveredIndex);
+                          if (!diff) {
                             return (
-                              <div className="flex items-center gap-1.5">
-                                {diff.isIncrease ? (
-                                  <TrendingUp className="h-4 w-4 text-emerald-400" />
-                                ) : (
-                                  <TrendingDown className="h-4 w-4 text-red-400" />
-                                )}
-                                <span
-                                  className={cn(
-                                    "text-sm font-semibold",
-                                    diff.isIncrease
-                                      ? "text-emerald-400"
-                                      : "text-red-400",
-                                  )}
-                                >
-                                  {diff.isIncrease ? "+" : "-"}
-                                  {diff.percentage.toFixed(1)}%
-                                </span>
+                              <div className="text-sm font-semibold">
+                                {hoveredPoint.valueLabel ??
+                                  `${points[hoveredIndex].value.toFixed(3)}`}
                               </div>
                             );
-                          })()
-                        ) : (
-                          <div className="text-sm font-semibold">
-                            {hoveredPoint.valueLabel ??
-                              `${points[hoveredIndex].value.toFixed(3)}`}
-                          </div>
-                        )}
+                          }
 
-                        {hoveredPoint.label && (
-                          <div className="mt-1 text-[11px] text-white/70">
-                            {hoveredPoint.label}
-                          </div>
-                        )}
-                        {hoveredPoint.meta && (
-                          <div className="text-[11px] text-white/45">
-                            {hoveredPoint.meta}
-                          </div>
-                        )}
-                      </div>
-                      <div
-                        className="absolute left-1/2 h-0 w-0 border-x-4 border-t-4 border-x-transparent border-t-black/85"
-                        style={{
-                          bottom: "-4px",
-                          transform: "translateX(-50%)",
-                        }}
-                      />
+                          return (
+                            <div className="flex items-center gap-1.5">
+                              {diff.isIncrease ? (
+                                <TrendingUp className="h-4 w-4 text-emerald-400" />
+                              ) : (
+                                <TrendingDown className="h-4 w-4 text-red-400" />
+                              )}
+                              <span
+                                className={cn(
+                                  "text-sm font-semibold",
+                                  diff.isIncrease
+                                    ? "text-emerald-400"
+                                    : "text-red-400",
+                                )}
+                              >
+                                {diff.isIncrease ? "+" : "-"}
+                                {diff.percentage.toFixed(1)}%
+                              </span>
+                            </div>
+                          );
+                        })()
+                      ) : (
+                        <div className="text-sm font-semibold">
+                          {hoveredPoint.valueLabel ??
+                            `${points[hoveredIndex].value.toFixed(3)}`}
+                        </div>
+                      )}
+
+                      {hoveredPoint.label && (
+                        <div className="mt-1 text-[11px] text-white/70">
+                          {hoveredPoint.label}
+                        </div>
+                      )}
+                      {hoveredPoint.meta && (
+                        <div className="text-[11px] text-white/45">
+                          {hoveredPoint.meta}
+                        </div>
+                      )}
                     </div>
-                  </motion.div>
-                </foreignObject>
-              );
-            })()}
-        </AnimatePresence>
-      </svg>
+                    <div
+                      className="absolute left-1/2 h-0 w-0 border-x-4 border-t-4 border-x-transparent border-t-black/85"
+                      style={{
+                        bottom: "-4px",
+                        transform: "translateX(-50%)",
+                      }}
+                    />
+                  </div>
+                </motion.div>
+              </div>
+            );
+          })()}
+      </AnimatePresence>
 
       {showXAxisLabels &&
         points.map((point, index) => {

@@ -44,8 +44,6 @@ const COUNTRY_ABBR: Record<string, string> = {
 const VB_W = 800;
 const VB_H = 400;
 const GRAPH_PADDING = { left: 56, bottom: 48, top: 36, right: 30 };
-const GRAPH_HEIGHT = 380;
-const GRAPH_CARD_WIDTH = 1460;
 
 /* Compute the 5 grid-line Y-percentages within the container */
 const plotTop = GRAPH_PADDING.top;
@@ -57,30 +55,46 @@ const GRID_LINE_PCTS = Array.from(
 );
 const Y_LABEL_RIGHT_PCT = ((GRAPH_PADDING.left - 8) / VB_W) * 100;
 
+const CARD =
+  "rounded-[24px] bg-black/60 backdrop-blur-sm border border-white/[0.06]";
+
+/* Direction each card flies in from — Mac trackpad spread style.
+   Vector points FROM where the card starts TO its final grid position. */
+const FLY_IN = [
+  { x: -800, y: -500, rotate: -15 }, // 0 header:  top-left
+  { x: 0, y: -600, rotate: 0 }, // 1 gap:     top-center
+  { x: 800, y: -500, rotate: 15 }, // 2 h2h:     top-right
+  { x: -900, y: 300, rotate: -10 }, // 3 graph:   center-left
+  { x: 900, y: 0, rotate: 10 }, // 4 q3:      right
+  { x: 900, y: 500, rotate: 15 }, // 5 results: bottom-right
+];
+
 export function GraphMode() {
   const overlayRef = useRef<HTMLDivElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
   const backBtnRef = useRef<HTMLButtonElement>(null);
   const isExitingRef = useRef(false);
+  const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const graphContainerRef = useRef<HTMLDivElement>(null);
 
   const [showGraph, setShowGraph] = useState(false);
   const [cardExpanded, setCardExpanded] = useState(false);
+  const [graphHeight, setGraphHeight] = useState(220);
   const analysisScope = "season" as const;
 
-  const {
-    selectedTeamId,
-    setSelectedTeamId,
-    setCameraMode,
-    setStage,
-  } = useAppStore();
+  const { selectedTeamId, setSelectedTeamId, setCameraMode, setStage } =
+    useAppStore();
 
   const team = selectedTeamId ? getTeamById(selectedTeamId) : null;
   const drivers = selectedTeamId ? getDriversByTeamId(selectedTeamId) : [];
 
   const medianGap = useMemo(() => {
     if (drivers.length !== 2) return null;
-    return calculateMedianQualifyingGap(drivers[0].id, drivers[1].id, analysisScope);
+    return calculateMedianQualifyingGap(
+      drivers[0].id,
+      drivers[1].id,
+      analysisScope,
+    );
   }, [analysisScope, drivers]);
 
   const headToHead = useMemo(() => {
@@ -96,17 +110,16 @@ export function GraphMode() {
     };
   }, [analysisScope, drivers]);
 
-  // Full season qualifying gaps
   const perRaceGaps = useMemo(() => {
     if (drivers.length !== 2) return [];
     return getPerRaceQualifyingGaps(drivers[0].id, drivers[1].id, 24);
   }, [drivers]);
 
-  // Signed seconds so the graph can show values above/below the 0 baseline.
   const graphData = useMemo(() => {
     return perRaceGaps.map((gap) => ({
       value: gap.gapMs / 1000,
-      label: COUNTRY_ABBR[gap.country] || gap.country.slice(0, 3).toUpperCase(),
+      label:
+        COUNTRY_ABBR[gap.country] || gap.country.slice(0, 3).toUpperCase(),
       meta: gap.country,
       valueLabel: `${gap.gapFormatted}s`,
     }));
@@ -120,7 +133,6 @@ export function GraphMode() {
     const range = maxVal - minVal || 1;
     const paddedMin = minVal - range * 0.1;
     const paddedMax = maxVal + range * 0.1;
-
     return {
       min: paddedMin,
       max: paddedMax,
@@ -128,7 +140,6 @@ export function GraphMode() {
     };
   }, [graphData]);
 
-  // Compute Y-axis tick values (must replicate SimpleGraph's padding logic)
   const yTicks = useMemo(() => {
     if (!yAxisScale) return [];
     return Array.from({ length: 5 }, (_, i) => {
@@ -146,7 +157,6 @@ export function GraphMode() {
     if (!yAxisScale) return null;
     const zeroRatio = (0 - yAxisScale.min) / yAxisScale.range;
     if (zeroRatio < 0 || zeroRatio > 1) return null;
-
     const zeroY = plotTop + graphH - zeroRatio * graphH;
     return (zeroY / VB_H) * 100;
   }, [yAxisScale]);
@@ -171,35 +181,68 @@ export function GraphMode() {
 
   const isFaster = (medianGap?.medianGap ?? 0) < 0;
 
-  // Card expand animation on mount
+  /* ── Measure graph container for responsive height ── */
   useEffect(() => {
-    if (!cardRef.current) return;
-
-    gsap.fromTo(
-      cardRef.current,
-      { scale: 0.6, opacity: 0, y: 30 },
-      {
-        scale: 1,
-        opacity: 1,
-        y: 0,
-        duration: 0.8,
-        ease: "back.out(1.2)",
-        delay: 0.3,
-        onComplete: () => {
-          setCardExpanded(true);
-          setTimeout(() => setShowGraph(true), 200);
-        },
-      },
-    );
+    const el = graphContainerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([entry]) => {
+      const h = Math.floor(entry.contentRect.height);
+      if (h > 100) setGraphHeight(h);
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
   }, []);
 
-  // Back to VERSUS
+  /* ── Card fly-in animation on mount ── */
+  useEffect(() => {
+    const cards = cardRefs.current.filter(Boolean) as HTMLDivElement[];
+    if (cards.length === 0) return;
+
+    // Set scattered starting positions
+    cards.forEach((card, i) => {
+      const f = FLY_IN[i] ?? FLY_IN[0];
+      gsap.set(card, {
+        x: f.x,
+        y: f.y,
+        rotation: f.rotate,
+        scale: 0.4,
+        opacity: 0,
+      });
+    });
+
+    // Converge to grid positions
+    const tl = gsap.timeline({
+      delay: 0.3,
+      onComplete: () => {
+        setCardExpanded(true);
+        setTimeout(() => setShowGraph(true), 200);
+      },
+    });
+
+    cards.forEach((card, i) => {
+      tl.to(
+        card,
+        {
+          x: 0,
+          y: 0,
+          rotation: 0,
+          scale: 1,
+          opacity: 1,
+          duration: 1.1,
+          ease: "power3.out",
+        },
+        i * 0.06,
+      );
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── Back to VERSUS ── */
   const handleBack = useCallback(() => {
     if (isExitingRef.current) return;
     isExitingRef.current = true;
-
     setCameraMode("cinematic");
 
+    const cards = cardRefs.current.filter(Boolean) as HTMLDivElement[];
     const tl = gsap.timeline({
       onComplete: () => {
         setStage("VERSUS");
@@ -207,11 +250,24 @@ export function GraphMode() {
       },
     });
 
-    tl.to(
-      cardRef.current,
-      { scale: 0.8, opacity: 0, y: 20, duration: 0.35, ease: "power2.in" },
-      0,
-    );
+    // Cards fly back out to their origin directions
+    cards.forEach((card, i) => {
+      const f = FLY_IN[i] ?? FLY_IN[0];
+      tl.to(
+        card,
+        {
+          x: f.x * 0.6,
+          y: f.y * 0.6,
+          rotation: f.rotate * 0.5,
+          scale: 0.5,
+          opacity: 0,
+          duration: 0.45,
+          ease: "power2.in",
+        },
+        i * 0.03,
+      );
+    });
+
     tl.to(
       backBtnRef.current,
       { opacity: 0, duration: 0.25, ease: "power2.in" },
@@ -229,29 +285,65 @@ export function GraphMode() {
     );
   }, [setCameraMode, setStage]);
 
+  /* ── Team switch ── */
   const handleTeamSelect = useCallback(
     (teamId: string) => {
       if (teamId === selectedTeamId) return;
-      setSelectedTeamId(teamId);
+
+      const cards = cardRefs.current.filter(Boolean) as HTMLDivElement[];
       setShowGraph(false);
       setCardExpanded(false);
 
-      if (cardRef.current) {
-        gsap.fromTo(
-          cardRef.current,
-          { scale: 0.85, opacity: 0.3 },
-          {
-            scale: 1,
-            opacity: 1,
-            duration: 0.5,
-            ease: "power3.out",
-            onComplete: () => {
-              setCardExpanded(true);
-              setTimeout(() => setShowGraph(true), 200);
-            },
-          },
-        );
-      }
+      // Quick scatter out
+      cards.forEach((card, i) => {
+        const f = FLY_IN[i] ?? FLY_IN[0];
+        gsap.to(card, {
+          x: f.x * 0.2,
+          y: f.y * 0.2,
+          rotation: f.rotate * 0.2,
+          scale: 0.8,
+          opacity: 0,
+          duration: 0.3,
+          ease: "power2.in",
+          delay: i * 0.02,
+        });
+      });
+
+      // After scatter, update data and fly back
+      setTimeout(() => {
+        setSelectedTeamId(teamId);
+
+        requestAnimationFrame(() => {
+          cards.forEach((card, i) => {
+            const f = FLY_IN[i] ?? FLY_IN[0];
+            gsap.fromTo(
+              card,
+              {
+                x: f.x * 0.2,
+                y: f.y * 0.2,
+                rotation: f.rotate * 0.2,
+                scale: 0.8,
+                opacity: 0,
+              },
+              {
+                x: 0,
+                y: 0,
+                rotation: 0,
+                scale: 1,
+                opacity: 1,
+                duration: 0.65,
+                ease: "power3.out",
+                delay: i * 0.04,
+              },
+            );
+          });
+
+          setTimeout(() => {
+            setCardExpanded(true);
+            setTimeout(() => setShowGraph(true), 200);
+          }, 450);
+        });
+      }, 350);
     },
     [selectedTeamId, setSelectedTeamId],
   );
@@ -260,13 +352,13 @@ export function GraphMode() {
 
   return (
     <div className="relative h-screen w-full overflow-hidden">
-      {/* Atmospheric overlay — heavier at top for card readability, lighter at bottom for car */}
+      {/* Atmospheric overlay */}
       <div
         ref={overlayRef}
         className="absolute inset-0 pointer-events-none z-[1]"
         style={{
           background:
-            "linear-gradient(to bottom, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.45) 55%, rgba(0,0,0,0.15) 100%)",
+            "linear-gradient(to bottom, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 100%)",
         }}
       />
 
@@ -297,305 +389,337 @@ export function GraphMode() {
         <Navbar onTeamSelect={handleTeamSelect} />
       </div>
 
-      {/* Data card — pinned to top, leaving bottom for the car above dock */}
-      <div className="relative z-20 flex justify-center pt-12 px-8">
+      {/* ── Cards grid ── */}
+      <div className="relative z-20 flex justify-center pt-16 px-8">
         <div
-          ref={cardRef}
-          className="rounded-[36px] bg-black/60 backdrop-blur-sm border border-white/[0.06]"
+          className="grid gap-3"
           style={{
-            width: GRAPH_CARD_WIDTH,
+            gridTemplateAreas: `
+              "header  gap     h2h"
+              "graph   graph   q3"
+              "graph   graph   results"
+            `,
+            gridTemplateColumns: "1fr 1fr 260px",
+            gridTemplateRows: "auto auto 1fr",
+            width: 1460,
             maxWidth: "calc(100vw - 64px)",
-            opacity: 0,
-            padding: "40px 56px 48px",
+            height: "calc(100vh - 450px)",
           }}
         >
-          {/* ── Header ── */}
-          <div className="flex items-start justify-between mb-8">
-            <div className="flex flex-col gap-2.5">
-              <div className="flex items-center gap-3">
-                <div
-                  className="w-1 h-7 rounded-full"
-                  style={{ backgroundColor: team.primaryColor }}
-                />
-                <span className="font-f1-bold text-[13px] text-white/50 uppercase tracking-[0.15em]">
-                  {team.name}
-                </span>
-              </div>
-              <h1 className="font-f1-bold text-[18px] text-white uppercase tracking-[0.12em]">
-                Qualifying Analysis
-              </h1>
+          {/* ── Card 0: Header ── */}
+          <div
+            ref={(el) => {
+              cardRefs.current[0] = el;
+            }}
+            className={cn(CARD, "px-5 py-4 flex flex-col justify-center")}
+            style={{ gridArea: "header", opacity: 0 }}
+          >
+            <div className="flex items-center gap-2.5 mb-1.5">
+              <div
+                className="w-1 h-5 rounded-full"
+                style={{ backgroundColor: team.primaryColor }}
+              />
+              <span className="font-f1-bold text-[11px] text-white/50 uppercase tracking-[0.15em]">
+                {team.name}
+              </span>
             </div>
-
-            <p className="text-[13px] font-semibold text-white/60">2025 Season</p>
+            <h1 className="font-f1-bold text-[15px] text-white uppercase tracking-[0.12em]">
+              Qualifying Analysis
+            </h1>
+            <p className="text-[11px] font-semibold text-white/40 mt-0.5">
+              2025 Season
+            </p>
           </div>
 
-          {/* ── Content grid ── */}
-          <div className="grid grid-cols-[minmax(0,1fr)_280px] gap-10">
-            {/* ===== Left column: gap number + graph ===== */}
-            <div className="flex flex-col gap-5">
-              {/* Median gap big number */}
-              <div className="flex flex-col gap-1.5">
-                <p className="font-f1-bold text-[12px] text-white/35 uppercase tracking-[0.15em]">
-                  Median Quali Gap
-                </p>
-                <p className="font-f1-bold text-[68px] text-white leading-none">
-                  {formatGapDisplay(medianGap?.medianGap ?? 0)}
-                </p>
-                <p className="text-[12px] text-white/35 mt-1">
-                  across {medianGap?.raceCount ?? 0} qualifying sessions
-                </p>
+          {/* ── Card 1: Median Gap ── */}
+          <div
+            ref={(el) => {
+              cardRefs.current[1] = el;
+            }}
+            className={cn(CARD, "px-5 py-4 flex flex-col justify-center")}
+            style={{ gridArea: "gap", opacity: 0 }}
+          >
+            <p className="font-f1-bold text-[10px] text-white/35 uppercase tracking-[0.15em] mb-1">
+              Median Quali Gap
+            </p>
+            <p className="font-f1-bold text-[40px] text-white leading-none">
+              {formatGapDisplay(medianGap?.medianGap ?? 0)}
+            </p>
+            <p className="text-[10px] text-white/35 mt-1.5">
+              across {medianGap?.raceCount ?? 0} sessions
+            </p>
+          </div>
+
+          {/* ── Card 2: Head to Head ── */}
+          <div
+            ref={(el) => {
+              cardRefs.current[2] = el;
+            }}
+            className={cn(CARD, "px-5 py-4")}
+            style={{ gridArea: "h2h", opacity: 0 }}
+          >
+            <p className="font-f1-bold text-[10px] text-white/30 uppercase tracking-[0.15em] mb-3">
+              Head to Head
+            </p>
+            <div className="flex items-center justify-between px-2">
+              <div className="flex flex-col items-center gap-0.5">
+                <span
+                  className={cn(
+                    "font-f1-bold text-[11px]",
+                    isFaster ? "text-white" : "text-white/40",
+                  )}
+                >
+                  {drivers[0].abbreviation}
+                </span>
+                <span
+                  className={cn(
+                    "font-f1-bold text-[30px] leading-none",
+                    isFaster ? "text-white" : "text-white/40",
+                  )}
+                >
+                  {headToHead?.driver1Wins ?? 0}
+                </span>
+              </div>
+              <span className="text-[18px] text-white/15 font-f1">—</span>
+              <div className="flex flex-col items-center gap-0.5">
+                <span
+                  className={cn(
+                    "font-f1-bold text-[11px]",
+                    !isFaster ? "text-white" : "text-white/40",
+                  )}
+                >
+                  {drivers[1].abbreviation}
+                </span>
+                <span
+                  className={cn(
+                    "font-f1-bold text-[30px] leading-none",
+                    !isFaster ? "text-white" : "text-white/40",
+                  )}
+                >
+                  {headToHead?.driver2Wins ?? 0}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Card 3: Graph ── */}
+          <div
+            ref={(el) => {
+              cardRefs.current[3] = el;
+            }}
+            className={cn(CARD, "px-5 py-4 flex flex-col min-h-0")}
+            style={{ gridArea: "graph", opacity: 0 }}
+          >
+            <p className="font-f1-bold text-[10px] text-white/25 uppercase tracking-[0.15em] mb-1 shrink-0">
+              Season Qualifying Delta
+            </p>
+
+            <div ref={graphContainerRef} className="relative flex-1 min-h-0">
+              {showGraph && graphData.length > 0 && (
+                <>
+                  <SimpleGraph
+                    data={graphData}
+                    lineColor={team.primaryColor}
+                    dotColor={team.primaryColor}
+                    height={graphHeight}
+                    dotSize={5}
+                    dotHoverGlow
+                    graphLineThickness={2.5}
+                    animationDuration={2}
+                    showGrid
+                    gridStyle="dashed"
+                    gridLines="horizontal"
+                    gridLineThickness={0.5}
+                    curved
+                    gradientFade
+                    showDots
+                    showZeroLine
+                    zeroLineColor="rgba(255,255,255,0.45)"
+                    zeroLineDashArray="0"
+                    showXAxisLabels
+                    xLabelColor="rgba(255,255,255,0.3)"
+                    xLabelFontSize={8}
+                    padding={GRAPH_PADDING}
+                    preserveAspectRatio="none"
+                    className="w-full"
+                  />
+
+                  {/* Y-axis tick values */}
+                  {yTicks.map((tick) => (
+                    <div
+                      key={tick.pct}
+                      className={cn(
+                        "absolute pointer-events-none text-[10px] font-f1 text-right pr-1.5 leading-none tabular-nums",
+                        tick.isZero
+                          ? "text-white/65 font-f1-bold"
+                          : "text-white/30",
+                      )}
+                      style={{
+                        top: `${tick.pct}%`,
+                        left: 0,
+                        width: `${Y_LABEL_RIGHT_PCT}%`,
+                        transform: "translateY(-50%)",
+                      }}
+                    >
+                      {formatSecondsTick(tick.value)}
+                    </div>
+                  ))}
+
+                  {zeroLinePct !== null && !hasZeroTick && (
+                    <div
+                      className="absolute pointer-events-none text-[9px] text-white/75 font-f1-bold text-right pr-1.5 leading-none tabular-nums"
+                      style={{
+                        top: `${zeroLinePct}%`,
+                        left: 0,
+                        width: `${Y_LABEL_RIGHT_PCT}%`,
+                        transform: "translateY(-50%)",
+                      }}
+                    >
+                      0.000
+                    </div>
+                  )}
+
+                  {/* Y-axis unit label */}
+                  <div
+                    className="absolute pointer-events-none text-[9px] text-white/20 font-f1 uppercase tracking-wider"
+                    style={{
+                      left: 0,
+                      top: `${(GRAPH_PADDING.top / VB_H) * 100}%`,
+                      transform: "translateY(-180%)",
+                    }}
+                  >
+                    s
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* ── Card 4: Q3 Rate ── */}
+          <div
+            ref={(el) => {
+              cardRefs.current[4] = el;
+            }}
+            className={cn(CARD, "px-5 py-4")}
+            style={{ gridArea: "q3", opacity: 0 }}
+          >
+            <p className="font-f1-bold text-[10px] text-white/30 uppercase tracking-[0.15em] mb-3">
+              Q3 Rate
+            </p>
+
+            <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="font-f1-bold text-[11px] text-white/70">
+                    {drivers[0].abbreviation}
+                  </span>
+                  <span className="font-f1-bold text-[11px] text-white">
+                    {Math.round((q3Rates?.driver1.q3Rate ?? 0) * 100)}%
+                  </span>
+                </div>
+                <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{ backgroundColor: team.primaryColor }}
+                    initial={{ width: 0 }}
+                    animate={{
+                      width: cardExpanded
+                        ? `${(q3Rates?.driver1.q3Rate ?? 0) * 100}%`
+                        : 0,
+                    }}
+                    transition={{
+                      duration: 1,
+                      delay: 0.3,
+                      ease: "easeOut",
+                    }}
+                  />
+                </div>
               </div>
 
-              {/* Graph with axis labels */}
               <div className="flex flex-col gap-1">
-                <p className="font-f1-bold text-[10px] text-white/25 uppercase tracking-[0.15em]">
-                  Season Qualifying Delta
-                </p>
-
-                <div className="relative" style={{ minHeight: GRAPH_HEIGHT }}>
-                  {showGraph && graphData.length > 0 && (
-                    <>
-                      <SimpleGraph
-                        data={graphData}
-                        lineColor={team.primaryColor}
-                        dotColor={team.primaryColor}
-                        height={GRAPH_HEIGHT}
-                        dotSize={5}
-                        dotHoverGlow
-                        graphLineThickness={2.5}
-                        animationDuration={2}
-                        showGrid
-                        gridStyle="dashed"
-                        gridLines="horizontal"
-                        gridLineThickness={0.5}
-                        curved
-                        gradientFade
-                        showDots
-                        showZeroLine
-                        zeroLineColor="rgba(255,255,255,0.45)"
-                        zeroLineDashArray="0"
-                        showXAxisLabels
-                        xLabelColor="rgba(255,255,255,0.3)"
-                        xLabelFontSize={8}
-                        padding={GRAPH_PADDING}
-                        preserveAspectRatio="none"
-                        className="w-full"
-                      />
-
-                      {/* Y-axis tick values — aligned with the 5 horizontal grid lines */}
-                      {yTicks.map((tick) => (
-                        <div
-                          key={tick.pct}
-                          className={cn(
-                            "absolute pointer-events-none text-[10px] font-f1 text-right pr-1.5 leading-none tabular-nums",
-                            tick.isZero
-                              ? "text-white/65 font-f1-bold"
-                              : "text-white/30",
-                          )}
-                          style={{
-                            top: `${tick.pct}%`,
-                            left: 0,
-                            width: `${Y_LABEL_RIGHT_PCT}%`,
-                            transform: "translateY(-50%)",
-                          }}
-                        >
-                          {formatSecondsTick(tick.value)}
-                        </div>
-                      ))}
-
-                      {zeroLinePct !== null && !hasZeroTick && (
-                        <div
-                          className="absolute pointer-events-none text-[9px] text-white/75 font-f1-bold text-right pr-1.5 leading-none tabular-nums"
-                          style={{
-                            top: `${zeroLinePct}%`,
-                            left: 0,
-                            width: `${Y_LABEL_RIGHT_PCT}%`,
-                            transform: "translateY(-50%)",
-                          }}
-                        >
-                          0.000
-                        </div>
-                      )}
-
-                      {/* Y-axis unit label */}
-                      <div
-                        className="absolute pointer-events-none text-[9px] text-white/20 font-f1 uppercase tracking-wider"
-                        style={{
-                          left: 0,
-                          top: `${(GRAPH_PADDING.top / VB_H) * 100}%`,
-                          transform: "translateY(-180%)",
-                        }}
-                      >
-                        s
-                      </div>
-                    </>
-                  )}
+                <div className="flex items-center justify-between">
+                  <span className="font-f1-bold text-[11px] text-white/70">
+                    {drivers[1].abbreviation}
+                  </span>
+                  <span className="font-f1-bold text-[11px] text-white">
+                    {Math.round((q3Rates?.driver2.q3Rate ?? 0) * 100)}%
+                  </span>
+                </div>
+                <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full rounded-full"
+                    style={{
+                      backgroundColor: team.primaryColor,
+                      opacity: 0.6,
+                    }}
+                    initial={{ width: 0 }}
+                    animate={{
+                      width: cardExpanded
+                        ? `${(q3Rates?.driver2.q3Rate ?? 0) * 100}%`
+                        : 0,
+                    }}
+                    transition={{
+                      duration: 1,
+                      delay: 0.5,
+                      ease: "easeOut",
+                    }}
+                  />
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* ===== Right column: H2H + Q3 + recent results ===== */}
-            <div className="flex flex-col gap-7 pt-1">
-              {/* Head to Head */}
-              <div className="flex flex-col gap-4">
-                <p className="font-f1-bold text-[11px] text-white/30 uppercase tracking-[0.15em]">
-                  Head to Head
-                </p>
-                <div className="flex items-center justify-between px-4">
-                  <div className="flex flex-col items-center gap-1">
-                    <span
-                      className={cn(
-                        "font-f1-bold text-[14px]",
-                        isFaster ? "text-white" : "text-white/40",
-                      )}
-                    >
-                      {drivers[0].abbreviation}
-                    </span>
-                    <span
-                      className={cn(
-                        "font-f1-bold text-[40px] leading-none",
-                        isFaster ? "text-white" : "text-white/40",
-                      )}
-                    >
-                      {headToHead?.driver1Wins ?? 0}
-                    </span>
-                  </div>
-                  <span className="text-[22px] text-white/15 font-f1">—</span>
-                  <div className="flex flex-col items-center gap-1">
-                    <span
-                      className={cn(
-                        "font-f1-bold text-[14px]",
-                        !isFaster ? "text-white" : "text-white/40",
-                      )}
-                    >
-                      {drivers[1].abbreviation}
-                    </span>
-                    <span
-                      className={cn(
-                        "font-f1-bold text-[40px] leading-none",
-                        !isFaster ? "text-white" : "text-white/40",
-                      )}
-                    >
-                      {headToHead?.driver2Wins ?? 0}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="h-px bg-white/[0.06]" />
-
-              {/* Q3 Rate */}
-              <div className="flex flex-col gap-4">
-                <p className="font-f1-bold text-[11px] text-white/30 uppercase tracking-[0.15em]">
-                  Q3 Rate
-                </p>
-
-                <div className="flex flex-col gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-f1-bold text-[13px] text-white/70">
-                        {drivers[0].abbreviation}
-                      </span>
-                      <span className="font-f1-bold text-[13px] text-white">
-                        {Math.round((q3Rates?.driver1.q3Rate ?? 0) * 100)}%
-                      </span>
-                    </div>
-                    <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full rounded-full"
-                        style={{ backgroundColor: team.primaryColor }}
-                        initial={{ width: 0 }}
-                        animate={{
-                          width: cardExpanded
-                            ? `${(q3Rates?.driver1.q3Rate ?? 0) * 100}%`
-                            : 0,
-                        }}
-                        transition={{
-                          duration: 1,
-                          delay: 0.3,
-                          ease: "easeOut",
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col gap-1.5">
-                    <div className="flex items-center justify-between">
-                      <span className="font-f1-bold text-[13px] text-white/70">
-                        {drivers[1].abbreviation}
-                      </span>
-                      <span className="font-f1-bold text-[13px] text-white">
-                        {Math.round((q3Rates?.driver2.q3Rate ?? 0) * 100)}%
-                      </span>
-                    </div>
-                    <div className="h-1.5 bg-white/[0.08] rounded-full overflow-hidden">
-                      <motion.div
-                        className="h-full rounded-full"
-                        style={{
-                          backgroundColor: team.primaryColor,
-                          opacity: 0.6,
-                        }}
-                        initial={{ width: 0 }}
-                        animate={{
-                          width: cardExpanded
-                            ? `${(q3Rates?.driver2.q3Rate ?? 0) * 100}%`
-                            : 0,
-                        }}
-                        transition={{
-                          duration: 1,
-                          delay: 0.5,
-                          ease: "easeOut",
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="h-px bg-white/[0.06]" />
-
-              {/* Recent Results */}
-              <div className="flex flex-col gap-3 min-h-0">
-                <p className="font-f1-bold text-[11px] text-white/30 uppercase tracking-[0.15em] shrink-0">
-                  Results
-                </p>
-                <div className="flex flex-col gap-2 overflow-y-auto no-scrollbar max-h-[180px]">
-                  {[...perRaceGaps].reverse().map((gap) => (
+          {/* ── Card 5: Results ── */}
+          <div
+            ref={(el) => {
+              cardRefs.current[5] = el;
+            }}
+            className={cn(CARD, "px-5 py-4 flex flex-col min-h-0")}
+            style={{ gridArea: "results", opacity: 0 }}
+          >
+            <div className="flex items-center justify-between mb-2 shrink-0">
+              <p className="font-f1-bold text-[10px] text-white/30 uppercase tracking-[0.15em]">
+                Results
+              </p>
+              <p className="text-[11px] text-white/25 tracking-[0.15em]">
+                baseline {drivers[0].abbreviation}
+              </p>
+            </div>
+            <div className="flex flex-col gap-1.5 overflow-y-auto no-scrollbar min-h-0">
+              {[...perRaceGaps].reverse().map((gap) => (
+                <div
+                  key={gap.raceId}
+                  className="flex items-center justify-between"
+                >
+                  <div className="flex items-center gap-2">
                     <div
-                      key={gap.raceId}
-                      className="flex items-center justify-between"
+                      className="w-1 h-3 rounded-full shrink-0"
+                      style={{
+                        backgroundColor:
+                          gap.gapMs > 0
+                            ? team.primaryColor
+                            : "rgba(255,255,255,0.15)",
+                      }}
+                    />
+                    <span className="text-[13px] text-white/50 font-f1">
+                      {gap.country}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] text-white/25 font-f1">
+                      {gap.session}
+                    </span>
+                    <span
+                      className={cn(
+                        "text-[12px] font-f1-bold tabular-nums",
+                        gap.gapMs > 0 ? "text-white/80" : "text-white/45",
+                      )}
                     >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-1 h-3 rounded-full shrink-0"
-                          style={{
-                            backgroundColor:
-                              gap.gapMs > 0
-                                ? team.primaryColor
-                                : "rgba(255,255,255,0.15)",
-                          }}
-                        />
-                        <span className="text-[13px] text-white/50 font-f1">
-                          {gap.country}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] text-white/25 font-f1">
-                          {gap.session}
-                        </span>
-                        <span
-                          className={cn(
-                            "text-[12px] font-f1-bold tabular-nums",
-                            gap.gapMs > 0 ? "text-white/80" : "text-white/45",
-                          )}
-                        >
-                          {gap.gapFormatted}s
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+                      {gap.gapFormatted}s
+                    </span>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>

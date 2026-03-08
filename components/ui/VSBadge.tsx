@@ -93,7 +93,7 @@ export function VSBadge({
     <div
       ref={containerRef}
       className={cn(
-        "flex flex-col items-center rounded-[36px] bg-black/50 shrink-0",
+        "flex flex-col items-center rounded-[36px] bg-black/20 backdrop-blur-2xl shrink-0",
         className
       )}
       style={{

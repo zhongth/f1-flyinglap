@@ -6,9 +6,8 @@ import { gsap } from "@/lib/gsap";
 import { useAppStore } from "@/store/useAppStore";
 import { Navbar } from "@/components/ui/Navbar";
 import { VSBadge } from "@/components/ui/VSBadge";
-import { DriverShowcase } from "@/components/ui/DriverShowcase";
+import { DriverProfileCard } from "@/components/ui/DriverProfileCard";
 import { DriverDetailModal } from "@/components/ui/DriverDetailModal";
-import { TiltedCard } from "@/components/ui/TiltedCard";
 import {
   getTeamById,
   getDriversByTeamId,
@@ -402,7 +401,7 @@ export function VersusMode() {
             transformOrigin: "center center",
           }}
         >
-          {/* Left driver — GSAP wrapper (slide out/in) → motion.div (layoutId) → TiltedCard → DriverShowcase */}
+          {/* Left driver — GSAP wrapper (slide out/in) → motion.div (layoutId) → DriverProfileCard */}
           <div ref={leftCardRef} className="will-change-transform">
             {displayDrivers[0] && displayTeam && (
               <motion.div
@@ -410,17 +409,15 @@ export function VersusMode() {
                 layoutId={`driver-card-${displayDrivers[0].id}`}
                 transition={layoutSpring}
               >
-                <TiltedCard rotateAmplitude={5} scaleOnHover={1}>
-                  <DriverShowcase
-                    driver={displayDrivers[0]}
-                    team={displayTeam}
-                    position="left"
-                    q3Rate={q3Rates?.driver1.q3Rate}
-                    pedigreeLabel={pedigrees?.driver1.text}
-                    pedigreeTier={pedigrees?.driver1.tier}
-                    onClick={() => handleDriverClick(0)}
-                  />
-                </TiltedCard>
+                <DriverProfileCard
+                  driver={displayDrivers[0]}
+                  team={displayTeam}
+                  position="left"
+                  q3Rate={q3Rates?.driver1.q3Rate}
+                  pedigreeLabel={pedigrees?.driver1.text}
+                  pedigreeTier={pedigrees?.driver1.tier}
+                  onClick={() => handleDriverClick(0)}
+                />
               </motion.div>
             )}
           </div>
@@ -442,7 +439,7 @@ export function VersusMode() {
             />
           </div>
 
-          {/* Right driver — GSAP wrapper (slide out/in) → motion.div (layoutId) → TiltedCard → DriverShowcase */}
+          {/* Right driver — GSAP wrapper (slide out/in) → motion.div (layoutId) → DriverProfileCard */}
           <div ref={rightCardRef} className="will-change-transform">
             {displayDrivers[1] && displayTeam && (
               <motion.div
@@ -450,17 +447,15 @@ export function VersusMode() {
                 layoutId={`driver-card-${displayDrivers[1].id}`}
                 transition={layoutSpring}
               >
-                <TiltedCard rotateAmplitude={5} scaleOnHover={1}>
-                  <DriverShowcase
-                    driver={displayDrivers[1]}
-                    team={displayTeam}
-                    position="right"
-                    q3Rate={q3Rates?.driver2.q3Rate}
-                    pedigreeLabel={pedigrees?.driver2.text}
-                    pedigreeTier={pedigrees?.driver2.tier}
-                    onClick={() => handleDriverClick(1)}
-                  />
-                </TiltedCard>
+                <DriverProfileCard
+                  driver={displayDrivers[1]}
+                  team={displayTeam}
+                  position="right"
+                  q3Rate={q3Rates?.driver2.q3Rate}
+                  pedigreeLabel={pedigrees?.driver2.text}
+                  pedigreeTier={pedigrees?.driver2.tier}
+                  onClick={() => handleDriverClick(1)}
+                />
               </motion.div>
             )}
           </div>

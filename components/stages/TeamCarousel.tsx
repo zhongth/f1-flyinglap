@@ -7,7 +7,7 @@ import { ProgressiveBlur } from "@/components/ui/ProgressiveBlur";
 import { teams } from "@/data";
 import { getDriversByTeamId, getDriverPedigree } from "@/data/drivers";
 import { getTeamById } from "@/data/teams";
-import { calculateHeadToHead, calculateMedianQualifyingGap } from "@/data/qualifying";
+import { calculateHeadToHead } from "@/data/qualifying";
 
 import { gsap } from "@/lib/gsap";
 import { useAppStore } from "@/store/useAppStore";
@@ -162,7 +162,6 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
   const activeDrivers = activeTeam ? getDriversByTeamId(activeTeam.id) : [];
   const [d1, d2] = activeDrivers;
   const h2h = d1 && d2 ? calculateHeadToHead(d1.id, d2.id, "season") : null;
-  const gap = d1 && d2 ? calculateMedianQualifyingGap(d1.id, d2.id, "season") : null;
 
   // Freeze initialIndex at mount time
   const initialIndexRef = useRef<number | null>(null);
@@ -374,65 +373,60 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
                   }}
                 />
 
-                {/* Points + Median Gap */}
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-white/38">
-                      Points
-                    </p>
-                    <p className="mt-1.5 text-[22px] font-f1-bold leading-none text-white">
-                      {activeTeam?.constructorPoints}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-white/38">
-                      Median Gap
-                    </p>
-                    <p className="mt-1.5 text-[22px] font-f1-bold leading-none text-white">
-                      {gap ? `${gap.medianGapFormatted}s` : "—"}
-                    </p>
-                  </div>
+                {/* Points */}
+                <div className="mt-5">
+                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/38">
+                    Constructor Points
+                  </p>
+                  <p className="mt-1.5 text-[22px] font-f1-bold leading-none text-white">
+                    {activeTeam?.constructorPoints}
+                  </p>
                 </div>
 
                 <div className="mt-6 h-px bg-white/8" />
 
                 {/* Qualifying H2H */}
-                {h2h && d1 && d2 && (
-                  <div className="mt-6">
-                    <p className="text-[10px] uppercase tracking-[0.14em] text-white/38">
-                      Qualifying H2H
-                    </p>
-                    <div className="mt-3 flex items-center gap-3">
-                      <span className={`text-[12px] font-f1-bold uppercase ${h2h.driver1Wins >= h2h.driver2Wins ? "text-white" : "text-white/40"}`}>
-                        {d1.abbreviation}
-                      </span>
-                      <div className="flex-1 flex h-[5px] rounded-full overflow-hidden bg-white/6">
-                        <div
-                          className="h-full rounded-l-full"
-                          style={{
-                            width: `${(h2h.driver1Wins / Math.max(h2h.driver1Wins + h2h.driver2Wins, 1)) * 100}%`,
-                            backgroundColor: h2h.driver1Wins >= h2h.driver2Wins ? activeTeam?.primaryColor : `${activeTeam?.primaryColor}55`,
-                          }}
-                        />
-                        <div
-                          className="h-full rounded-r-full"
-                          style={{
-                            width: `${(h2h.driver2Wins / Math.max(h2h.driver1Wins + h2h.driver2Wins, 1)) * 100}%`,
-                            backgroundColor: h2h.driver2Wins > h2h.driver1Wins ? activeTeam?.primaryColor : `${activeTeam?.primaryColor}55`,
-                          }}
-                        />
+                {h2h && d1 && d2 && (() => {
+                  const total = Math.max(h2h.driver1Wins + h2h.driver2Wins, 1);
+                  const d1Pct = Math.round((h2h.driver1Wins / total) * 100);
+                  const d2Pct = 100 - d1Pct;
+                  return (
+                    <div className="mt-6">
+                      <p className="text-[10px] uppercase tracking-[0.14em] text-white/38">
+                        Qualifying H2H
+                      </p>
+                      <div className="mt-3 flex items-center gap-3">
+                        <span className={`text-[12px] font-f1-bold uppercase ${h2h.driver1Wins >= h2h.driver2Wins ? "text-white" : "text-white/40"}`}>
+                          {d1.abbreviation}
+                        </span>
+                        <div className="flex-1 flex h-[5px] rounded-full overflow-hidden bg-white/6">
+                          <div
+                            className="h-full rounded-l-full"
+                            style={{
+                              width: `${d1Pct}%`,
+                              backgroundColor: h2h.driver1Wins >= h2h.driver2Wins ? activeTeam?.primaryColor : `${activeTeam?.primaryColor}55`,
+                            }}
+                          />
+                          <div
+                            className="h-full rounded-r-full"
+                            style={{
+                              width: `${d2Pct}%`,
+                              backgroundColor: h2h.driver2Wins > h2h.driver1Wins ? activeTeam?.primaryColor : `${activeTeam?.primaryColor}55`,
+                            }}
+                          />
+                        </div>
+                        <span className={`text-[12px] font-f1-bold uppercase ${h2h.driver2Wins > h2h.driver1Wins ? "text-white" : "text-white/40"}`}>
+                          {d2.abbreviation}
+                        </span>
                       </div>
-                      <span className={`text-[12px] font-f1-bold uppercase ${h2h.driver2Wins > h2h.driver1Wins ? "text-white" : "text-white/40"}`}>
-                        {d2.abbreviation}
-                      </span>
+                      <div className="mt-1.5 flex justify-between">
+                        <span className="text-[16px] font-f1-bold text-white">{d1Pct}%</span>
+                        <span className="text-[11px] text-white/30 self-center">{total} races</span>
+                        <span className="text-[16px] font-f1-bold text-white">{d2Pct}%</span>
+                      </div>
                     </div>
-                    <div className="mt-1.5 flex justify-between">
-                      <span className="text-[16px] font-f1-bold text-white">{h2h.driver1Wins}</span>
-                      <span className="text-[11px] text-white/30 self-center">{h2h.driver1Wins + h2h.driver2Wins} races</span>
-                      <span className="text-[16px] font-f1-bold text-white">{h2h.driver2Wins}</span>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
 
                 <div className="mt-6 h-px bg-white/8" />
 

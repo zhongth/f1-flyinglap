@@ -93,13 +93,13 @@ export function DriverShowcase({
     <div
       ref={cardRef}
       data-driver-card
-      className="relative cursor-pointer group shrink-0"
+      className="relative cursor-pointer group shrink-0 backdrop-blur-2xl"
       style={{
         width: 480,
         height: 606,
         borderRadius: 40,
         backgroundColor: darkColors.cardBg,
-        border: `3px solid ${darkColors.cardBorder}`,
+        border: `1.5px solid ${darkColors.cardBorder}`,
       }}
       onClick={onClick}
     >
