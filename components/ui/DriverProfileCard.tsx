@@ -33,6 +33,35 @@ const INITIAL_DURATION = 1200;
 const INITIAL_X_OFFSET = 70;
 const INITIAL_Y_OFFSET = 60;
 
+const NATIONALITY_TO_CODE: Record<string, string> = {
+  Netherlands: "nl",
+  "United Kingdom": "gb",
+  Australia: "au",
+  Monaco: "mc",
+  Spain: "es",
+  Brazil: "br",
+  France: "fr",
+  Japan: "jp",
+  "New Zealand": "nz",
+  Italy: "it",
+  Canada: "ca",
+  Thailand: "th",
+  Germany: "de",
+  Argentina: "ar",
+  Finland: "fi",
+  Denmark: "dk",
+  Mexico: "mx",
+  China: "cn",
+  USA: "us",
+  "United States": "us",
+  Belgium: "be",
+  Switzerland: "ch",
+  Poland: "pl",
+  Russia: "ru",
+  India: "in",
+  Sweden: "se",
+};
+
 export function DriverProfileCard({
   driver,
   team,
@@ -261,42 +290,8 @@ export function DriverProfileCard({
             {/* Glare overlay */}
             <div className="pc-glare" />
 
-            {/* Driver name & details — parallax layer */}
+            {/* Driver number watermark — stays inside card */}
             <div className="pc-content">
-              <div
-                className={cn(
-                  "absolute z-10 leading-[1.36]",
-                  isLeft
-                    ? "left-[40px] bottom-[44px] text-left"
-                    : "right-[18px] bottom-[44px] text-right"
-                )}
-                style={{ display: "block", borderRadius: 0, pointerEvents: "none" }}
-              >
-                <p className="font-northwell text-white text-[64px]">
-                  {driver.firstName}
-                </p>
-                <p className="font-f1-bold text-white text-[40px] uppercase">
-                  {driver.lastName}
-                </p>
-                {pedigreeLabel && (
-                  <span
-                    className={cn(
-                      "inline-block mt-2 px-3 py-0.5 rounded-full text-[11px] font-f1-bold uppercase tracking-wider",
-                      pedigreeTier === "champion"
-                        ? "bg-amber-500/20 text-amber-400"
-                        : pedigreeTier === "winner"
-                          ? "bg-white/15 text-white/80"
-                          : pedigreeTier === "podium"
-                            ? "bg-white/10 text-white/60"
-                            : "bg-white/8 text-white/40"
-                    )}
-                  >
-                    {pedigreeLabel}
-                  </span>
-                )}
-              </div>
-
-              {/* Driver number watermark */}
               <p
                 className={cn(
                   "absolute font-f1-bold leading-[1.36] z-0",
@@ -315,6 +310,125 @@ export function DriverProfileCard({
             </div>
           </div>
         </section>
+
+        {/* National flag — outside .pc-card so colors aren't faded */}
+        {NATIONALITY_TO_CODE[driver.nationality] && (
+          <div
+            className={cn(
+              "absolute z-[3] pointer-events-none",
+              isLeft ? "left-[40px] top-[210px]" : "right-[33px] top-[192px]"
+            )}
+          >
+            <div
+              className="overflow-hidden border-white/85 border-2"
+              style={{ width: 36, height: 36, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={`https://flagcdn.com/w80/${NATIONALITY_TO_CODE[driver.nationality]}.png`}
+                alt={driver.nationality}
+                style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 0 }}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Driver name — outside .pc-card, in front of portrait */}
+        <div
+          className={cn(
+            "absolute z-[3] leading-[1.36] pointer-events-none",
+            isLeft
+              ? "left-[40px] bottom-[100px] text-left"
+              : "right-[18px] bottom-[100px] text-right"
+          )}
+        >
+          <p className="font-northwell text-white text-[64px]">
+            {driver.firstName}
+          </p>
+          <p className="font-f1-bold text-white text-[40px] uppercase">
+            {driver.lastName}
+          </p>
+        </div>
+
+        {/* Bottom info bar */}
+        <div className="pc-user-info">
+          <div className="pc-info-left">
+            <div className="pc-team-logo">
+              <Image
+                src={team.logoPath}
+                alt={team.shortName}
+                width={22}
+                height={22}
+              />
+            </div>
+            <div className="pc-driver-id">
+              <span className="pc-driver-num">
+                {driver.abbreviation} #{driver.number}
+              </span>
+              <span className="pc-driver-team">{team.shortName}</span>
+            </div>
+          </div>
+          {pedigreeLabel && (
+            <span
+              className={cn(
+                "inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-f1-bold uppercase tracking-wider",
+                pedigreeTier === "champion"
+                  ? "border border-amber-500/30"
+                  : pedigreeTier === "winner"
+                    ? "bg-yellow-600/15 text-yellow-300 border border-yellow-500/25"
+                    : pedigreeTier === "podium"
+                      ? "bg-emerald-400/15 text-emerald-300 border border-emerald-400/25"
+                      : "bg-white/8 text-white/50 border border-white/10"
+              )}
+              style={
+                pedigreeTier === "champion"
+                  ? {
+                      background: "linear-gradient(135deg, rgba(251,191,36,0.15) 0%, rgba(245,158,11,0.25) 50%, rgba(217,119,6,0.15) 100%)",
+                      color: "transparent",
+                      WebkitBackgroundClip: undefined,
+                    }
+                  : undefined
+              }
+            >
+              {pedigreeTier === "champion" && (
+                <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#f59e0b" }}>
+                  <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
+                </svg>
+              )}
+              {pedigreeTier === "winner" && (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <circle cx="12" cy="9" r="7" stroke="currentColor" strokeWidth="1.5" />
+                  <circle cx="12" cy="9" r="4.5" fill="currentColor" opacity="0.3" />
+                  <path d="M12 4.5l1.1 2.2 2.4.35-1.75 1.7.41 2.4L12 10.1l-2.16 1.05.41-2.4-1.75-1.7 2.4-.35L12 4.5z" fill="currentColor" />
+                  <path d="M8 15.5l-1.5 5L12 18l5.5 2.5L16 15.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              )}
+              {pedigreeTier === "podium" && (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7.5 21H2V9h5.5v12zm7.25-18h-5.5v18h5.5V3zM22 11h-5.5v10H22V11z" />
+                </svg>
+              )}
+              {pedigreeTier === "rookie" && (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                </svg>
+              )}
+              {pedigreeTier === "champion" ? (
+                <span
+                  style={{
+                    background: "linear-gradient(135deg, #fbbf24, #f59e0b, #d97706, #f59e0b, #fbbf24)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  {pedigreeLabel}
+                </span>
+              ) : (
+                pedigreeLabel
+              )}
+            </span>
+          )}
+        </div>
 
         {/* Driver portrait — outside .pc-card so it's not clipped */}
         <div className="pc-avatar-content">

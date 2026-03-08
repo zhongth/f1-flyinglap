@@ -307,7 +307,7 @@
   bottom: var(--ui-inset);
   left: var(--ui-inset);
   right: var(--ui-inset);
-  z-index: 2;
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: space-between;
