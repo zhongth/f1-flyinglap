@@ -1,10 +1,10 @@
-"""Fetch constructor standings from FastF1's Ergast interface."""
+"""Fetch constructor and driver standings from FastF1's Ergast interface."""
 
 from __future__ import annotations
 
 import fastf1
 
-from .config import TEAM_ID_MAP
+from .config import DRIVER_ID_MAP, TEAM_ID_MAP
 
 
 def fetch_constructor_standings(season: int) -> dict[str, int]:
@@ -35,4 +35,28 @@ def fetch_constructor_standings(season: int) -> dict[str, int]:
             standings[team_id] = points
 
     print(f"  Fetched constructor standings for {len(standings)} teams")
+    return standings
+
+
+def fetch_driver_standings(season: int) -> dict[str, int]:
+    """Return a dict mapping our app driver_id -> championship points."""
+    ergast = fastf1.ergast.Ergast()
+    response = ergast.get_driver_standings(season=season)
+    df = response.content[0]
+
+    standings: dict[str, int] = {}
+    for _, row in df.iterrows():
+        abbreviation = str(row.get("driverCode", ""))
+        points = int(row.get("points", 0))
+
+        # Map Ergast driver abbreviation to our app driver ID
+        driver_id = DRIVER_ID_MAP.get(abbreviation)
+        if not driver_id:
+            # Try driverId as fallback
+            driver_id = str(row.get("driverId", ""))
+
+        if driver_id:
+            standings[driver_id] = points
+
+    print(f"  Fetched driver standings for {len(standings)} drivers")
     return standings

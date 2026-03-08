@@ -11,6 +11,7 @@ export interface CarouselProps {
   cardAspectRatio?: number;
   gap?: number;
   onCardClick?: (index: number) => void;
+  disabled?: boolean;
   className?: string;
 }
 
@@ -21,6 +22,7 @@ export function Carousel({
   cardAspectRatio = 17 / 10,
   gap = 24,
   onCardClick,
+  disabled = false,
   className,
 }: CarouselProps) {
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -55,10 +57,11 @@ export function Carousel({
 
   const handleClick = useCallback(
     (index: number) => {
+      if (disabled) return;
       scrollToIndex(index);
       onCardClick?.(index);
     },
-    [scrollToIndex, onCardClick],
+    [disabled, scrollToIndex, onCardClick],
   );
 
   // Translate vertical mouse wheel into horizontal scroll
@@ -103,7 +106,7 @@ export function Carousel({
               delay: 0.05 * index,
               ease: "easeOut",
             }}
-            className="shrink-0 snap-center cursor-pointer"
+            className={cn("shrink-0 snap-center", disabled ? "cursor-default" : "cursor-pointer")}
             style={{
               width: `${cardWidth}px`,
               aspectRatio: `${cardAspectRatio}`,

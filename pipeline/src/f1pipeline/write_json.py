@@ -10,6 +10,7 @@ import fastf1
 
 from .schema import (
     Driver,
+    DriverStanding,
     HeadToHeadResult,
     MedianGapResult,
     PipelineMetadata,
@@ -41,6 +42,7 @@ def write_all(
     teammate_gaps: dict[str, MedianGapResult],
     head_to_head: dict[str, HeadToHeadResult],
     q3_rates: dict[str, Q3RateResult],
+    driver_standings: dict[str, int],
 ) -> None:
     """Write all JSON files to the output directory."""
     season_dir = output_dir / str(season)
@@ -84,6 +86,13 @@ def write_all(
         computed_dir / "q3-rates.json",
         {k: v.model_dump() for k, v in q3_rates.items()},
     )
+
+    # Driver standings
+    driver_standing_models = {
+        driver_id: DriverStanding(driverId=driver_id, points=points).model_dump()
+        for driver_id, points in driver_standings.items()
+    }
+    _write_json(computed_dir / "driver-standings.json", driver_standing_models)
 
     # Metadata
     last_race = races[-1] if races else None

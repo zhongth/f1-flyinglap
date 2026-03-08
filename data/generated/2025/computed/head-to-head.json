@@ -1,18 +1,4 @@
 {
-  "red_bull.season": {
-    "driver1Id": "max_verstappen",
-    "driver2Id": "yuki_tsunoda",
-    "driver1Wins": 23,
-    "driver2Wins": 0,
-    "scope": "season"
-  },
-  "ferrari.season": {
-    "driver1Id": "charles_leclerc",
-    "driver2Id": "lewis_hamilton",
-    "driver1Wins": 19,
-    "driver2Wins": 5,
-    "scope": "season"
-  },
   "mclaren.season": {
     "driver1Id": "lando_norris",
     "driver2Id": "oscar_piastri",
@@ -27,17 +13,17 @@
     "driver2Wins": 3,
     "scope": "season"
   },
-  "aston_martin.season": {
-    "driver1Id": "fernando_alonso",
-    "driver2Id": "lance_stroll",
+  "red_bull.season": {
+    "driver1Id": "max_verstappen",
+    "driver2Id": "yuki_tsunoda",
     "driver1Wins": 23,
     "driver2Wins": 0,
     "scope": "season"
   },
-  "alpine.season": {
-    "driver1Id": "pierre_gasly",
-    "driver2Id": "franco_colapinto",
-    "driver1Wins": 13,
+  "ferrari.season": {
+    "driver1Id": "charles_leclerc",
+    "driver2Id": "lewis_hamilton",
+    "driver1Wins": 19,
     "driver2Wins": 5,
     "scope": "season"
   },
@@ -55,11 +41,11 @@
     "driver2Wins": 5,
     "scope": "season"
   },
-  "sauber.season": {
-    "driver1Id": "gabriel_bortoleto",
-    "driver2Id": "nico_hulkenberg",
-    "driver1Wins": 12,
-    "driver2Wins": 11,
+  "aston_martin.season": {
+    "driver1Id": "fernando_alonso",
+    "driver2Id": "lance_stroll",
+    "driver1Wins": 23,
+    "driver2Wins": 0,
     "scope": "season"
   },
   "haas.season": {
@@ -69,19 +55,19 @@
     "driver2Wins": 13,
     "scope": "season"
   },
-  "red_bull.last5": {
-    "driver1Id": "max_verstappen",
-    "driver2Id": "yuki_tsunoda",
-    "driver1Wins": 5,
-    "driver2Wins": 0,
-    "scope": "last5"
+  "sauber.season": {
+    "driver1Id": "gabriel_bortoleto",
+    "driver2Id": "nico_hulkenberg",
+    "driver1Wins": 12,
+    "driver2Wins": 11,
+    "scope": "season"
   },
-  "ferrari.last5": {
-    "driver1Id": "charles_leclerc",
-    "driver2Id": "lewis_hamilton",
-    "driver1Wins": 5,
-    "driver2Wins": 0,
-    "scope": "last5"
+  "alpine.season": {
+    "driver1Id": "pierre_gasly",
+    "driver2Id": "franco_colapinto",
+    "driver1Wins": 13,
+    "driver2Wins": 5,
+    "scope": "season"
   },
   "mclaren.last5": {
     "driver1Id": "lando_norris",
@@ -97,16 +83,16 @@
     "driver2Wins": 1,
     "scope": "last5"
   },
-  "aston_martin.last5": {
-    "driver1Id": "fernando_alonso",
-    "driver2Id": "lance_stroll",
+  "red_bull.last5": {
+    "driver1Id": "max_verstappen",
+    "driver2Id": "yuki_tsunoda",
     "driver1Wins": 5,
     "driver2Wins": 0,
     "scope": "last5"
   },
-  "alpine.last5": {
-    "driver1Id": "pierre_gasly",
-    "driver2Id": "franco_colapinto",
+  "ferrari.last5": {
+    "driver1Id": "charles_leclerc",
+    "driver2Id": "lewis_hamilton",
     "driver1Wins": 5,
     "driver2Wins": 0,
     "scope": "last5"
@@ -125,11 +111,11 @@
     "driver2Wins": 1,
     "scope": "last5"
   },
-  "sauber.last5": {
-    "driver1Id": "gabriel_bortoleto",
-    "driver2Id": "nico_hulkenberg",
-    "driver1Wins": 1,
-    "driver2Wins": 3,
+  "aston_martin.last5": {
+    "driver1Id": "fernando_alonso",
+    "driver2Id": "lance_stroll",
+    "driver1Wins": 5,
+    "driver2Wins": 0,
     "scope": "last5"
   },
   "haas.last5": {
@@ -137,6 +123,20 @@
     "driver2Id": "oliver_bearman",
     "driver1Wins": 2,
     "driver2Wins": 3,
+    "scope": "last5"
+  },
+  "sauber.last5": {
+    "driver1Id": "gabriel_bortoleto",
+    "driver2Id": "nico_hulkenberg",
+    "driver1Wins": 1,
+    "driver2Wins": 3,
+    "scope": "last5"
+  },
+  "alpine.last5": {
+    "driver1Id": "pierre_gasly",
+    "driver2Id": "franco_colapinto",
+    "driver1Wins": 5,
+    "driver2Wins": 0,
     "scope": "last5"
   }
 }

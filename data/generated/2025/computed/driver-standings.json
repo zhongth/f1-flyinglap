@@ -1,0 +1,86 @@
+{
+  "lando_norris": {
+    "driverId": "lando_norris",
+    "points": 423
+  },
+  "max_verstappen": {
+    "driverId": "max_verstappen",
+    "points": 421
+  },
+  "oscar_piastri": {
+    "driverId": "oscar_piastri",
+    "points": 410
+  },
+  "george_russell": {
+    "driverId": "george_russell",
+    "points": 319
+  },
+  "charles_leclerc": {
+    "driverId": "charles_leclerc",
+    "points": 242
+  },
+  "lewis_hamilton": {
+    "driverId": "lewis_hamilton",
+    "points": 156
+  },
+  "kimi_antonelli": {
+    "driverId": "kimi_antonelli",
+    "points": 150
+  },
+  "alexander_albon": {
+    "driverId": "alexander_albon",
+    "points": 73
+  },
+  "carlos_sainz": {
+    "driverId": "carlos_sainz",
+    "points": 64
+  },
+  "fernando_alonso": {
+    "driverId": "fernando_alonso",
+    "points": 56
+  },
+  "nico_hulkenberg": {
+    "driverId": "nico_hulkenberg",
+    "points": 51
+  },
+  "isack_hadjar": {
+    "driverId": "isack_hadjar",
+    "points": 51
+  },
+  "oliver_bearman": {
+    "driverId": "oliver_bearman",
+    "points": 41
+  },
+  "liam_lawson": {
+    "driverId": "liam_lawson",
+    "points": 38
+  },
+  "esteban_ocon": {
+    "driverId": "esteban_ocon",
+    "points": 38
+  },
+  "lance_stroll": {
+    "driverId": "lance_stroll",
+    "points": 33
+  },
+  "yuki_tsunoda": {
+    "driverId": "yuki_tsunoda",
+    "points": 33
+  },
+  "pierre_gasly": {
+    "driverId": "pierre_gasly",
+    "points": 22
+  },
+  "gabriel_bortoleto": {
+    "driverId": "gabriel_bortoleto",
+    "points": 19
+  },
+  "franco_colapinto": {
+    "driverId": "franco_colapinto",
+    "points": 0
+  },
+  "jack_doohan": {
+    "driverId": "jack_doohan",
+    "points": 0
+  }
+}

@@ -89,6 +89,11 @@ class Q3RateResult(BaseModel):
     scope: str
 
 
+class DriverStanding(BaseModel):
+    driverId: str
+    points: int
+
+
 class PipelineMetadata(BaseModel):
     generatedAt: str
     season: int

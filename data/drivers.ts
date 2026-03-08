@@ -28,7 +28,10 @@ export function getHeightScale(heightCm: number): number {
   return heightCm / MAX_DRIVER_HEIGHT;
 }
 
-export type PedigreeTier = "champion" | "winner" | "podium" | "rookie";
+export type PedigreeTier = "champion" | "winner" | "podium" | "none" | "rookie";
+
+// Veterans with 0 podiums who should NOT show "ROOKIE"
+const VETERAN_DRIVER_IDS = new Set(["yuki_tsunoda"]);
 
 export function getDriverPedigree(driverId: string): { text: string; tier: PedigreeTier } {
   const driver = getDriverById(driverId);
@@ -44,6 +47,9 @@ export function getDriverPedigree(driverId: string): { text: string; tier: Pedig
   }
   if (podiums > 0) {
     return { text: `${podiums} ${podiums === 1 ? "PODIUM" : "PODIUMS"}`, tier: "podium" };
+  }
+  if (VETERAN_DRIVER_IDS.has(driverId)) {
+    return { text: "0 PODIUMS", tier: "none" };
   }
   return { text: "ROOKIE", tier: "rookie" };
 }

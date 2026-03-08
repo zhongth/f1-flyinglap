@@ -42,6 +42,11 @@ export interface Q3RateResult {
   scope: "season" | "last5";
 }
 
+export interface DriverStanding {
+  driverId: string;
+  points: number;
+}
+
 export interface PerRaceGap {
   raceId: string;
   circuit: string;

@@ -33,7 +33,7 @@ const INITIAL_DURATION = 1200;
 const INITIAL_X_OFFSET = 70;
 const INITIAL_Y_OFFSET = 60;
 
-const NATIONALITY_TO_CODE: Record<string, string> = {
+export const NATIONALITY_TO_CODE: Record<string, string> = {
   Netherlands: "nl",
   "United Kingdom": "gb",
   Australia: "au",
@@ -378,7 +378,9 @@ export function DriverProfileCard({
                     ? "bg-yellow-600/15 text-yellow-300 border border-yellow-500/25"
                     : pedigreeTier === "podium"
                       ? "bg-emerald-400/15 text-emerald-300 border border-emerald-400/25"
-                      : "bg-white/8 text-white/50 border border-white/10"
+                      : pedigreeTier === "none"
+                        ? "bg-white/5 text-white/30 border border-white/8"
+                        : "bg-white/8 text-white/50 border border-white/10"
               )}
               style={
                 pedigreeTier === "champion"
@@ -405,6 +407,11 @@ export function DriverProfileCard({
               )}
               {pedigreeTier === "podium" && (
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M7.5 21H2V9h5.5v12zm7.25-18h-5.5v18h5.5V3zM22 11h-5.5v10H22V11z" />
+                </svg>
+              )}
+              {pedigreeTier === "none" && (
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" opacity="0.5">
                   <path d="M7.5 21H2V9h5.5v12zm7.25-18h-5.5v18h5.5V3zM22 11h-5.5v10H22V11z" />
                 </svg>
               )}

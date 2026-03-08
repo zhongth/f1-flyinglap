@@ -59,7 +59,7 @@ def main() -> None:
     from .fetch_calendar import fetch_calendar
     from .fetch_drivers import fetch_drivers
     from .fetch_qualifying import fetch_all_qualifying
-    from .fetch_standings import fetch_constructor_standings
+    from .fetch_standings import fetch_constructor_standings, fetch_driver_standings
     from .fetch_teams import build_teams
     from .write_json import write_all
 
@@ -89,6 +89,11 @@ def main() -> None:
     constructor_standings = fetch_constructor_standings(args.season)
     print()
 
+    # Step 4b: Fetch driver standings
+    print("Step 4b: Fetching driver standings...")
+    driver_standings = fetch_driver_standings(args.season)
+    print()
+
     # Step 5: Build teams
     print("Step 5: Building teams from driver data + branding...")
     teams = build_teams(drivers, constructor_standings)
@@ -115,6 +120,7 @@ def main() -> None:
         teammate_gaps=teammate_gaps,
         head_to_head=head_to_head,
         q3_rates=q3_rates,
+        driver_standings=driver_standings,
     )
 
     print("\nDone!")

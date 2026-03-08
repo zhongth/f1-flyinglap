@@ -10,10 +10,10 @@
     "portraitPath": "/f1_2025_driver_portraits/max_verstappen.webp",
     "heightCm": 181,
     "careerStats": {
-      "polePositions": 40,
-      "wins": 62,
-      "podiums": 111,
-      "fastestLaps": 32,
+      "polePositions": 48,
+      "wins": 71,
+      "podiums": 127,
+      "fastestLaps": 37,
       "championships": 4
     }
   },
@@ -28,10 +28,10 @@
     "portraitPath": "/f1_2025_driver_portraits/lando_norris.webp",
     "heightCm": 170,
     "careerStats": {
-      "polePositions": 8,
-      "wins": 4,
-      "podiums": 26,
-      "fastestLaps": 9,
+      "polePositions": 16,
+      "wins": 11,
+      "podiums": 44,
+      "fastestLaps": 18,
       "championships": 1
     }
   },
@@ -46,10 +46,10 @@
     "portraitPath": "/f1_2025_driver_portraits/oscar_piastri.webp",
     "heightCm": 178,
     "careerStats": {
-      "polePositions": 3,
-      "wins": 2,
-      "podiums": 14,
-      "fastestLaps": 2,
+      "polePositions": 9,
+      "wins": 9,
+      "podiums": 30,
+      "fastestLaps": 8,
       "championships": 0
     }
   },
@@ -64,10 +64,10 @@
     "portraitPath": "/f1_2025_driver_portraits/george_russell.webp",
     "heightCm": 185,
     "careerStats": {
-      "polePositions": 5,
-      "wins": 3,
-      "podiums": 16,
-      "fastestLaps": 7,
+      "polePositions": 8,
+      "wins": 6,
+      "podiums": 25,
+      "fastestLaps": 11,
       "championships": 0
     }
   },
@@ -84,8 +84,8 @@
     "careerStats": {
       "polePositions": 26,
       "wins": 8,
-      "podiums": 40,
-      "fastestLaps": 10,
+      "podiums": 50,
+      "fastestLaps": 11,
       "championships": 0
     }
   },
@@ -103,7 +103,7 @@
       "polePositions": 22,
       "wins": 32,
       "podiums": 106,
-      "fastestLaps": 24,
+      "fastestLaps": 26,
       "championships": 2
     }
   },
@@ -138,8 +138,8 @@
     "careerStats": {
       "polePositions": 0,
       "wins": 1,
-      "podiums": 3,
-      "fastestLaps": 0,
+      "podiums": 4,
+      "fastestLaps": 1,
       "championships": 0
     }
   },
@@ -174,7 +174,7 @@
     "careerStats": {
       "polePositions": 0,
       "wins": 0,
-      "podiums": 1,
+      "podiums": 0,
       "fastestLaps": 0,
       "championships": 0
     }
@@ -210,7 +210,7 @@
     "careerStats": {
       "polePositions": 6,
       "wins": 4,
-      "podiums": 25,
+      "podiums": 29,
       "fastestLaps": 5,
       "championships": 0
     }
@@ -282,7 +282,7 @@
     "careerStats": {
       "polePositions": 104,
       "wins": 105,
-      "podiums": 201,
+      "podiums": 202,
       "fastestLaps": 67,
       "championships": 7
     }
@@ -318,7 +318,7 @@
     "careerStats": {
       "polePositions": 1,
       "wins": 0,
-      "podiums": 0,
+      "podiums": 1,
       "fastestLaps": 2,
       "championships": 0
     }
@@ -336,7 +336,7 @@
     "careerStats": {
       "polePositions": 0,
       "wins": 1,
-      "podiums": 4,
+      "podiums": 5,
       "fastestLaps": 3,
       "championships": 0
     }

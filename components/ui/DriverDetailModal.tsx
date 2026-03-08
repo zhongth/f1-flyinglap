@@ -8,6 +8,7 @@ import { cn, getTeamDarkColors } from "@/lib/utils";
 import type { Driver, Team } from "@/types";
 import type { PedigreeTier } from "@/data/drivers";
 import type { TimeScope } from "@/store/useAppStore";
+import { NATIONALITY_TO_CODE } from "@/components/ui/DriverProfileCard";
 
 interface DriverDetailModalProps {
   driver: Driver | null;
@@ -207,7 +208,7 @@ export function DriverDetailModal({
                 )}
 
                 {/* Team logo */}
-                <div className="absolute top-5 right-5 z-20 w-7 h-9 opacity-60">
+                <div className="absolute top-5 right-5 z-20 w-9 h-9 opacity-80">
                   <Image
                     src={team.logoPath}
                     alt={team.shortName}
@@ -235,11 +236,11 @@ export function DriverDetailModal({
                 </p>
 
                 {/* Pedigree + Nationality row */}
-                <div className="flex items-center gap-3 mt-2">
+                <div className="flex items-center gap-3 mt-3">
                   {pedigreeLabel && (
                     <span
                       className={cn(
-                        "inline-block px-3 py-0.5 rounded-full text-[11px] font-f1-bold uppercase tracking-wider",
+                        "inline-block px-4 py-1.5 rounded-full text-[11px] font-f1-bold uppercase",
                         pedigreeTier === "champion"
                           ? "bg-amber-500/20 text-amber-400"
                           : pedigreeTier === "winner"
@@ -252,14 +253,24 @@ export function DriverDetailModal({
                       {pedigreeLabel}
                     </span>
                   )}
-                  <span className="text-[12px] font-f1 text-white/40 uppercase tracking-wider">
-                    {driver.nationality}
-                  </span>
+                  {NATIONALITY_TO_CODE[driver.nationality] && (
+                    <div
+                      className="overflow-hidden border-white/60 border-[1.5px] flex-shrink-0"
+                      style={{ width: 24, height: 24, borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center" }}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`https://flagcdn.com/w80/${NATIONALITY_TO_CODE[driver.nationality]}.png`}
+                        alt={driver.nationality}
+                        style={{ width: "100%", height: "100%", objectFit: "cover", borderRadius: 0 }}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Team name */}
                 <p
-                  className="text-[13px] font-f1 uppercase tracking-wider mt-2"
+                  className="text-[13px] font-f1 uppercase tracking-wider mt-3"
                   style={{ color: team.primaryColor }}
                 >
                   {team.name}
@@ -268,7 +279,7 @@ export function DriverDetailModal({
 
               {/* Stats grid */}
               <motion.div
-                className="px-8 pt-6 pb-8"
+                className="px-8 pt-8 pb-10"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
@@ -276,13 +287,13 @@ export function DriverDetailModal({
               >
                 {/* Divider */}
                 <div
-                  className="h-px w-full mb-5 opacity-30"
+                  className="h-px w-full mb-6 opacity-30"
                   style={{ backgroundColor: darkColors.cardBorder }}
                 />
 
                 {/* Q3 Rate highlight */}
                 {q3Rate !== undefined && (
-                  <div className="mb-5">
+                  <div className="mb-10">
                     <div className="flex items-baseline justify-between">
                       <span className="text-[12px] font-f1 text-white/40 uppercase tracking-wider">
                         Q3 Rate{" "}
@@ -313,13 +324,13 @@ export function DriverDetailModal({
                 )}
 
                 {/* Career stats grid */}
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-4 gap-6">
                   {stats.map((stat) => (
                     <div key={stat.label} className="text-center">
                       <p className="text-[24px] font-f1-bold text-white tabular-nums">
                         {stat.value}
                       </p>
-                      <p className="text-[10px] font-f1 text-white/40 uppercase tracking-wider mt-0.5">
+                      <p className="text-[10px] font-f1 text-white/40 uppercase tracking-wider mt-1">
                         {stat.label}
                       </p>
                     </div>
@@ -328,7 +339,7 @@ export function DriverDetailModal({
 
                 {/* Championships row (if any) */}
                 {driver.careerStats.championships > 0 && (
-                  <div className="mt-5 flex items-center justify-center gap-2">
+                  <div className="mt-10 flex items-center justify-center gap-2">
                     <div className="flex gap-1">
                       {Array.from({
                         length: driver.careerStats.championships,

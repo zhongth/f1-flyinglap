@@ -5,9 +5,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Carousel } from "@/components/ui/apple-cards-carousel";
 import { ProgressiveBlur } from "@/components/ui/ProgressiveBlur";
 import { teams } from "@/data";
-import { getDriversByTeamId, getDriverPedigree } from "@/data/drivers";
+import { getDriversByTeamId } from "@/data/drivers";
 import { getTeamById } from "@/data/teams";
-import { calculateHeadToHead } from "@/data/qualifying";
+import { getDriverPoints } from "@/data/qualifying";
 
 import { gsap } from "@/lib/gsap";
 import { useAppStore } from "@/store/useAppStore";
@@ -35,9 +35,9 @@ function TeamCardContent({ team, drivers }: { team: { id: string; name: string; 
 
   return (
     <div
-      className="relative w-full h-full overflow-hidden rounded-[20px] border bg-white/15 backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.05)] transition-colors duration-300"
+      className={`relative w-full h-full overflow-hidden rounded-[20px] border backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.05)] transition-colors duration-300 ${isSelected ? 'bg-white/15' : 'bg-white/5 hover:bg-white/10'}`}
       style={{
-        borderColor: isSelected ? `${team.primaryColor}66` : 'rgba(255,255,255,0.08)',
+        borderColor: isSelected ? `${team.primaryColor}66` : 'rgba(255,255,255,0.04)',
       }}
     >
       {/* Atmospheric overlay */}
@@ -161,7 +161,8 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
   const activeTeam = hoveredTeamId ? getTeamById(hoveredTeamId) : defaultTeam;
   const activeDrivers = activeTeam ? getDriversByTeamId(activeTeam.id) : [];
   const [d1, d2] = activeDrivers;
-  const h2h = d1 && d2 ? calculateHeadToHead(d1.id, d2.id, "season") : null;
+  const d1Points = d1 ? getDriverPoints(d1.id) : 0;
+  const d2Points = d2 ? getDriverPoints(d2.id) : 0;
 
   // Freeze initialIndex at mount time
   const initialIndexRef = useRef<number | null>(null);
@@ -321,22 +322,19 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
         <div className="w-full px-5 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] xl:items-start xl:gap-x-10">
             <div className="max-w-[28rem]">
-              <div className="inline-flex items-center gap-2.5 rounded-full border border-white/8 bg-white/[0.04] px-4 py-2 backdrop-blur-xl">
-                <span
-                  className="h-1.5 w-1.5 rounded-full"
-                  style={{ backgroundColor: activeTeam?.primaryColor }}
-                />
-                <p className="text-xs font-semibold tracking-[0.16em] text-white/42 uppercase">
+              <Image src="/f1-logo-white.png" alt="F1 Logo" width={120} height={30} className="mb-4" />
+              <div className="inline-flex items-center ">
+                <p className="text-sm font-f1-bold tracking-[0.16em] text-white/42 uppercase">
                   2025 Season
                 </p>
               </div>
 
               <h1 className="mt-6 text-[42px] md:text-[52px] font-f1-bold leading-none tracking-[-0.04em] text-white">
-                Who is Faster
+                Who is Faster ?
               </h1>
 
-              <p className="mt-5 max-w-[24rem] text-[14px] leading-[1.45] tracking-[-0.01em] text-white/56">
-                来自 117 的客观评价。 by 村长托马斯
+              <p className="mt-5 max-w-[24rem] text-[17px] leading-[1.45] tracking-[-0.01em] text-white/56">
+                 “117 的客观评价。”   &nbsp;  — 村长托马斯
               </p>
             </div>
 
@@ -351,7 +349,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
                 {/* Team header */}
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-1">
-                    <p className="text-[11px] uppercase tracking-[0.16em] text-white/38">
+                    <p className="text-[11px] uppercase tracking-[0.16em] text-white/50">
                       Constructor
                     </p>
                     <p className="text-xl font-f1-bold tracking-[-0.04em] text-white leading-tight">
@@ -375,10 +373,10 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
 
                 {/* Points */}
                 <div className="mt-5">
-                  <p className="text-[10px] uppercase tracking-[0.14em] text-white/38">
-                    Constructor Points
+                  <p className="text-xs uppercase tracking-[0.08em] text-white/50">
+                    Total Points
                   </p>
-                  <p className="mt-1.5 text-[22px] font-f1-bold leading-none text-white">
+                  <p className="mt-2.5 text-[22px] font-f1-bold leading-none text-white">
                     {activeTeam?.constructorPoints}
                   </p>
                 </div>
@@ -386,17 +384,17 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
                 <div className="mt-6 h-px bg-white/8" />
 
                 {/* Qualifying H2H */}
-                {h2h && d1 && d2 && (() => {
-                  const total = Math.max(h2h.driver1Wins + h2h.driver2Wins, 1);
-                  const d1Pct = Math.round((h2h.driver1Wins / total) * 100);
+                {d1 && d2 && (() => {
+                  const total = Math.max(d1Points + d2Points, 1);
+                  const d1Pct = Math.round((d1Points / total) * 100);
                   const d2Pct = 100 - d1Pct;
                   return (
                     <div className="mt-6">
-                      <p className="text-[10px] uppercase tracking-[0.14em] text-white/38">
-                        Qualifying H2H
+                      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-white/50">
+                        Points Split
                       </p>
-                      <div className="mt-3 flex items-center gap-3">
-                        <span className={`text-[12px] font-f1-bold uppercase ${h2h.driver1Wins >= h2h.driver2Wins ? "text-white" : "text-white/40"}`}>
+                      <div className="mt-4 flex items-center gap-3">
+                        <span className={`text-[12px] font-f1-bold uppercase ${d1Points >= d2Points ? "text-white" : "text-white/40"}`}>
                           {d1.abbreviation}
                         </span>
                         <div className="flex-1 flex h-[5px] rounded-full overflow-hidden bg-white/6">
@@ -404,36 +402,33 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
                             className="h-full rounded-l-full"
                             style={{
                               width: `${d1Pct}%`,
-                              backgroundColor: h2h.driver1Wins >= h2h.driver2Wins ? activeTeam?.primaryColor : `${activeTeam?.primaryColor}55`,
+                              backgroundColor: d1Points >= d2Points ? activeTeam?.primaryColor : `${activeTeam?.primaryColor}55`,
                             }}
                           />
                           <div
                             className="h-full rounded-r-full"
                             style={{
                               width: `${d2Pct}%`,
-                              backgroundColor: h2h.driver2Wins > h2h.driver1Wins ? activeTeam?.primaryColor : `${activeTeam?.primaryColor}55`,
+                              backgroundColor: d2Points > d1Points ? activeTeam?.primaryColor : `${activeTeam?.primaryColor}55`,
                             }}
                           />
                         </div>
-                        <span className={`text-[12px] font-f1-bold uppercase ${h2h.driver2Wins > h2h.driver1Wins ? "text-white" : "text-white/40"}`}>
+                        <span className={`text-[12px] font-f1-bold uppercase ${d2Points > d1Points ? "text-white" : "text-white/40"}`}>
                           {d2.abbreviation}
                         </span>
                       </div>
                       <div className="mt-1.5 flex justify-between">
                         <span className="text-[16px] font-f1-bold text-white">{d1Pct}%</span>
-                        <span className="text-[11px] text-white/30 self-center">{total} races</span>
                         <span className="text-[16px] font-f1-bold text-white">{d2Pct}%</span>
                       </div>
                     </div>
                   );
                 })()}
 
-                <div className="mt-6 h-px bg-white/8" />
-
                 {/* Driver lineup */}
-                <div className="mt-6 space-y-3">
+                <div className="mt-9 space-y-3">
                   {activeDrivers.map((driver) => {
-                    const pedigree = getDriverPedigree(driver.id);
+                    const points = getDriverPoints(driver.id);
                     return (
                       <div key={driver.id} className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
@@ -447,8 +442,8 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
                             {driver.firstName} {driver.lastName}
                           </p>
                         </div>
-                        <span className="text-[10px] tracking-[0.08em] text-white/38 uppercase">
-                          {pedigree.text}
+                        <span className="text-[13px] font-f1-bold tabular-nums text-white/50">
+                          {points} <span className="text-[10px] tracking-[0.08em] font-f1-regular text-white/30">PTS</span>
                         </span>
                       </div>
                     );
@@ -497,6 +492,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
             cardAspectRatio={17 / 10}
             gap={24}
             onCardClick={handleCardClick}
+            disabled={isAnimating || isCarAnimating}
           />
           <ProgressiveBlur
             position="left"

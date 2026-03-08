@@ -86,6 +86,11 @@ def build_teams(
             )
             constructor_order += 1
 
+    # Sort by constructor points (descending) and assign order
+    teams.sort(key=lambda t: t.constructorPoints, reverse=True)
+    for i, team in enumerate(teams):
+        team.constructorOrder = i + 1
+
     print(f"  Built {len(teams)} teams")
     return teams
 

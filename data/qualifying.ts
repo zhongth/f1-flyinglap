@@ -1,9 +1,10 @@
-import type { QualifyingResult, RaceWeekend, MedianGapResult, HeadToHeadResult, Q3RateResult, PerRaceGap } from "@/types";
+import type { QualifyingResult, RaceWeekend, MedianGapResult, HeadToHeadResult, Q3RateResult, PerRaceGap, DriverStanding } from "@/types";
 import racesData from "@/data/generated/2025/races.json";
 import qualifyingData from "@/data/generated/2025/qualifying-results.json";
 import teammateGapsData from "@/data/generated/2025/computed/teammate-gaps.json";
 import headToHeadData from "@/data/generated/2025/computed/head-to-head.json";
 import q3RatesData from "@/data/generated/2025/computed/q3-rates.json";
+import driverStandingsData from "@/data/generated/2025/computed/driver-standings.json";
 
 // --- Core data from pipeline JSON ---
 
@@ -15,6 +16,7 @@ export const qualifyingResults: QualifyingResult[] = qualifyingData as Qualifyin
 const teammateGaps = teammateGapsData as Record<string, MedianGapResult>;
 const headToHead = headToHeadData as Record<string, HeadToHeadResult>;
 const q3Rates = q3RatesData as Record<string, Q3RateResult>;
+const driverStandings = driverStandingsData as Record<string, DriverStanding>;
 
 // --- Lookup functions (replace previous compute-on-the-fly logic) ---
 
@@ -97,6 +99,10 @@ export function calculateQ3Rate(
   if (result) return result;
 
   return { driverId, q3Appearances: 0, totalRaces: 0, q3Rate: 0, scope };
+}
+
+export function getDriverPoints(driverId: string): number {
+  return driverStandings[driverId]?.points ?? 0;
 }
 
 // --- Utility functions (kept for any component that might use them) ---

@@ -13,8 +13,10 @@ TEAM_ID_MAP: dict[str, str] = {
     "Mercedes": "mercedes",
     "Aston Martin": "aston_martin",
     "Alpine": "alpine",
+    "Alpine F1 Team": "alpine",
     "Williams": "williams",
     "RB": "racing_bulls",
+    "RB F1 Team": "racing_bulls",
     "Racing Bulls": "racing_bulls",
     "Kick Sauber": "sauber",
     "Sauber": "sauber",
@@ -156,7 +158,7 @@ DRIVER_EXTRA: dict[str, dict] = {
     "max_verstappen": {
         "portraitPath": "/f1_2025_driver_portraits/max_verstappen.webp",
         "heightCm": 181,
-        "careerStats": {"polePositions": 40, "wins": 62, "podiums": 111, "fastestLaps": 32, "championships": 4},
+        "careerStats": {"polePositions": 48, "wins": 71, "podiums": 127, "fastestLaps": 37, "championships": 4},
     },
     "liam_lawson": {
         "portraitPath": "/f1_2025_driver_portraits/liam_lawson.webp",
@@ -166,27 +168,27 @@ DRIVER_EXTRA: dict[str, dict] = {
     "charles_leclerc": {
         "portraitPath": "/f1_2025_driver_portraits/charles_leclerc.webp",
         "heightCm": 180,
-        "careerStats": {"polePositions": 26, "wins": 8, "podiums": 40, "fastestLaps": 10, "championships": 0},
+        "careerStats": {"polePositions": 26, "wins": 8, "podiums": 50, "fastestLaps": 11, "championships": 0},
     },
     "lewis_hamilton": {
         "portraitPath": "/f1_2025_driver_portraits/lewis_hamilton.webp",
         "heightCm": 174,
-        "careerStats": {"polePositions": 104, "wins": 105, "podiums": 201, "fastestLaps": 67, "championships": 7},
+        "careerStats": {"polePositions": 104, "wins": 105, "podiums": 202, "fastestLaps": 67, "championships": 7},
     },
     "lando_norris": {
         "portraitPath": "/f1_2025_driver_portraits/lando_norris.webp",
         "heightCm": 170,
-        "careerStats": {"polePositions": 8, "wins": 4, "podiums": 26, "fastestLaps": 9, "championships": 1},
+        "careerStats": {"polePositions": 16, "wins": 11, "podiums": 44, "fastestLaps": 18, "championships": 1},
     },
     "oscar_piastri": {
         "portraitPath": "/f1_2025_driver_portraits/oscar_piastri.webp",
         "heightCm": 178,
-        "careerStats": {"polePositions": 3, "wins": 2, "podiums": 14, "fastestLaps": 2, "championships": 0},
+        "careerStats": {"polePositions": 9, "wins": 9, "podiums": 30, "fastestLaps": 8, "championships": 0},
     },
     "george_russell": {
         "portraitPath": "/f1_2025_driver_portraits/george_russell.webp",
         "heightCm": 185,
-        "careerStats": {"polePositions": 5, "wins": 3, "podiums": 16, "fastestLaps": 7, "championships": 0},
+        "careerStats": {"polePositions": 8, "wins": 6, "podiums": 25, "fastestLaps": 11, "championships": 0},
     },
     "kimi_antonelli": {
         "portraitPath": "/f1_2025_driver_portraits/2025mercedesandant01right.webp",
@@ -196,7 +198,7 @@ DRIVER_EXTRA: dict[str, dict] = {
     "fernando_alonso": {
         "portraitPath": "/f1_2025_driver_portraits/fernando_alonso.webp",
         "heightCm": 171,
-        "careerStats": {"polePositions": 22, "wins": 32, "podiums": 106, "fastestLaps": 24, "championships": 2},
+        "careerStats": {"polePositions": 22, "wins": 32, "podiums": 106, "fastestLaps": 26, "championships": 2},
     },
     "lance_stroll": {
         "portraitPath": "/f1_2025_driver_portraits/lance_stroll.webp",
@@ -206,7 +208,7 @@ DRIVER_EXTRA: dict[str, dict] = {
     "pierre_gasly": {
         "portraitPath": "/f1_2025_driver_portraits/pierre_gasly.webp",
         "heightCm": 177,
-        "careerStats": {"polePositions": 0, "wins": 1, "podiums": 4, "fastestLaps": 3, "championships": 0},
+        "careerStats": {"polePositions": 0, "wins": 1, "podiums": 5, "fastestLaps": 3, "championships": 0},
     },
     "franco_colapinto": {
         "portraitPath": "/f1_2025_driver_portraits/franco_colapinto.webp",
@@ -221,7 +223,7 @@ DRIVER_EXTRA: dict[str, dict] = {
     "carlos_sainz": {
         "portraitPath": "/f1_2025_driver_portraits/carlos_sainz.webp",
         "heightCm": 178,
-        "careerStats": {"polePositions": 6, "wins": 4, "podiums": 25, "fastestLaps": 5, "championships": 0},
+        "careerStats": {"polePositions": 6, "wins": 4, "podiums": 29, "fastestLaps": 5, "championships": 0},
     },
     "isack_hadjar": {
         "portraitPath": "/f1_2025_driver_portraits/isack_hadjar.webp",
@@ -236,7 +238,7 @@ DRIVER_EXTRA: dict[str, dict] = {
     "nico_hulkenberg": {
         "portraitPath": "/f1_2025_driver_portraits/2025kicksaubernichul01right.webp",
         "heightCm": 184,
-        "careerStats": {"polePositions": 1, "wins": 0, "podiums": 0, "fastestLaps": 2, "championships": 0},
+        "careerStats": {"polePositions": 1, "wins": 0, "podiums": 1, "fastestLaps": 2, "championships": 0},
     },
     "gabriel_bortoleto": {
         "portraitPath": "/f1_2025_driver_portraits/2025kicksaubergabbor01right.avif",
@@ -246,7 +248,7 @@ DRIVER_EXTRA: dict[str, dict] = {
     "esteban_ocon": {
         "portraitPath": "/f1_2025_driver_portraits/esteban_ocon.webp",
         "heightCm": 186,
-        "careerStats": {"polePositions": 0, "wins": 1, "podiums": 3, "fastestLaps": 0, "championships": 0},
+        "careerStats": {"polePositions": 0, "wins": 1, "podiums": 4, "fastestLaps": 1, "championships": 0},
     },
     "oliver_bearman": {
         "portraitPath": "/f1_2025_driver_portraits/oliver_bearman.webp",
@@ -256,7 +258,7 @@ DRIVER_EXTRA: dict[str, dict] = {
     "yuki_tsunoda": {
         "portraitPath": "/f1_2025_driver_portraits/2025redbullracingyuktsu01right.webp",
         "heightCm": 159,
-        "careerStats": {"polePositions": 0, "wins": 0, "podiums": 1, "fastestLaps": 0, "championships": 0},
+        "careerStats": {"polePositions": 0, "wins": 0, "podiums": 0, "fastestLaps": 0, "championships": 0},
     },
     "jack_doohan": {
         "portraitPath": "/f1_2025_driver_portraits/jack_doohan.webp",
@@ -299,8 +301,10 @@ TEAM_OFFICIAL_NAMES: dict[str, str] = {
     "Mercedes": "Mercedes-AMG Petronas F1",
     "Aston Martin": "Aston Martin Aramco F1",
     "Alpine": "BWT Alpine F1 Team",
+    "Alpine F1 Team": "BWT Alpine F1 Team",
     "Williams": "Williams Racing",
     "RB": "Visa Cash App RB F1 Team",
+    "RB F1 Team": "Visa Cash App RB F1 Team",
     "Racing Bulls": "Visa Cash App RB F1 Team",
     "Kick Sauber": "Stake F1 Team Kick Sauber",
     "Sauber": "Stake F1 Team Kick Sauber",
