@@ -1,21 +1,130 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { GradientCarouselItem } from "@/components/ui/GradientCarousel";
+import { Carousel } from "@/components/ui/apple-cards-carousel";
 import { ProgressiveBlur } from "@/components/ui/ProgressiveBlur";
 import { teams } from "@/data";
-import { getDriversByTeamId } from "@/data/drivers";
+import { getDriversByTeamId, getDriverPedigree } from "@/data/drivers";
 import { getTeamById } from "@/data/teams";
+import { calculateHeadToHead, calculateMedianQualifyingGap } from "@/data/qualifying";
 
 import { gsap } from "@/lib/gsap";
 import { useAppStore } from "@/store/useAppStore";
 
-const GradientCarousel = dynamic(
-  () => import("@/components/ui/GradientCarousel"),
-  { ssr: false },
-);
+// Car image map — static, never changes
+const CAR_IMAGE_MAP: Record<string, string> = {
+  mclaren: "/f1-2025-cars/2025mclarencarright.webp",
+  mercedes: "/f1-2025-cars/2025mercedescarright.webp",
+  red_bull: "/f1-2025-cars/2025redbullracingcarright.webp",
+  ferrari: "/f1-2025-cars/2025ferraricarright.webp",
+  williams: "/f1-2025-cars/2025williamscarright.webp",
+  racing_bulls: "/f1-2025-cars/2025racingbullscarright.webp",
+  aston_martin: "/f1-2025-cars/2025astonmartincarright.webp",
+  haas: "/f1-2025-cars/2025haasf1teamcarright.webp",
+  sauber: "/f1-2025-cars/2025kicksaubercarright.webp",
+  alpine: "/f1-2025-cars/2025alpinecarright.webp",
+};
+
+/** Isolated card component — reads hoveredTeamId from store so the parent memo stays stable */
+function TeamCardContent({ team, drivers }: { team: { id: string; name: string; shortName: string; primaryColor: string; logoPath: string; constructorOrder: number; constructorPoints: number }; drivers: { id: string; abbreviation: string }[] }) {
+  const hoveredTeamId = useAppStore((s) => s.hoveredTeamId);
+  const isSelected = team.id === hoveredTeamId;
+  const position = `P${team.constructorOrder}`;
+  const carImage = CAR_IMAGE_MAP[team.id];
+
+  return (
+    <div
+      className="relative w-full h-full overflow-hidden rounded-[20px] border bg-white/15 backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.05)] transition-colors duration-300"
+      style={{
+        borderColor: isSelected ? `${team.primaryColor}66` : 'rgba(255,255,255,0.08)',
+      }}
+    >
+      {/* Atmospheric overlay */}
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute inset-x-0 top-0 h-px bg-white/10" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_34%)]" />
+      </div>
+
+      {/* Team color accent */}
+      <div
+        className="pointer-events-none absolute inset-0 rounded-[20px]"
+        style={{
+          background: `radial-gradient(ellipse 130% 100% at 70% 65%, ${team.primaryColor}18, ${team.primaryColor}08 50%, transparent 85%)`,
+        }}
+      />
+
+      {/* Content */}
+      <div className="relative flex flex-col h-full p-5">
+        {/* Top row: logo + position/points */}
+        <div className="flex items-start justify-between">
+          <div className="relative h-[48px] w-[48px]">
+            <Image
+              src={team.logoPath}
+              alt={team.name}
+              fill
+              sizes="48px"
+              className="object-contain"
+              draggable={false}
+            />
+          </div>
+          <div className="text-right">
+            <p
+              className="text-[28px] font-f1-bold leading-none tracking-[-0.04em]"
+              style={{ color: team.primaryColor }}
+            >
+              {position}
+            </p>
+            <p className="mt-1 text-[13px] font-f1-bold text-white/50">
+              {team.constructorPoints} pts
+            </p>
+          </div>
+        </div>
+
+        {/* Team name + accent line + drivers */}
+        <div className="mt-3">
+          <p className="text-[22px] font-f1-bold leading-none tracking-[-0.02em] text-white">
+            {team.shortName}
+          </p>
+          {/* Team color accent line */}
+          <div
+            className="mt-2 mb-2 h-px w-20"
+            style={{
+              background: `linear-gradient(to right, ${team.primaryColor}cc, ${team.primaryColor}33, transparent)`,
+            }}
+          />
+          <div className="flex items-center gap-1.5">
+            {drivers.map((d, i) => (
+              <span
+                key={d.id}
+                className="text-[11px] tracking-[0.08em] text-white/50 uppercase font-f1-bold"
+              >
+                {d.abbreviation}
+                {i < drivers.length - 1 && (
+                  <span className="ml-1.5 text-white/20">·</span>
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Car image — bottom right, flipped & rear wing clipped */}
+      {carImage && (
+        <div className="pointer-events-none absolute bottom-[6%] -right-[22%] w-[85%] h-[85%] -scale-x-100">
+          <Image
+            src={carImage}
+            alt={`${team.shortName} car`}
+            fill
+            sizes="360px"
+            className="object-contain object-right-bottom"
+            draggable={false}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface TeamCarouselProps {
   introReady?: boolean;
@@ -35,6 +144,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     setStage,
     setIsAnimating,
     isAnimating,
+    isCarAnimating,
     isIntroComplete,
     setIntroComplete,
   } = useAppStore();
@@ -50,19 +160,22 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
   );
   const activeTeam = hoveredTeamId ? getTeamById(hoveredTeamId) : defaultTeam;
   const activeDrivers = activeTeam ? getDriversByTeamId(activeTeam.id) : [];
-  const ferrariInitialIndex = useMemo(() => {
-    const ferrariIndex = sortedTeams.findIndex((team) => team.id === "ferrari");
-    return ferrariIndex < 0 ? 0 : ferrariIndex;
-  }, [sortedTeams]);
+  const [d1, d2] = activeDrivers;
+  const h2h = d1 && d2 ? calculateHeadToHead(d1.id, d2.id, "season") : null;
+  const gap = d1 && d2 ? calculateMedianQualifyingGap(d1.id, d2.id, "season") : null;
 
-  // When returning from VERSUS, start on the team we were viewing
-  const initialIndex = useMemo(() => {
+  // Freeze initialIndex at mount time
+  const initialIndexRef = useRef<number | null>(null);
+  if (initialIndexRef.current === null) {
     if (hoveredTeamId) {
       const idx = sortedTeams.findIndex((t) => t.id === hoveredTeamId);
-      if (idx >= 0) return idx;
+      initialIndexRef.current = idx >= 0 ? idx : sortedTeams.findIndex((t) => t.id === "ferrari");
+    } else {
+      initialIndexRef.current = Math.max(0, sortedTeams.findIndex((t) => t.id === "ferrari"));
     }
-    return ferrariInitialIndex;
-  }, [sortedTeams, hoveredTeamId, ferrariInitialIndex]);
+  }
+  const initialIndex = initialIndexRef.current;
+
   const selectingRef = useRef(false);
 
   useEffect(() => {
@@ -70,84 +183,12 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     setHoveredTeamId(defaultTeam.id);
   }, [defaultTeam.id, hoveredTeamId, setHoveredTeamId]);
 
-  // Build team card array for GradientCarousel
-  const teamCards: GradientCarouselItem[] = useMemo(
+  // Build team card nodes — stable reference
+  const teamCardNodes = useMemo(
     () =>
       sortedTeams.map((team) => {
         const drivers = getDriversByTeamId(team.id);
-        const position = `P${team.constructorOrder}`;
-
-        return {
-          id: team.id,
-          content: (
-            <div className="relative flex flex-col w-full h-full overflow-hidden p-5">
-              {/* Atmospheric overlay */}
-              <div className="pointer-events-none absolute inset-0">
-                <div className="absolute inset-x-0 top-0 h-px bg-white/10" />
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_34%)]" />
-              </div>
-
-              {/* Eyebrow + position */}
-              <div className="relative space-y-1.5">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-white/38">
-                  Constructor
-                </p>
-                <p
-                  className="text-[32px] font-f1-bold leading-none tracking-[-0.04em]"
-                  style={{ color: team.primaryColor }}
-                >
-                  {position}
-                </p>
-                <div
-                  className="h-px w-12 rounded-full"
-                  style={{
-                    background: `linear-gradient(to right, ${team.primaryColor}cc, ${team.primaryColor}33, transparent)`,
-                  }}
-                />
-              </div>
-
-              {/* Center: team logo */}
-              <div className="relative flex-1 flex items-center justify-center">
-                <div className="relative">
-                  <div
-                    className="absolute inset-0 blur-3xl opacity-10 scale-[2]"
-                    style={{ backgroundColor: team.primaryColor }}
-                  />
-                  <div className="relative h-[52px] w-[52px]">
-                    <Image
-                      src={team.logoPath}
-                      alt={team.name}
-                      fill
-                      sizes="52px"
-                      className="object-contain"
-                      draggable={false}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Bottom: team name + drivers */}
-              <div className="relative space-y-2.5">
-                <div className="h-px bg-white/8" />
-                <p className="text-[14px] font-f1-bold tracking-[-0.02em] text-white">
-                  {team.shortName}
-                </p>
-                <div className="flex items-center gap-1.5">
-                  {drivers.map((d) => (
-                    <span
-                      key={d.id}
-                      className="rounded-full border border-white/8 bg-white/[0.04] px-2 py-0.5 text-[9px] tracking-[0.1em] text-white/60 uppercase font-f1-bold"
-                    >
-                      {d.abbreviation}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ),
-          primaryColor: team.primaryColor,
-          secondaryColor: team.secondaryColor,
-        };
+        return <TeamCardContent key={team.id} team={team} drivers={drivers} />;
       }),
     [sortedTeams],
   );
@@ -155,7 +196,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
   // Handle team selection with exit animation
   const handleTeamSelect = useCallback(
     (teamId: string) => {
-      if (selectingRef.current || isAnimating || !containerRef.current) return;
+      if (selectingRef.current || isAnimating || isCarAnimating || !containerRef.current) return;
       selectingRef.current = true;
 
       selectTeam(teamId);
@@ -163,60 +204,43 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
       gsap.context(() => {
         const tl = gsap.timeline({
           onComplete: () => {
+            selectingRef.current = false;
             setStage("VERSUS");
             setIsAnimating(false);
           },
         });
 
-        // Title exits upward
         tl.to(
           titleRef.current,
-          {
-            y: -40,
-            opacity: 0,
-            duration: 0.3,
-            ease: "power2.in",
-          },
+          { y: -40, opacity: 0, duration: 0.3, ease: "power2.in" },
           0,
         );
-
-        // Wheel exits downward
         tl.to(
           wheelRef.current,
-          {
-            y: 200,
-            opacity: 0,
-            duration: 0.5,
-            ease: "power2.in",
-          },
+          { y: 200, opacity: 0, duration: 0.5, ease: "power2.in" },
           0.1,
         );
       }, containerRef);
     },
-    [isAnimating, selectTeam, setStage, setIsAnimating],
+    [isAnimating, isCarAnimating, selectTeam, setStage, setIsAnimating],
   );
 
-  const handleCardChange = useCallback(
-    (index: number) => {
-      const selectedTeam = sortedTeams[index];
-      if (!selectedTeam) return;
-      setHoveredTeamId(selectedTeam.id);
-    },
-    [setHoveredTeamId, sortedTeams],
-  );
-
-  // Click highlighted + centered card to enter Versus mode.
+  // Click a card: switch team; if already selected → enter Versus
   const handleCardClick = useCallback(
     (index: number) => {
-      if (isAnimating) return;
-      const selectedTeam = sortedTeams[index];
-      if (!selectedTeam) return;
-      handleTeamSelect(selectedTeam.id);
+      if (isAnimating || isCarAnimating) return;
+      const team = sortedTeams[index];
+      if (!team) return;
+
+      if (team.id === hoveredTeamId) {
+        handleTeamSelect(team.id);
+      } else {
+        setHoveredTeamId(team.id);
+      }
     },
-    [isAnimating, handleTeamSelect, sortedTeams],
+    [isAnimating, isCarAnimating, hoveredTeamId, handleTeamSelect, setHoveredTeamId, sortedTeams],
   );
 
-  // Whether we're still in the intro phase (used for CSS initial states)
   const showIntro = !isIntroComplete;
 
   // Intro animation
@@ -226,7 +250,6 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     const ctx = gsap.context(() => {
       const title = titleRef.current;
       const wheel = wheelRef.current;
-      // Set initial states (CSS classes handle opacity:0, GSAP adds transforms)
       gsap.set(title, { y: -30 });
       gsap.set(wheel, { y: 0 });
 
@@ -318,67 +341,124 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
               </p>
             </div>
 
-            <div className="relative w-full max-w-[24rem] self-start justify-self-start overflow-hidden rounded-[28px] border border-white/8 bg-white/15 p-6 text-left backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.05)] xl:justify-self-end">
+            <div className="relative w-full max-w-[24rem] self-start justify-self-start overflow-hidden rounded-[28px] border border-white/8 bg-white/15 px-7 py-7 text-left backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.05)] xl:justify-self-end">
               {/* Atmospheric overlay */}
               <div className="pointer-events-none absolute inset-0">
                 <div className="absolute inset-x-0 top-0 h-px bg-white/10" />
                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.06),transparent_34%)]" />
               </div>
 
-              <div className="relative space-y-5">
+              <div className="relative">
+                {/* Team header */}
                 <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-0.5">
+                  <div className="space-y-1">
                     <p className="text-[11px] uppercase tracking-[0.16em] text-white/38">
                       Constructor
                     </p>
-                    <p className="text-2xl font-f1-bold tracking-[-0.04em] text-white">
-                      {activeTeam?.shortName}
+                    <p className="text-xl font-f1-bold tracking-[-0.04em] text-white leading-tight">
+                      {activeTeam?.name}
                     </p>
                   </div>
+                  <p
+                    className="text-[32px] font-f1-bold leading-none tracking-[-0.04em] shrink-0"
+                    style={{ color: activeTeam?.primaryColor }}
+                  >
+                    P{activeTeam?.constructorOrder}
+                  </p>
                 </div>
 
                 <div
-                  className="h-px w-20"
+                  className="mt-5 h-px w-16"
                   style={{
                     background: `linear-gradient(to right, ${activeTeam?.primaryColor}cc, ${activeTeam?.primaryColor}33, transparent)`,
                   }}
                 />
 
-                <div className="grid grid-cols-2 gap-x-4 gap-y-4">
-                  <div className="rounded-[20px] border border-white/6 bg-white/[0.03] px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-[0.14em] text-white/38">
-                      Constructor
-                    </p>
-                    <p className="mt-2 text-[28px] font-f1-bold leading-none text-white">
-                      P{activeTeam?.constructorOrder}
-                    </p>
-                  </div>
-                  <div className="rounded-[20px] border border-white/6 bg-white/[0.03] px-4 py-3">
-                    <p className="text-[11px] uppercase tracking-[0.14em] text-white/38">
+                {/* Points + Median Gap */}
+                <div className="mt-5 grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-white/38">
                       Points
                     </p>
-                    <p className="mt-2 text-[28px] font-f1-bold leading-none text-white">
+                    <p className="mt-1.5 text-[22px] font-f1-bold leading-none text-white">
                       {activeTeam?.constructorPoints}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-white/38">
+                      Median Gap
+                    </p>
+                    <p className="mt-1.5 text-[22px] font-f1-bold leading-none text-white">
+                      {gap ? `${gap.medianGapFormatted}s` : "—"}
                     </p>
                   </div>
                 </div>
 
-                <div className="h-px bg-white/8" />
+                <div className="mt-6 h-px bg-white/8" />
 
-                <div>
-                  <p className="text-[11px] uppercase tracking-[0.14em] text-white/38">
-                    Driver pair
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {activeDrivers.map((driver) => (
-                      <span
-                        key={driver.id}
-                        className="rounded-full border border-white/8 bg-white/[0.04] px-3 py-1.5 text-[11px] font-f1-bold text-white/72 uppercase"
-                      >
-                        {driver.abbreviation}
+                {/* Qualifying H2H */}
+                {h2h && d1 && d2 && (
+                  <div className="mt-6">
+                    <p className="text-[10px] uppercase tracking-[0.14em] text-white/38">
+                      Qualifying H2H
+                    </p>
+                    <div className="mt-3 flex items-center gap-3">
+                      <span className={`text-[12px] font-f1-bold uppercase ${h2h.driver1Wins >= h2h.driver2Wins ? "text-white" : "text-white/40"}`}>
+                        {d1.abbreviation}
                       </span>
-                    ))}
+                      <div className="flex-1 flex h-[5px] rounded-full overflow-hidden bg-white/6">
+                        <div
+                          className="h-full rounded-l-full"
+                          style={{
+                            width: `${(h2h.driver1Wins / Math.max(h2h.driver1Wins + h2h.driver2Wins, 1)) * 100}%`,
+                            backgroundColor: h2h.driver1Wins >= h2h.driver2Wins ? activeTeam?.primaryColor : `${activeTeam?.primaryColor}55`,
+                          }}
+                        />
+                        <div
+                          className="h-full rounded-r-full"
+                          style={{
+                            width: `${(h2h.driver2Wins / Math.max(h2h.driver1Wins + h2h.driver2Wins, 1)) * 100}%`,
+                            backgroundColor: h2h.driver2Wins > h2h.driver1Wins ? activeTeam?.primaryColor : `${activeTeam?.primaryColor}55`,
+                          }}
+                        />
+                      </div>
+                      <span className={`text-[12px] font-f1-bold uppercase ${h2h.driver2Wins > h2h.driver1Wins ? "text-white" : "text-white/40"}`}>
+                        {d2.abbreviation}
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex justify-between">
+                      <span className="text-[16px] font-f1-bold text-white">{h2h.driver1Wins}</span>
+                      <span className="text-[11px] text-white/30 self-center">{h2h.driver1Wins + h2h.driver2Wins} races</span>
+                      <span className="text-[16px] font-f1-bold text-white">{h2h.driver2Wins}</span>
+                    </div>
                   </div>
+                )}
+
+                <div className="mt-6 h-px bg-white/8" />
+
+                {/* Driver lineup */}
+                <div className="mt-6 space-y-3">
+                  {activeDrivers.map((driver) => {
+                    const pedigree = getDriverPedigree(driver.id);
+                    return (
+                      <div key={driver.id} className="flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                          <span
+                            className="text-[14px] font-f1-bold tabular-nums w-8"
+                            style={{ color: activeTeam?.primaryColor }}
+                          >
+                            {driver.number}
+                          </span>
+                          <p className="text-[13px] font-f1-bold text-white leading-none">
+                            {driver.firstName} {driver.lastName}
+                          </p>
+                        </div>
+                        <span className="text-[10px] tracking-[0.08em] text-white/38 uppercase">
+                          {pedigree.text}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -406,40 +486,23 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
         </svg>
       </button>
 
-      {/* Horizontal team selector — anchored to bottom, sizes to content */}
+      {/* Horizontal team selector — anchored to bottom */}
       <div className="absolute bottom-0 left-0 right-0 z-50 pb-10">
         <div
           ref={wheelRef}
           className={
             showIntro
-              ? "relative mx-auto w-full overflow-x-clip overflow-y-visible opacity-0"
-              : "relative mx-auto w-full overflow-x-clip overflow-y-visible"
+              ? "relative mx-auto w-full opacity-0"
+              : "relative mx-auto w-full"
           }
         >
-          <GradientCarousel
-            items={teamCards}
-            className="w-full bg-transparent"
-            cardClassName=""
-            contentClassName=""
-            cardWidthPx={236}
-            cardAspectRatio={110 / 140}
+          <Carousel
+            items={teamCardNodes}
             initialIndex={initialIndex}
-            introSpin={introReady && !isIntroComplete}
-            introSpinRounds={1}
-            introSpinDurationMs={2900}
-            onCardChange={handleCardChange}
+            cardWidth={340}
+            cardAspectRatio={17 / 10}
+            gap={24}
             onCardClick={handleCardClick}
-            maxRotationDegrees={28}
-            maxDepthPx={96}
-            cardGap={32}
-            dragSensitivity={0.8}
-            frictionFactor={0.88}
-            wheelSensitivity={0.25}
-            gradientIntensity={0.55}
-            gradientSize={0.5}
-            backgroundBlur={22}
-            showBackdrop={false}
-            showLoadingOverlay={true}
           />
           <ProgressiveBlur
             position="left"
