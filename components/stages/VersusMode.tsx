@@ -1,26 +1,37 @@
 "use client";
 
-import { useRef, useMemo, useState, useEffect, useCallback } from "react";
 import { motion } from "motion/react";
-import { gsap } from "@/lib/gsap";
-import { useAppStore } from "@/store/useAppStore";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { DriverDetailModal } from "@/components/ui/DriverDetailModal";
+import { DriverProfileCard } from "@/components/ui/DriverProfileCard";
 import { Navbar } from "@/components/ui/Navbar";
 import { VSBadge } from "@/components/ui/VSBadge";
-import { DriverProfileCard } from "@/components/ui/DriverProfileCard";
-import { DriverDetailModal } from "@/components/ui/DriverDetailModal";
 import {
-  getTeamById,
-  getDriversByTeamId,
-  calculateMedianQualifyingGap,
   calculateHeadToHead,
+  calculateMedianQualifyingGap,
   calculateQ3Rate,
   getDriverPedigree,
+  getDriversByTeamId,
+  getTeamById,
 } from "@/data";
+import { gsap } from "@/lib/gsap";
+import { useAppStore } from "@/store/useAppStore";
 
 const layoutSpring = {
   type: "spring" as const,
   stiffness: 180,
   damping: 24,
+};
+
+const DRIVER_AUDIO_CONFIG: Record<string, { src: string; volume: number }> = {
+  max_verstappen: {
+    src: "/assets/music/Max33 Dub.mov",
+    volume: 0.5,
+  },
+  charles_leclerc: {
+    src: "/sound/F1 Notification + Words Of Wisdom.mp3",
+    volume: 0.5,
+  },
 };
 
 export function VersusMode() {
@@ -52,9 +63,10 @@ export function VersusMode() {
   // Modal state: which driver card is expanded (0 = left, 1 = right, null = none)
   const [selectedDriverIndex, setSelectedDriverIndex] = useState<number | null>(null);
 
-  // Audio for Max Verstappen easter egg
-  const maxAudioRef = useRef<HTMLAudioElement | null>(null);
-  const [isMaxMuted, setIsMaxMuted] = useState(false);
+  // Audio easter eggs for select drivers
+  const driverAudioRefs = useRef<Record<string, HTMLAudioElement | null>>({});
+  const activeAudioDriverIdRef = useRef<string | null>(null);
+  const [isDriverAudioMuted, setIsDriverAudioMuted] = useState(false);
 
   // Center panel uses selectedTeamId (updates immediately)
   const team = selectedTeamId ? getTeamById(selectedTeamId) : null;
@@ -63,6 +75,11 @@ export function VersusMode() {
   // Cards use displayTeamId (updates mid-animation)
   const displayTeam = displayTeamId ? getTeamById(displayTeamId) : null;
   const displayDrivers = displayTeamId ? getDriversByTeamId(displayTeamId) : [];
+  const selectedDriver =
+    selectedDriverIndex !== null ? displayDrivers[selectedDriverIndex] ?? null : null;
+  const selectedDriverAudioConfig = selectedDriver
+    ? DRIVER_AUDIO_CONFIG[selectedDriver.id]
+    : undefined;
 
   const medianGap = useMemo(() => {
     if (drivers.length !== 2) return null;
@@ -178,34 +195,72 @@ export function VersusMode() {
     (index: number) => {
       setSelectedDriverIndex(index);
       const driver = displayDrivers[index];
-      if (driver?.id === "max_verstappen") {
-        if (!maxAudioRef.current) {
-          maxAudioRef.current = new Audio("/assets/music/Max33 Dub.mov");
-          maxAudioRef.current.volume = 0.5;
+      const audioConfig = driver ? DRIVER_AUDIO_CONFIG[driver.id] : undefined;
+      const activeDriverId = activeAudioDriverIdRef.current;
+
+      if (activeDriverId) {
+        const activeAudio = driverAudioRefs.current[activeDriverId];
+        if (activeAudio) {
+          activeAudio.pause();
+          activeAudio.currentTime = 0;
         }
-        setIsMaxMuted(false);
-        maxAudioRef.current.muted = false;
-        maxAudioRef.current.currentTime = 0;
-        maxAudioRef.current.play().catch(() => {});
+        activeAudioDriverIdRef.current = null;
+      }
+
+      setIsDriverAudioMuted(false);
+
+      if (driver && audioConfig) {
+        let audio = driverAudioRefs.current[driver.id];
+        if (!audio) {
+          audio = new Audio(audioConfig.src);
+          audio.volume = audioConfig.volume;
+          driverAudioRefs.current[driver.id] = audio;
+        }
+        audio.muted = false;
+        audio.currentTime = 0;
+        activeAudioDriverIdRef.current = driver.id;
+        audio.play().catch(() => {});
       }
     },
     [displayDrivers],
   );
 
-  const handleToggleMaxMute = useCallback(() => {
-    setIsMaxMuted((prev) => {
+  const handleToggleDriverMute = useCallback(() => {
+    if (!selectedDriver) return;
+
+    const audio = driverAudioRefs.current[selectedDriver.id];
+    if (!audio) return;
+
+    setIsDriverAudioMuted((prev) => {
       const next = !prev;
-      if (maxAudioRef.current) maxAudioRef.current.muted = next;
+      audio.muted = next;
       return next;
     });
-  }, []);
+  }, [selectedDriver]);
 
   const handleDriverModalClose = useCallback(() => {
     setSelectedDriverIndex(null);
-    if (maxAudioRef.current) {
-      maxAudioRef.current.pause();
-      maxAudioRef.current.currentTime = 0;
+    setIsDriverAudioMuted(false);
+
+    const activeDriverId = activeAudioDriverIdRef.current;
+    if (activeDriverId) {
+      const activeAudio = driverAudioRefs.current[activeDriverId];
+      if (activeAudio) {
+        activeAudio.pause();
+        activeAudio.currentTime = 0;
+      }
+      activeAudioDriverIdRef.current = null;
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      Object.values(driverAudioRefs.current).forEach((audio) => {
+        if (!audio) return;
+        audio.pause();
+        audio.currentTime = 0;
+      });
+    };
   }, []);
 
   const handleTimeScopeToggle = useCallback(() => {
@@ -464,11 +519,7 @@ export function VersusMode() {
 
       {/* Driver detail modal */}
       <DriverDetailModal
-        driver={
-          selectedDriverIndex !== null
-            ? displayDrivers[selectedDriverIndex] ?? null
-            : null
-        }
+        driver={selectedDriver}
         team={displayTeam ?? null}
         q3Rate={
           selectedDriverIndex === 0
@@ -493,13 +544,8 @@ export function VersusMode() {
         }
         timeScope={timeScope}
         onClose={handleDriverModalClose}
-        isMuted={isMaxMuted}
-        onToggleMute={
-          selectedDriverIndex !== null &&
-          displayDrivers[selectedDriverIndex]?.id === "max_verstappen"
-            ? handleToggleMaxMute
-            : undefined
-        }
+        isMuted={isDriverAudioMuted}
+        onToggleMute={selectedDriverAudioConfig ? handleToggleDriverMute : undefined}
       />
     </div>
   );

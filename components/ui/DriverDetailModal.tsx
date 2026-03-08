@@ -172,7 +172,7 @@ export function DriverDetailModal({
                   </svg>
                 </motion.button>
 
-                {/* Mute toggle (Max Verstappen only) */}
+                {/* Mute toggle for driver click audio */}
                 {onToggleMute && (
                   <motion.button
                     onClick={onToggleMute}
