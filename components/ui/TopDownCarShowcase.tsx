@@ -1,6 +1,7 @@
 "use client";
 
-import { type FC, useEffect, useEffectEvent, useRef } from "react";
+import { type FC, useEffect, useEffectEvent, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import * as THREE from "three";
 import { getAllModelPaths, getTeamCarModelPath } from "@/data/teamCarModels";
 import { getTeamById } from "@/data/teams";
@@ -12,6 +13,7 @@ import {
   WHEEL_BASE_ANGULAR_SPEED,
   type WheelSpinTarget,
 } from "@/lib/wheelUtils";
+import { WindTunnelEffect } from "@/lib/windTunnelEffect";
 import type { CameraMode } from "@/store/useAppStore";
 
 /* Camera presets keyed by mode */
@@ -161,6 +163,9 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
   const outgoingCarRef = useRef<CarState | null>(null);
   const prevOutgoingXRef = useRef<number | null>(null);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const windTunnelRef = useRef<WindTunnelEffect | null>(null);
+  const windTweenRef = useRef<gsap.core.Tween | null>(null);
+  const speedReadoutRef = useRef<HTMLDivElement>(null);
 
   // Object pool: pre-prepared cars keyed by model path
   const carPoolRef = useRef<Map<string, CarState>>(new Map());
@@ -449,6 +454,11 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     panelMesh.rotation.x = Math.PI / 2;
     scene.add(panelMesh);
 
+    // Wind tunnel smoke effect
+    const windTunnel = new WindTunnelEffect();
+    scene.add(windTunnel.mesh);
+    windTunnelRef.current = windTunnel;
+
     // Render loop — only renders when needed
     const animate = (timestamp: number) => {
       rafRef.current = requestAnimationFrame(animate);
@@ -507,13 +517,21 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
         prevOutgoingXRef.current = outX;
       }
 
+      // Wind tunnel particles
+      const wt = windTunnelRef.current;
+      if (wt) {
+        wt.update(delta);
+        if (wt.isActive) needsRenderRef.current = true;
+      }
+
       renderer.render(scene, camera);
 
       // After one idle frame, stop rendering (keep going while wheels decelerate)
       if (
         !isAnimatingRef.current &&
         !isCameraAnimatingRef.current &&
-        wheelAngularSpeedRef.current <= 0.05
+        wheelAngularSpeedRef.current <= 0.05 &&
+        !(wt && wt.isActive)
       ) {
         needsRenderRef.current = false;
       }
@@ -549,6 +567,9 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
         disposeCar(currentCarRef.current);
       }
 
+      windTweenRef.current?.kill();
+      windTunnelRef.current?.dispose();
+      windTunnelRef.current = null;
       renderer.dispose();
       scene.traverse((obj) => {
         if (obj instanceof THREE.Mesh) {
@@ -979,6 +1000,11 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     const teamColor = new THREE.Color(team.primaryColor);
     const stripColor = teamColor.clone().lerp(new THREE.Color(0xffffff), 0.3);
 
+    // Tint wind tunnel beams toward team color
+    if (windTunnelRef.current) {
+      windTunnelRef.current.setTeamColor(teamColor);
+    }
+
     needsRenderRef.current = true;
 
     // Animate rim strip to team color (or back to neutral)
@@ -1157,12 +1183,127 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     img.src = team.logoPath;
   }, [teamId, cameraMode]);
 
+  /* ── Wind tunnel button handlers ── */
+  const [isWindActive, setIsWindActive] = useState(false);
+
+  const handleWindStart = () => {
+    const wt = windTunnelRef.current;
+    if (!wt) return;
+    setIsWindActive(true);
+    wt.start();
+    needsRenderRef.current = true;
+    windTweenRef.current?.kill();
+    windTweenRef.current = gsap.to(wt, {
+      windStrength: 1,
+      duration: 0.6,
+      ease: "power2.out",
+      onUpdate: () => {
+        needsRenderRef.current = true;
+        if (speedReadoutRef.current)
+          speedReadoutRef.current.textContent = `${wt.windSpeedKmh} km/h`;
+      },
+    });
+  };
+
+  const handleWindStop = () => {
+    const wt = windTunnelRef.current;
+    if (!wt) return;
+    setIsWindActive(false);
+    windTweenRef.current?.kill();
+    windTweenRef.current = gsap.to(wt, {
+      windStrength: 0,
+      duration: 1.2,
+      ease: "power3.in",
+      onUpdate: () => {
+        needsRenderRef.current = true;
+        if (speedReadoutRef.current)
+          speedReadoutRef.current.textContent = `${wt.windSpeedKmh} km/h`;
+      },
+      onComplete: () => {
+        wt.stop();
+      },
+    });
+  };
+
   return (
     <div
-      ref={containerRef}
-      className={`w-full h-full ${className}`}
+      className={`w-full h-full relative ${className}`}
       style={{ touchAction: "none" }}
-    />
+    >
+      <div ref={containerRef} className="absolute inset-0" />
+
+      {/* Wind Tunnel button — portaled to body so it escapes the z-0 stacking context */}
+      {createPortal(
+        <button
+          type="button"
+          onPointerDown={(e) => {
+            e.currentTarget.setPointerCapture(e.pointerId);
+            handleWindStart();
+          }}
+          onPointerUp={handleWindStop}
+          onPointerCancel={handleWindStop}
+          onLostPointerCapture={handleWindStop}
+          onContextMenu={(e) => e.preventDefault()}
+          className="fixed left-6 top-1/2 -translate-y-1/2 select-none cursor-pointer"
+          style={{
+            zIndex: 90,
+            touchAction: "none",
+            background: isWindActive
+              ? "rgba(59,130,246,0.14)"
+              : "rgba(255,255,255,0.04)",
+            backdropFilter: "blur(14px)",
+            WebkitBackdropFilter: "blur(14px)",
+            border: isWindActive
+              ? "1px solid rgba(59,130,246,0.35)"
+              : "1px solid rgba(255,255,255,0.08)",
+            borderRadius: "14px",
+            padding: "14px 22px",
+            color: isWindActive ? "#93c5fd" : "#71717a",
+            transition: "all 0.3s ease",
+            boxShadow: isWindActive
+              ? "0 0 28px rgba(59,130,246,0.18), inset 0 0 12px rgba(59,130,246,0.06)"
+              : "none",
+          }}
+        >
+          <div className="flex items-center gap-2.5 pointer-events-none">
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+            >
+              <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2" />
+              <path d="M9.6 4.6A2 2 0 1 1 11 8H2" />
+              <path d="M12.6 19.4A2 2 0 1 0 14 16H2" />
+            </svg>
+            <span className="text-[11px] font-semibold tracking-widest uppercase">
+              Wind Tunnel
+            </span>
+          </div>
+          {/* Speed readout — updated via ref to avoid React re-renders */}
+          <div
+            ref={speedReadoutRef}
+            className="text-base font-mono font-bold tabular-nums tracking-tight mt-1 pointer-events-none"
+            style={{
+              color: isWindActive ? "#93c5fd" : "#52525b",
+              transition: "color 0.3s ease",
+            }}
+          >
+            0 km/h
+          </div>
+          <div
+            className="text-[10px] tracking-wide pointer-events-none"
+            style={{ opacity: isWindActive ? 0.6 : 0.3 }}
+          >
+            {isWindActive ? "Release to stop" : "Hold to activate"}
+          </div>
+        </button>,
+        document.body,
+      )}
+    </div>
   );
 };
 
