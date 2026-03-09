@@ -78,6 +78,29 @@ export function VSBadge({
     );
   }, []);
 
+  // Hover animation
+  const handleMouseEnter = () => {
+    if (!containerRef.current) return;
+    gsap.to(containerRef.current, {
+      scale: 1.01,
+      y: 0,
+      backgroundColor: "rgba(255,255,255,0.04)",
+      duration: 0.4,
+      ease: "power2.out",
+    });
+  };
+
+  const handleMouseLeave = () => {
+    if (!containerRef.current) return;
+    gsap.to(containerRef.current, {
+      scale: 1,
+      y: 0,
+      backgroundColor: "rgba(0,0,0,0.2)",
+      duration: 0.5,
+      ease: "power2.out",
+    });
+  };
+
   const isFaster = value < 0; // driver1 is faster when value is negative
 
   // Slider: calculate thumb position (center=50%)
@@ -92,8 +115,10 @@ export function VSBadge({
   return (
     <div
       ref={containerRef}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
       className={cn(
-        "flex flex-col items-center rounded-[36px] bg-black/20 backdrop-blur-2xl shrink-0",
+        "flex flex-col items-center rounded-[36px] bg-black/20 backdrop-blur-2xl shrink-0 cursor-pointer",
         className
       )}
       style={{

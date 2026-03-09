@@ -214,7 +214,7 @@ const Preloader: React.FC<PreloaderProps> = ({
         }
       });
 
-      const textFadeDelay = 300;
+      const textFadeDelay = loadingText.trim() ? 300 : 0;
       const exitDelay = variant === "percentage" ? 2000 : 0;
 
       timeoutId = setTimeout(() => {
