@@ -267,7 +267,7 @@ export function GraphMode() {
       windFlyoutTlRef.current.kill();
       const allTargets = [...cards, backBtnRef.current, navRef.current, overlayRef.current].filter(Boolean);
       const tl = gsap.timeline({
-        onComplete: () => { gsap.set(allTargets, { clearProps: "all" }); },
+        onComplete: () => { gsap.set(allTargets, { clearProps: "transform" }); },
       });
       cards.forEach((card, i) => {
         tl.to(card, {
