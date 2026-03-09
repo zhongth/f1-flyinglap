@@ -10,6 +10,7 @@ import Image from "next/image";
 import { cn, getTeamDarkColors } from "@/lib/utils";
 import type { Driver, Team } from "@/types";
 import type { PedigreeTier } from "@/data/drivers";
+import type { HongheibangStats } from "@/data/podcast";
 import "./DriverProfileCard.css";
 
 interface DriverProfileCardProps {
@@ -19,6 +20,7 @@ interface DriverProfileCardProps {
   q3Rate?: number; // 0–1
   pedigreeLabel?: string;
   pedigreeTier?: PedigreeTier;
+  hongheibang?: HongheibangStats;
   onClick?: () => void;
 }
 
@@ -69,6 +71,7 @@ export function DriverProfileCard({
   q3Rate,
   pedigreeLabel,
   pedigreeTier,
+  hongheibang,
   onClick,
 }: DriverProfileCardProps) {
   const wrapRef = useRef<HTMLDivElement>(null);
@@ -368,73 +371,70 @@ export function DriverProfileCard({
               <span className="pc-driver-team">{team.shortName}</span>
             </div>
           </div>
-          {pedigreeLabel && (
-            <span
-              className={cn(
-                "inline-flex items-center gap-2 px-4 py-2 rounded-full text-[12px] font-f1-bold uppercase tracking-wider",
-                pedigreeTier === "champion"
-                  ? "border border-amber-500/30"
-                  : pedigreeTier === "winner"
-                    ? "bg-yellow-600/15 text-yellow-300 border border-yellow-500/25"
-                    : pedigreeTier === "podium"
-                      ? "bg-emerald-400/15 text-emerald-300 border border-emerald-400/25"
-                      : pedigreeTier === "none"
-                        ? "bg-white/5 text-white/30 border border-white/8"
-                        : "bg-white/8 text-white/50 border border-white/10"
-              )}
-              style={
-                pedigreeTier === "champion"
-                  ? {
-                      background: "linear-gradient(135deg, rgba(251,191,36,0.15) 0%, rgba(245,158,11,0.25) 50%, rgba(217,119,6,0.15) 100%)",
-                      color: "transparent",
-                      WebkitBackgroundClip: undefined,
-                    }
-                  : undefined
-              }
-            >
-              {pedigreeTier === "champion" && (
-                <svg width="14" height="14" viewBox="0 0 24 24" style={{ fill: "#f59e0b" }}>
-                  <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
-                </svg>
-              )}
-              {pedigreeTier === "winner" && (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="9" r="7" stroke="currentColor" strokeWidth="1.5" />
-                  <circle cx="12" cy="9" r="4.5" fill="currentColor" opacity="0.3" />
-                  <path d="M12 4.5l1.1 2.2 2.4.35-1.75 1.7.41 2.4L12 10.1l-2.16 1.05.41-2.4-1.75-1.7 2.4-.35L12 4.5z" fill="currentColor" />
-                  <path d="M8 15.5l-1.5 5L12 18l5.5 2.5L16 15.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              )}
-              {pedigreeTier === "podium" && (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M7.5 21H2V9h5.5v12zm7.25-18h-5.5v18h5.5V3zM22 11h-5.5v10H22V11z" />
-                </svg>
-              )}
-              {pedigreeTier === "none" && (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" opacity="0.5">
-                  <path d="M7.5 21H2V9h5.5v12zm7.25-18h-5.5v18h5.5V3zM22 11h-5.5v10H22V11z" />
-                </svg>
-              )}
-              {pedigreeTier === "rookie" && (
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                </svg>
-              )}
-              {pedigreeTier === "champion" ? (
-                <span
-                  style={{
-                    background: "linear-gradient(135deg, #fbbf24, #f59e0b, #d97706, #f59e0b, #fbbf24)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}
-                >
-                  {pedigreeLabel}
-                </span>
-              ) : (
-                pedigreeLabel
-              )}
-            </span>
-          )}
+          {hongheibang && (() => {
+            const total = hongheibang.red + hongheibang.black;
+            const redPct = total > 0 ? (hongheibang.red / total) * 100 : 50;
+            return (
+              <div className="flex items-center gap-3">
+                {/* Podcast avatar + label */}
+                <div className="flex items-center gap-1.5">
+                  <div className="w-[32px] h-[32px] rounded-full overflow-hidden border border-white/10 flex-shrink-0">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src="/assets/feichiquan-podcast.jpg"
+                      alt="飞驰圈"
+                      className="w-full h-full object-cover"
+                      style={{ borderRadius: 0 }}
+                    />
+                  </div>
+                  <span className="text-xs text-white/40 font-f1 whitespace-nowrap">Rating</span>
+                </div>
+                {/* Divider */}
+                <div className="w-px h-3.5 bg-white/10" />
+                {/* Red count */}
+                <div className="flex items-center gap-1.5">
+                  <svg width="10" height="10" viewBox="0 0 10 10">
+                    <path d="M5 1L9 7H1L5 1Z" fill="#ef4444" />
+                  </svg>
+                  <span className="font-f1-bold text-[14px] leading-none" style={{ color: "#ef4444" }}>
+                    {hongheibang.red}
+                  </span>
+                </div>
+                {/* Ratio bar */}
+                <div className="relative w-[56px] h-[6px] rounded-full overflow-hidden bg-white/[0.06]">
+                  {total > 0 ? (
+                    <>
+                      <div
+                        className="absolute inset-y-0 left-0 rounded-full"
+                        style={{
+                          width: `${redPct}%`,
+                          background: "linear-gradient(90deg, #ef4444, #f87171)",
+                        }}
+                      />
+                      <div
+                        className="absolute inset-y-0 right-0 rounded-full"
+                        style={{
+                          width: `${100 - redPct}%`,
+                          background: "linear-gradient(90deg, #52525b, #3f3f46)",
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 rounded-full bg-white/[0.06]" />
+                  )}
+                </div>
+                {/* Black count */}
+                <div className="flex items-center gap-1.5">
+                  <svg width="10" height="10" viewBox="0 0 10 10">
+                    <path d="M5 9L1 3H9L5 9Z" fill="#71717a" />
+                  </svg>
+                  <span className="font-f1-bold text-[14px] leading-none text-zinc-400">
+                    {hongheibang.black}
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Driver portrait — outside .pc-card so it's not clipped */}

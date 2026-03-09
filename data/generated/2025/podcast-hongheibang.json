@@ -1,0 +1,26 @@
+{
+  "source": "Flying Lap Podcast 2025 Season",
+  "description": "红黑榜 (Red/Black List) - Driver mentions per podcast episode",
+  "drivers": {
+    "max_verstappen": { "red": 10, "black": 1 },
+    "charles_leclerc": { "red": 10, "black": 1 },
+    "lando_norris": { "red": 9, "black": 4 },
+    "george_russell": { "red": 7, "black": 0 },
+    "isack_hadjar": { "red": 7, "black": 0 },
+    "oscar_piastri": { "red": 5, "black": 5 },
+    "kimi_antonelli": { "red": 5, "black": 4 },
+    "oliver_bearman": { "red": 5, "black": 0 },
+    "yuki_tsunoda": { "red": 4, "black": 4 },
+    "liam_lawson": { "red": 4, "black": 3 },
+    "lewis_hamilton": { "red": 3, "black": 8 },
+    "fernando_alonso": { "red": 3, "black": 0 },
+    "carlos_sainz": { "red": 2, "black": 2 },
+    "alexander_albon": { "red": 2, "black": 0 },
+    "nico_hulkenberg": { "red": 2, "black": 0 },
+    "pierre_gasly": { "red": 2, "black": 1 },
+    "gabriel_bortoleto": { "red": 1, "black": 3 },
+    "lance_stroll": { "red": 1, "black": 1 },
+    "franco_colapinto": { "red": 0, "black": 1 },
+    "esteban_ocon": { "red": 0, "black": 0 }
+  }
+}

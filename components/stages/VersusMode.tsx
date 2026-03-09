@@ -12,6 +12,7 @@ import {
   calculateQ3Rate,
   getDriverPedigree,
   getDriversByTeamId,
+  getHongheibang,
   getTeamById,
 } from "@/data";
 import { gsap } from "@/lib/gsap";
@@ -117,6 +118,15 @@ export function VersusMode() {
     return {
       driver1: getDriverPedigree(displayDrivers[0].id),
       driver2: getDriverPedigree(displayDrivers[1].id),
+    };
+  }, [displayDrivers]);
+
+  // Podcast 红黑榜 data
+  const hongheibang = useMemo(() => {
+    if (displayDrivers.length !== 2) return null;
+    return {
+      driver1: getHongheibang(displayDrivers[0].id),
+      driver2: getHongheibang(displayDrivers[1].id),
     };
   }, [displayDrivers]);
 
@@ -512,6 +522,7 @@ export function VersusMode() {
                   q3Rate={q3Rates?.driver1.q3Rate}
                   pedigreeLabel={pedigrees?.driver1.text}
                   pedigreeTier={pedigrees?.driver1.tier}
+                  hongheibang={hongheibang?.driver1}
                   onClick={() => handleDriverClick(0)}
                 />
               </motion.div>
@@ -550,6 +561,7 @@ export function VersusMode() {
                   q3Rate={q3Rates?.driver2.q3Rate}
                   pedigreeLabel={pedigrees?.driver2.text}
                   pedigreeTier={pedigrees?.driver2.tier}
+                  hongheibang={hongheibang?.driver2}
                   onClick={() => handleDriverClick(1)}
                 />
               </motion.div>
