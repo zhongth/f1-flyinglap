@@ -74,6 +74,7 @@ export function GraphMode() {
   const navRef = useRef<HTMLDivElement>(null);
   const backBtnRef = useRef<HTMLButtonElement>(null);
   const isExitingRef = useRef(false);
+  const windFlyoutTlRef = useRef<gsap.core.Timeline | null>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
   const graphContainerRef = useRef<HTMLDivElement>(null);
 
@@ -82,7 +83,7 @@ export function GraphMode() {
   const [graphHeight, setGraphHeight] = useState(220);
   const analysisScope = "season" as const;
 
-  const { selectedTeamId, setSelectedTeamId, setCameraMode, setStage } =
+  const { selectedTeamId, isWindTunnelActive, setSelectedTeamId, setCameraMode, setStage } =
     useAppStore();
 
   const team = selectedTeamId ? getTeamById(selectedTeamId) : null;
@@ -236,10 +237,43 @@ export function GraphMode() {
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Wind tunnel flyout: scatter cards when wind tunnel is active
+  useEffect(() => {
+    if (isExitingRef.current) return;
+
+    if (isWindTunnelActive) {
+      windFlyoutTlRef.current?.kill();
+      const cards = cardRefs.current.filter(Boolean) as HTMLDivElement[];
+      const tl = gsap.timeline();
+
+      cards.forEach((card, i) => {
+        const f = FLY_IN[i] ?? FLY_IN[0];
+        tl.to(card, {
+          x: f.x * 0.5,
+          y: f.y * 0.5,
+          rotation: f.rotate * 0.4,
+          scale: 0.6,
+          opacity: 0,
+          duration: 0.45,
+          ease: "power2.in",
+        }, i * 0.03);
+      });
+
+      tl.to(backBtnRef.current, { opacity: 0, duration: 0.25, ease: "power2.in" }, 0);
+      tl.to(navRef.current, { opacity: 0, y: 50, duration: 0.3, ease: "power2.in" }, 0.04);
+      tl.to(overlayRef.current, { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 0.08);
+
+      windFlyoutTlRef.current = tl;
+    } else if (windFlyoutTlRef.current) {
+      windFlyoutTlRef.current.reverse();
+    }
+  }, [isWindTunnelActive]);
+
   /* ── Back to VERSUS ── */
   const handleBack = useCallback(() => {
     if (isExitingRef.current) return;
     isExitingRef.current = true;
+    windFlyoutTlRef.current?.kill();
     setCameraMode("cinematic");
 
     const cards = cardRefs.current.filter(Boolean) as HTMLDivElement[];

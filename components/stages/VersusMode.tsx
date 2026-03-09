@@ -32,6 +32,10 @@ const DRIVER_AUDIO_CONFIG: Record<string, { src: string; volume: number }> = {
     src: "/sound/F1 Notification + Words Of Wisdom.mp3",
     volume: 0.5,
   },
+  lando_norris: {
+    src: "/sound/F1 Notification + Lando Friday Radio.mp3",
+    volume: 0.5,
+  },
 };
 
 export function VersusMode() {
@@ -44,11 +48,13 @@ export function VersusMode() {
   const patternRef = useRef<HTMLDivElement>(null);
   const transitionRef = useRef<gsap.core.Timeline | null>(null);
   const exitTlRef = useRef<gsap.core.Timeline | null>(null);
+  const windFlyoutTlRef = useRef<gsap.core.Timeline | null>(null);
   const isExitingRef = useRef(false);
 
   const {
     selectedTeamId,
     timeScope,
+    isWindTunnelActive,
     setTimeScope,
     goBack,
     setSelectedTeamId,
@@ -143,6 +149,28 @@ export function VersusMode() {
       { x: 0, opacity: 1, duration: 0.8, ease: "power3.out", delay: 0.1 }
     );
   }, []);
+
+  // Wind tunnel flyout: scatter UI elements when wind tunnel is active
+  useEffect(() => {
+    if (isExitingRef.current) return;
+
+    if (isWindTunnelActive) {
+      windFlyoutTlRef.current?.kill();
+      const tl = gsap.timeline();
+
+      tl.to(leftCardRef.current, { x: -200, opacity: 0, scale: 0.85, duration: 0.45, ease: "power2.in" }, 0);
+      tl.to(rightCardRef.current, { x: 200, opacity: 0, scale: 0.85, duration: 0.45, ease: "power2.in" }, 0);
+      tl.to(centerRef.current, { opacity: 0, scale: 0.8, y: -40, duration: 0.38, ease: "power2.in" }, 0.04);
+      tl.to(navRef.current, { opacity: 0, y: 60, duration: 0.35, ease: "power2.in" }, 0.04);
+      tl.to(backBtnRef.current, { opacity: 0, x: -40, duration: 0.3, ease: "power2.in" }, 0);
+      tl.to(overlayRef.current, { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 0.08);
+      tl.to(patternRef.current, { opacity: 0, y: -30, duration: 0.3, ease: "power2.in" }, 0);
+
+      windFlyoutTlRef.current = tl;
+    } else if (windFlyoutTlRef.current) {
+      windFlyoutTlRef.current.reverse();
+    }
+  }, [isWindTunnelActive]);
 
   const handleTeamSelect = useCallback(
     (teamId: string) => {
@@ -271,6 +299,7 @@ export function VersusMode() {
   const handleGraphView = useCallback(() => {
     if (isExitingRef.current) return;
     isExitingRef.current = true;
+    windFlyoutTlRef.current?.kill();
 
     setCameraMode("sideProfile");
 
@@ -322,6 +351,7 @@ export function VersusMode() {
   const handleBack = useCallback(() => {
     if (isExitingRef.current) return;
     isExitingRef.current = true;
+    windFlyoutTlRef.current?.kill();
 
     // Start camera returning to top-down immediately
     setCameraMode("topDown");

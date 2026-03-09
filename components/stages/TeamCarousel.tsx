@@ -133,8 +133,12 @@ interface TeamCarouselProps {
 export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const titleRef = useRef<HTMLDivElement>(null);
+  const titleLeftRef = useRef<HTMLDivElement>(null);
+  const titleRightRef = useRef<HTMLDivElement>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
   const podcastRef = useRef<HTMLAnchorElement>(null);
+  const toggleBtnRef = useRef<HTMLButtonElement>(null);
+  const windFlyoutTlRef = useRef<gsap.core.Timeline | null>(null);
   const [uiHidden, setUiHidden] = useState(false);
 
   const {
@@ -147,6 +151,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     isCarAnimating,
     isIntroComplete,
     setIntroComplete,
+    isWindTunnelActive,
   } = useAppStore();
 
   const sortedTeams = useMemo(
@@ -268,6 +273,29 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     return () => ctx.revert();
   }, [introReady, isIntroComplete, setIntroComplete]);
 
+  // Wind tunnel flyout: scatter UI sections when wind tunnel is active
+  useEffect(() => {
+    if (isWindTunnelActive) {
+      windFlyoutTlRef.current?.kill();
+      const tl = gsap.timeline();
+
+      // Top-left (F1 logo, title, tagline) → fly out to left
+      tl.to(titleLeftRef.current, { x: -250, opacity: 0, duration: 0.45, ease: "power2.in" }, 0);
+      // Top-right (team info card) → fly out to right
+      tl.to(titleRightRef.current, { x: 250, opacity: 0, duration: 0.45, ease: "power2.in" }, 0);
+      // Podcast link (top right corner) → fly out to right
+      tl.to(podcastRef.current, { x: 80, opacity: 0, duration: 0.3, ease: "power2.in" }, 0);
+      // Bottom carousel → fly out downward
+      tl.to(wheelRef.current, { y: 120, opacity: 0, duration: 0.45, ease: "power2.in" }, 0.03);
+      // Toggle button → fade
+      tl.to(toggleBtnRef.current, { y: 40, opacity: 0, duration: 0.3, ease: "power2.in" }, 0.03);
+
+      windFlyoutTlRef.current = tl;
+    } else if (windFlyoutTlRef.current) {
+      windFlyoutTlRef.current.reverse();
+    }
+  }, [isWindTunnelActive]);
+
   const toggleUI = useCallback(() => {
     if (isAnimating || !isIntroComplete) return;
     const hiding = !uiHidden;
@@ -321,7 +349,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
       >
         <div className="w-full px-5 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
           <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,24rem)] xl:items-start xl:gap-x-10">
-            <div className="max-w-[28rem]">
+            <div ref={titleLeftRef} className="max-w-[28rem]">
               <Image src="/f1-logo-white.png" alt="F1 Logo" width={120} height={30} className="mb-4" />
               <div className="inline-flex items-center ">
                 <p className="text-sm font-f1-bold tracking-[0.16em] text-white/42 uppercase">
@@ -338,7 +366,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
               </p>
             </div>
 
-            <div className="relative w-full max-w-[24rem] self-start justify-self-start overflow-hidden rounded-[28px] border border-white/8 bg-white/15 px-7 py-7 text-left backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.05)] xl:justify-self-end">
+            <div ref={titleRightRef} className="relative w-full max-w-[24rem] self-start justify-self-start overflow-hidden rounded-[28px] border border-white/8 bg-white/15 px-7 py-7 text-left backdrop-blur-xl shadow-[0_14px_50px_rgba(0,0,0,0.34),inset_0_1px_0_rgba(255,255,255,0.05)] xl:justify-self-end">
               {/* Atmospheric overlay */}
               <div className="pointer-events-none absolute inset-0">
                 <div className="absolute inset-x-0 top-0 h-px bg-white/10" />
@@ -457,6 +485,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
 
       {/* Clean-view toggle */}
       <button
+        ref={toggleBtnRef}
         type="button"
         onClick={toggleUI}
         className="absolute bottom-6 left-6 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-xl transition-all duration-300 hover:border-white/25 hover:bg-white/10"

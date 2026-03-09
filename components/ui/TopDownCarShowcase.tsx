@@ -14,7 +14,7 @@ import {
   type WheelSpinTarget,
 } from "@/lib/wheelUtils";
 import { WindTunnelEffect } from "@/lib/windTunnelEffect";
-import type { CameraMode } from "@/store/useAppStore";
+import { useAppStore, type CameraMode } from "@/store/useAppStore";
 
 /* Camera presets keyed by mode */
 const CAMERA_CONFIGS = {
@@ -1185,11 +1185,14 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
 
   /* ── Wind tunnel button handlers ── */
   const [isWindActive, setIsWindActive] = useState(false);
+  const [isButtonHovered, setIsButtonHovered] = useState(false);
+  const isExpanded = isButtonHovered || isWindActive;
 
   const handleWindStart = () => {
     const wt = windTunnelRef.current;
     if (!wt) return;
     setIsWindActive(true);
+    useAppStore.getState().setIsWindTunnelActive(true);
     wt.start();
     needsRenderRef.current = true;
     windTweenRef.current?.kill();
@@ -1209,6 +1212,7 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     const wt = windTunnelRef.current;
     if (!wt) return;
     setIsWindActive(false);
+    useAppStore.getState().setIsWindTunnelActive(false);
     windTweenRef.current?.kill();
     windTweenRef.current = gsap.to(wt, {
       windStrength: 0,
@@ -1232,75 +1236,79 @@ const TopDownCarShowcase: FC<TopDownCarShowcaseProps> = ({
     >
       <div ref={containerRef} className="absolute inset-0" />
 
-      {/* Wind Tunnel button — portaled to body so it escapes the z-0 stacking context */}
+      {/* Wind Tunnel — portaled to body so it escapes the z-0 stacking context */}
       {createPortal(
-        <button
-          type="button"
-          onPointerDown={(e) => {
-            e.currentTarget.setPointerCapture(e.pointerId);
-            handleWindStart();
-          }}
-          onPointerUp={handleWindStop}
-          onPointerCancel={handleWindStop}
-          onLostPointerCapture={handleWindStop}
-          onContextMenu={(e) => e.preventDefault()}
-          className="fixed left-6 top-1/2 -translate-y-1/2 select-none cursor-pointer"
-          style={{
-            zIndex: 90,
-            touchAction: "none",
-            background: isWindActive
-              ? "rgba(59,130,246,0.14)"
-              : "rgba(255,255,255,0.04)",
-            backdropFilter: "blur(14px)",
-            WebkitBackdropFilter: "blur(14px)",
-            border: isWindActive
-              ? "1px solid rgba(59,130,246,0.35)"
-              : "1px solid rgba(255,255,255,0.08)",
-            borderRadius: "14px",
-            padding: "14px 22px",
-            color: isWindActive ? "#93c5fd" : "#71717a",
-            transition: "all 0.3s ease",
-            boxShadow: isWindActive
-              ? "0 0 28px rgba(59,130,246,0.18), inset 0 0 12px rgba(59,130,246,0.06)"
-              : "none",
-          }}
+        <div
+          onMouseEnter={() => setIsButtonHovered(true)}
+          onMouseLeave={() => { if (!isWindActive) setIsButtonHovered(false); }}
+          className="fixed left-0 top-1/2 -translate-y-1/2"
+          style={{ zIndex: 90, padding: "28px" }}
         >
-          <div className="flex items-center gap-2.5 pointer-events-none">
+          <button
+            type="button"
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId);
+              handleWindStart();
+            }}
+            onPointerUp={() => { handleWindStop(); setIsButtonHovered(false); }}
+            onPointerCancel={() => { handleWindStop(); setIsButtonHovered(false); }}
+            onLostPointerCapture={() => { handleWindStop(); setIsButtonHovered(false); }}
+            onContextMenu={(e) => e.preventDefault()}
+            className="select-none cursor-pointer flex items-center justify-center"
+            style={{
+              touchAction: "none",
+              background: "none",
+              border: "none",
+              padding: 0,
+              color: isWindActive ? "#93c5fd" : "rgba(255,255,255,0.35)",
+              transition: "color 0.3s ease, transform 0.3s ease, filter 0.3s ease",
+              transform: isExpanded ? "translateX(6px) scale(1.15)" : "translateX(0) scale(1)",
+              filter: isWindActive
+                ? "drop-shadow(0 0 12px rgba(59,130,246,0.5))"
+                : isExpanded
+                  ? "drop-shadow(0 0 6px rgba(255,255,255,0.15))"
+                  : "none",
+            }}
+          >
             <svg
-              width="18"
-              height="18"
+              width="26"
+              height="26"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
-              strokeWidth="2"
+              strokeWidth="1.8"
               strokeLinecap="round"
+              className="pointer-events-none"
             >
               <path d="M17.7 7.7a2.5 2.5 0 1 1 1.8 4.3H2" />
               <path d="M9.6 4.6A2 2 0 1 1 11 8H2" />
               <path d="M12.6 19.4A2 2 0 1 0 14 16H2" />
             </svg>
-            <span className="text-[11px] font-semibold tracking-widest uppercase">
-              Wind Tunnel
-            </span>
+          </button>
+          {/* Tooltip — appears to the right of the icon on hover */}
+          <div
+            className="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 text-[11px] tracking-wide text-white/40 whitespace-nowrap"
+            style={{
+              opacity: isExpanded && !isWindActive ? 1 : 0,
+              transform: `translateY(-50%) translateX(${isExpanded && !isWindActive ? "0" : "-6px"})`,
+              transition: "opacity 0.25s ease, transform 0.25s ease",
+            }}
+          >
+            Hold
           </div>
-          {/* Speed readout — updated via ref to avoid React re-renders */}
+          {/* Speed readout — appears on hover/active */}
           <div
             ref={speedReadoutRef}
-            className="text-base font-mono font-bold tabular-nums tracking-tight mt-1 pointer-events-none"
+            className="text-xs font-mono font-bold tabular-nums tracking-tight text-center mt-1.5 pointer-events-none"
             style={{
-              color: isWindActive ? "#93c5fd" : "#52525b",
-              transition: "color 0.3s ease",
+              color: isWindActive ? "#93c5fd" : "rgba(255,255,255,0.3)",
+              opacity: isExpanded ? 1 : 0,
+              transition: "opacity 0.3s ease, color 0.3s ease",
             }}
           >
             0 km/h
           </div>
-          <div
-            className="text-[10px] tracking-wide pointer-events-none"
-            style={{ opacity: isWindActive ? 0.6 : 0.3 }}
-          >
-            {isWindActive ? "Release to stop" : "Hold to activate"}
-          </div>
-        </button>,
+        </div>,
         document.body,
       )}
     </div>

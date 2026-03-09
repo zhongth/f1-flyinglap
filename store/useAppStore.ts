@@ -26,6 +26,7 @@ interface AppState {
   isAnimating: boolean;
   isCarAnimating: boolean;
   isIntroComplete: boolean;
+  isWindTunnelActive: boolean;
 
   // 3D camera mode
   cameraMode: CameraMode;
@@ -39,6 +40,7 @@ interface AppState {
   setIsAnimating: (animating: boolean) => void;
   setIsCarAnimating: (animating: boolean) => void;
   setIntroComplete: () => void;
+  setIsWindTunnelActive: (active: boolean) => void;
   setCameraMode: (mode: CameraMode) => void;
 
   // Complex actions
@@ -59,6 +61,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   isAnimating: false,
   isCarAnimating: false,
   isIntroComplete: false,
+  isWindTunnelActive: false,
   cameraMode: "topDown",
 
   // Simple setters
@@ -75,6 +78,7 @@ export const useAppStore = create<AppState>((set, get) => ({
   setIsAnimating: (animating) => set({ isAnimating: animating }),
   setIsCarAnimating: (animating) => set({ isCarAnimating: animating }),
   setIntroComplete: () => set({ isIntroComplete: true }),
+  setIsWindTunnelActive: (active) => set({ isWindTunnelActive: active }),
   setCameraMode: (mode) => set({ cameraMode: mode }),
 
   // Select a team (GRID -> VERSUS transition)
@@ -141,6 +145,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       focusedDriverId: null,
       isAnimating: false,
       isCarAnimating: false,
+      isWindTunnelActive: false,
       cameraMode: "topDown",
     }),
 }));
