@@ -11,6 +11,7 @@ import { getDriverPoints } from "@/data/qualifying";
 
 import { gsap } from "@/lib/gsap";
 import { useAppStore } from "@/store/useAppStore";
+import { AnimatedTooltip } from "@/components/ui/animated-tooltip";
 
 // Car image map — static, never changes
 const CAR_IMAGE_MAP: Record<string, string> = {
@@ -136,7 +137,7 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
   const titleLeftRef = useRef<HTMLDivElement>(null);
   const titleRightRef = useRef<HTMLDivElement>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
-  const podcastRef = useRef<HTMLAnchorElement>(null);
+  const podcastRef = useRef<HTMLDivElement>(null);
   const toggleBtnRef = useRef<HTMLButtonElement>(null);
   const windFlyoutTlRef = useRef<gsap.core.Timeline | null>(null);
   const [uiHidden, setUiHidden] = useState(false);
@@ -325,22 +326,46 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
       ref={containerRef}
       className="relative h-screen w-full overflow-hidden"
     >
-      {/* Podcast link — top right */}
-      <a
+      {/* Attribution — top right */}
+      <div
         ref={podcastRef}
-        href="https://www.youtube.com/playlist?list=PL3g6oz4W-l1k0YrzaNaaGoI3MXwx96PoC"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="absolute top-6 right-6 z-50 group"
+        className="absolute top-6 right-6 z-50 flex items-center gap-3.5"
       >
-        <Image
-          src="/assets/feichiquan-podcast.jpg"
-          alt="飞驰圈 Podcast"
-          width={40}
-          height={40}
-          className="rounded-full border border-white/10 group-hover:border-white/30 transition-all duration-300 group-hover:scale-110"
-        />
-      </a>
+        <span className="text-xs uppercase text-white/40 font-f1">
+          Fan made for
+        </span>
+        <a
+          href="https://www.youtube.com/playlist?list=PL3g6oz4W-l1k0YrzaNaaGoI3MXwx96PoC"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="group"
+        >
+          <Image
+            src="/assets/feichiquan-podcast.jpg"
+            alt="飞驰圈 Podcast"
+            width={36}
+            height={36}
+            unoptimized
+            className="rounded-full border border-white/10 group-hover:border-white/30 transition-all duration-300 group-hover:scale-110"
+          />
+        </a>
+        <span className="text-xs uppercase text-white/40 font-f1">
+          Author
+        </span>
+        <div className="flex items-center">
+          <AnimatedTooltip
+            items={[
+              {
+                id: 1,
+                name: "Edward",
+                designation: "317022920hu@gmail.com",
+                image: "/assets/Pipi-avatar.png",
+                link: "https://github.com/zhongth/f1-flyinglap",
+              },
+            ]}
+          />
+        </div>
+      </div>
 
       {/* Team name — prominent display at top */}
       <div
