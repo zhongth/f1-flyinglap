@@ -508,27 +508,6 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
         </div>
       </div>
 
-      {/* Clean-view toggle */}
-      <button
-        ref={toggleBtnRef}
-        type="button"
-        onClick={toggleUI}
-        className="absolute bottom-6 left-6 z-[60] flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] backdrop-blur-xl transition-all duration-300 hover:border-white/25 hover:bg-white/10"
-        aria-label={uiHidden ? "Show UI" : "Hide UI"}
-      >
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 16 16"
-          fill="none"
-          className="text-white/70 transition-transform duration-300"
-          style={{ transform: uiHidden ? "rotate(45deg)" : "rotate(0deg)" }}
-        >
-          <rect x="2" y="4" width="12" height="1.5" rx="0.75" fill="currentColor" />
-          <rect x="2" y="10.5" width="12" height="1.5" rx="0.75" fill="currentColor" />
-        </svg>
-      </button>
-
       {/* Horizontal team selector — anchored to bottom */}
       <div className="absolute bottom-0 left-0 right-0 z-50 pb-10">
         <div
