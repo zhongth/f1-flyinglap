@@ -26,15 +26,15 @@ const layoutSpring = {
 
 const DRIVER_AUDIO_CONFIG: Record<string, { src: string; volume: number }> = {
   max_verstappen: {
-    src: "/assets/music/Max33 Dub.mov",
+    src: "/assets/music/max33-dub.mov",
     volume: 0.5,
   },
   charles_leclerc: {
-    src: "/sound/F1 Notification + Words Of Wisdom.mp3",
+    src: "/sound/f1-notification-words-of-wisdom.mp3",
     volume: 0.5,
   },
   lando_norris: {
-    src: "/sound/F1 Notification + Lando Friday Radio.mp3",
+    src: "/sound/f1-notification-lando-friday-radio.mp3",
     volume: 0.5,
   },
 };
