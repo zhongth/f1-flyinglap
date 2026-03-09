@@ -278,21 +278,21 @@ export function TeamCarousel({ introReady = true }: TeamCarouselProps) {
     if (isWindTunnelActive) {
       windFlyoutTlRef.current?.kill();
       const tl = gsap.timeline();
-
-      // Top-left (F1 logo, title, tagline) → fly out to left
       tl.to(titleLeftRef.current, { x: -250, opacity: 0, duration: 0.45, ease: "power2.in" }, 0);
-      // Top-right (team info card) → fly out to right
       tl.to(titleRightRef.current, { x: 250, opacity: 0, duration: 0.45, ease: "power2.in" }, 0);
-      // Podcast link (top right corner) → fly out to right
       tl.to(podcastRef.current, { x: 80, opacity: 0, duration: 0.3, ease: "power2.in" }, 0);
-      // Bottom carousel → fly out downward
       tl.to(wheelRef.current, { y: 120, opacity: 0, duration: 0.45, ease: "power2.in" }, 0.03);
-      // Toggle button → fade
       tl.to(toggleBtnRef.current, { y: 40, opacity: 0, duration: 0.3, ease: "power2.in" }, 0.03);
-
       windFlyoutTlRef.current = tl;
     } else if (windFlyoutTlRef.current) {
-      windFlyoutTlRef.current.reverse();
+      windFlyoutTlRef.current.kill();
+      const tl = gsap.timeline();
+      tl.to(titleLeftRef.current, { x: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0);
+      tl.to(titleRightRef.current, { x: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0);
+      tl.to(podcastRef.current, { x: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 0);
+      tl.to(wheelRef.current, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 0.03);
+      tl.to(toggleBtnRef.current, { y: 0, opacity: 1, duration: 0.35, ease: "power3.out" }, 0.03);
+      windFlyoutTlRef.current = null;
     }
   }, [isWindTunnelActive]);
 

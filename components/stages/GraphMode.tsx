@@ -241,11 +241,11 @@ export function GraphMode() {
   useEffect(() => {
     if (isExitingRef.current) return;
 
+    const cards = cardRefs.current.filter(Boolean) as HTMLDivElement[];
+
     if (isWindTunnelActive) {
       windFlyoutTlRef.current?.kill();
-      const cards = cardRefs.current.filter(Boolean) as HTMLDivElement[];
       const tl = gsap.timeline();
-
       cards.forEach((card, i) => {
         const f = FLY_IN[i] ?? FLY_IN[0];
         tl.to(card, {
@@ -258,14 +258,28 @@ export function GraphMode() {
           ease: "power2.in",
         }, i * 0.03);
       });
-
       tl.to(backBtnRef.current, { opacity: 0, duration: 0.25, ease: "power2.in" }, 0);
-      tl.to(navRef.current, { opacity: 0, y: 50, duration: 0.3, ease: "power2.in" }, 0.04);
+      // Navbar is position:fixed — only fade opacity, no transform
+      tl.to(navRef.current, { opacity: 0, duration: 0.3, ease: "power2.in" }, 0.04);
       tl.to(overlayRef.current, { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 0.08);
-
       windFlyoutTlRef.current = tl;
     } else if (windFlyoutTlRef.current) {
-      windFlyoutTlRef.current.reverse();
+      windFlyoutTlRef.current.kill();
+      const allTargets = [...cards, backBtnRef.current, navRef.current, overlayRef.current].filter(Boolean);
+      const tl = gsap.timeline({
+        onComplete: () => { gsap.set(allTargets, { clearProps: "all" }); },
+      });
+      cards.forEach((card, i) => {
+        tl.to(card, {
+          x: 0, y: 0, rotation: 0, scale: 1, opacity: 1,
+          duration: 0.55,
+          ease: "power3.out",
+        }, i * 0.03);
+      });
+      tl.to(backBtnRef.current, { opacity: 1, duration: 0.3, ease: "power3.out" }, 0);
+      tl.to(navRef.current, { opacity: 1, duration: 0.4, ease: "power3.out" }, 0.04);
+      tl.to(overlayRef.current, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 0.08);
+      windFlyoutTlRef.current = null;
     }
   }, [isWindTunnelActive]);
 

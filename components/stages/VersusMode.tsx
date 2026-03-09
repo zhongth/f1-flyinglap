@@ -157,18 +157,29 @@ export function VersusMode() {
     if (isWindTunnelActive) {
       windFlyoutTlRef.current?.kill();
       const tl = gsap.timeline();
-
       tl.to(leftCardRef.current, { x: -200, opacity: 0, scale: 0.85, duration: 0.45, ease: "power2.in" }, 0);
       tl.to(rightCardRef.current, { x: 200, opacity: 0, scale: 0.85, duration: 0.45, ease: "power2.in" }, 0);
       tl.to(centerRef.current, { opacity: 0, scale: 0.8, y: -40, duration: 0.38, ease: "power2.in" }, 0.04);
-      tl.to(navRef.current, { opacity: 0, y: 60, duration: 0.35, ease: "power2.in" }, 0.04);
+      // Navbar is position:fixed — only fade opacity, no transform (transform breaks fixed positioning)
+      tl.to(navRef.current, { opacity: 0, duration: 0.35, ease: "power2.in" }, 0.04);
       tl.to(backBtnRef.current, { opacity: 0, x: -40, duration: 0.3, ease: "power2.in" }, 0);
       tl.to(overlayRef.current, { opacity: 0, duration: 0.5, ease: "power2.inOut" }, 0.08);
       tl.to(patternRef.current, { opacity: 0, y: -30, duration: 0.3, ease: "power2.in" }, 0);
-
       windFlyoutTlRef.current = tl;
     } else if (windFlyoutTlRef.current) {
-      windFlyoutTlRef.current.reverse();
+      windFlyoutTlRef.current.kill();
+      const targets = [leftCardRef.current, rightCardRef.current, centerRef.current, navRef.current, backBtnRef.current, overlayRef.current, patternRef.current].filter(Boolean);
+      const tl = gsap.timeline({
+        onComplete: () => { gsap.set(targets, { clearProps: "all" }); },
+      });
+      tl.to(leftCardRef.current, { x: 0, opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" }, 0);
+      tl.to(rightCardRef.current, { x: 0, opacity: 1, scale: 1, duration: 0.5, ease: "power3.out" }, 0);
+      tl.to(centerRef.current, { opacity: 1, scale: 1, y: 0, duration: 0.45, ease: "power3.out" }, 0.04);
+      tl.to(navRef.current, { opacity: 1, duration: 0.45, ease: "power3.out" }, 0.04);
+      tl.to(backBtnRef.current, { opacity: 1, x: 0, duration: 0.35, ease: "power3.out" }, 0);
+      tl.to(overlayRef.current, { opacity: 1, duration: 0.5, ease: "power2.inOut" }, 0.08);
+      tl.to(patternRef.current, { opacity: 1, y: 0, duration: 0.35, ease: "power3.out" }, 0);
+      windFlyoutTlRef.current = null;
     }
   }, [isWindTunnelActive]);
 
