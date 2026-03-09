@@ -46,6 +46,16 @@ next-env.d.ts
 .kiro/
 .windsurf/
 
+# Claude Code
+.claude/commands/
+.claude/skills/
+.claude/worktrees/
+
+# CloudBase MCP / AI rules
+.mcp.json
+CLAUDE.md
+rules/
+
 # Python pipeline
 pipeline/cache/
 pipeline/.venv/
