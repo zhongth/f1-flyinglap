@@ -13,13 +13,6 @@
     "driver2Wins": 3,
     "scope": "season"
   },
-  "red_bull.season": {
-    "driver1Id": "max_verstappen",
-    "driver2Id": "yuki_tsunoda",
-    "driver1Wins": 23,
-    "driver2Wins": 0,
-    "scope": "season"
-  },
   "ferrari.season": {
     "driver1Id": "charles_leclerc",
     "driver2Id": "lewis_hamilton",
@@ -69,6 +62,13 @@
     "driver2Wins": 5,
     "scope": "season"
   },
+  ".season": {
+    "driver1Id": "max_verstappen",
+    "driver2Id": "yuki_tsunoda",
+    "driver1Wins": 23,
+    "driver2Wins": 0,
+    "scope": "season"
+  },
   "mclaren.last5": {
     "driver1Id": "lando_norris",
     "driver2Id": "oscar_piastri",
@@ -81,13 +81,6 @@
     "driver2Id": "kimi_antonelli",
     "driver1Wins": 4,
     "driver2Wins": 1,
-    "scope": "last5"
-  },
-  "red_bull.last5": {
-    "driver1Id": "max_verstappen",
-    "driver2Id": "yuki_tsunoda",
-    "driver1Wins": 5,
-    "driver2Wins": 0,
     "scope": "last5"
   },
   "ferrari.last5": {
@@ -135,6 +128,13 @@
   "alpine.last5": {
     "driver1Id": "pierre_gasly",
     "driver2Id": "franco_colapinto",
+    "driver1Wins": 5,
+    "driver2Wins": 0,
+    "scope": "last5"
+  },
+  ".last5": {
+    "driver1Id": "max_verstappen",
+    "driver2Id": "yuki_tsunoda",
     "driver1Wins": 5,
     "driver2Wins": 0,
     "scope": "last5"

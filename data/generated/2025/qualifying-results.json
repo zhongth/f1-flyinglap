@@ -3771,15 +3771,6 @@
     "bestTime": "1:10.711"
   },
   {
-    "raceId": "brazil",
-    "driverId": "gabriel_bortoleto",
-    "position": 0,
-    "q1Time": null,
-    "q2Time": null,
-    "q3Time": null,
-    "bestTime": null
-  },
-  {
     "raceId": "las_vegas",
     "driverId": "lando_norris",
     "position": 1,

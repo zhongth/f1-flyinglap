@@ -17,15 +17,6 @@
     "raceCount": 24,
     "scope": "season"
   },
-  "red_bull.season": {
-    "teamId": "red_bull",
-    "driver1Id": "max_verstappen",
-    "driver2Id": "yuki_tsunoda",
-    "medianGap": -723.4,
-    "medianGapFormatted": "-0.723",
-    "raceCount": 23,
-    "scope": "season"
-  },
   "ferrari.season": {
     "teamId": "ferrari",
     "driver1Id": "charles_leclerc",
@@ -89,6 +80,15 @@
     "raceCount": 18,
     "scope": "season"
   },
+  ".season": {
+    "teamId": "",
+    "driver1Id": "max_verstappen",
+    "driver2Id": "yuki_tsunoda",
+    "medianGap": -723.4,
+    "medianGapFormatted": "-0.723",
+    "raceCount": 23,
+    "scope": "season"
+  },
   "mclaren.last5": {
     "teamId": "mclaren",
     "driver1Id": "lando_norris",
@@ -104,15 +104,6 @@
     "driver2Id": "kimi_antonelli",
     "medianGap": -231.0,
     "medianGapFormatted": "-0.231",
-    "raceCount": 5,
-    "scope": "last5"
-  },
-  "red_bull.last5": {
-    "teamId": "red_bull",
-    "driver1Id": "max_verstappen",
-    "driver2Id": "yuki_tsunoda",
-    "medianGap": -359.1,
-    "medianGapFormatted": "-0.359",
     "raceCount": 5,
     "scope": "last5"
   },
@@ -176,6 +167,15 @@
     "driver2Id": "franco_colapinto",
     "medianGap": -565.2,
     "medianGapFormatted": "-0.565",
+    "raceCount": 5,
+    "scope": "last5"
+  },
+  ".last5": {
+    "teamId": "",
+    "driver1Id": "max_verstappen",
+    "driver2Id": "yuki_tsunoda",
+    "medianGap": -359.1,
+    "medianGapFormatted": "-0.359",
     "raceCount": 5,
     "scope": "last5"
   }
