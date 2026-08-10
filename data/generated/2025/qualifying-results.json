@@ -903,181 +903,181 @@
     "raceId": "miami",
     "driverId": "max_verstappen",
     "position": 1,
-    "q1Time": "1:26.870",
-    "q2Time": "1:26.643",
-    "q3Time": "1:26.204",
-    "bestTime": "1:26.204"
+    "q1Time": null,
+    "q2Time": null,
+    "q3Time": null,
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "lando_norris",
     "position": 2,
-    "q1Time": "1:26.955",
-    "q2Time": "1:26.499",
-    "q3Time": "1:26.269",
-    "bestTime": "1:26.269"
+    "q1Time": null,
+    "q2Time": null,
+    "q3Time": null,
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "kimi_antonelli",
     "position": 3,
-    "q1Time": "1:27.077",
-    "q2Time": "1:26.606",
-    "q3Time": "1:26.271",
-    "bestTime": "1:26.271"
+    "q1Time": null,
+    "q2Time": null,
+    "q3Time": null,
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "oscar_piastri",
     "position": 4,
-    "q1Time": "1:27.006",
-    "q2Time": "1:26.269",
-    "q3Time": "1:26.375",
-    "bestTime": "1:26.375"
+    "q1Time": null,
+    "q2Time": null,
+    "q3Time": null,
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "george_russell",
     "position": 5,
-    "q1Time": "1:27.014",
-    "q2Time": "1:26.575",
-    "q3Time": "1:26.385",
-    "bestTime": "1:26.385"
+    "q1Time": null,
+    "q2Time": null,
+    "q3Time": null,
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "carlos_sainz",
     "position": 6,
-    "q1Time": "1:27.098",
-    "q2Time": "1:26.847",
-    "q3Time": "1:26.569",
-    "bestTime": "1:26.569"
+    "q1Time": null,
+    "q2Time": null,
+    "q3Time": null,
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "alexander_albon",
     "position": 7,
-    "q1Time": "1:27.042",
-    "q2Time": "1:26.855",
-    "q3Time": "1:26.682",
-    "bestTime": "1:26.682"
+    "q1Time": null,
+    "q2Time": null,
+    "q3Time": null,
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "charles_leclerc",
     "position": 8,
-    "q1Time": "1:27.417",
-    "q2Time": "1:26.948",
-    "q3Time": "1:26.754",
-    "bestTime": "1:26.754"
+    "q1Time": null,
+    "q2Time": null,
+    "q3Time": null,
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "esteban_ocon",
     "position": 9,
-    "q1Time": "1:27.450",
-    "q2Time": "1:26.967",
-    "q3Time": "1:26.824",
-    "bestTime": "1:26.824"
+    "q1Time": null,
+    "q2Time": null,
+    "q3Time": null,
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "yuki_tsunoda",
     "position": 10,
-    "q1Time": "1:27.298",
-    "q2Time": "1:26.959",
-    "q3Time": "1:26.943",
-    "bestTime": "1:26.943"
+    "q1Time": null,
+    "q2Time": null,
+    "q3Time": null,
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "isack_hadjar",
     "position": 11,
-    "q1Time": "1:27.301",
-    "q2Time": "1:26.987",
+    "q1Time": null,
+    "q2Time": null,
     "q3Time": null,
-    "bestTime": "1:26.987"
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "lewis_hamilton",
     "position": 12,
-    "q1Time": "1:27.279",
-    "q2Time": "1:27.006",
+    "q1Time": null,
+    "q2Time": null,
     "q3Time": null,
-    "bestTime": "1:27.006"
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "gabriel_bortoleto",
     "position": 13,
-    "q1Time": "1:27.343",
-    "q2Time": "1:27.151",
+    "q1Time": null,
+    "q2Time": null,
     "q3Time": null,
-    "bestTime": "1:27.151"
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "jack_doohan",
     "position": 14,
-    "q1Time": "1:27.422",
-    "q2Time": "1:27.186",
+    "q1Time": null,
+    "q2Time": null,
     "q3Time": null,
-    "bestTime": "1:27.186"
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "liam_lawson",
     "position": 15,
-    "q1Time": "1:27.444",
-    "q2Time": "1:27.363",
+    "q1Time": null,
+    "q2Time": null,
     "q3Time": null,
-    "bestTime": "1:27.363"
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "nico_hulkenberg",
     "position": 16,
-    "q1Time": "1:27.473",
+    "q1Time": null,
     "q2Time": null,
     "q3Time": null,
-    "bestTime": "1:27.473"
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "fernando_alonso",
     "position": 17,
-    "q1Time": "1:27.604",
+    "q1Time": null,
     "q2Time": null,
     "q3Time": null,
-    "bestTime": "1:27.604"
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "pierre_gasly",
     "position": 18,
-    "q1Time": "1:27.710",
+    "q1Time": null,
     "q2Time": null,
     "q3Time": null,
-    "bestTime": "1:27.710"
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "lance_stroll",
     "position": 19,
-    "q1Time": "1:27.830",
+    "q1Time": null,
     "q2Time": null,
     "q3Time": null,
-    "bestTime": "1:27.830"
+    "bestTime": null
   },
   {
     "raceId": "miami",
     "driverId": "oliver_bearman",
     "position": 20,
-    "q1Time": "1:27.999",
+    "q1Time": null,
     "q2Time": null,
     "q3Time": null,
-    "bestTime": "1:27.999"
+    "bestTime": null
   },
   {
     "raceId": "emilia_romagna",
@@ -1216,6 +1216,15 @@
   },
   {
     "raceId": "emilia_romagna",
+    "driverId": "oliver_bearman",
+    "position": 16,
+    "q1Time": "1:16.918",
+    "q2Time": null,
+    "q3Time": null,
+    "bestTime": "1:16.918"
+  },
+  {
+    "raceId": "emilia_romagna",
     "driverId": "liam_lawson",
     "position": 16,
     "q1Time": "1:16.379",
@@ -1240,15 +1249,6 @@
     "q2Time": null,
     "q3Time": null,
     "bestTime": "1:16.613"
-  },
-  {
-    "raceId": "emilia_romagna",
-    "driverId": "oliver_bearman",
-    "position": 19,
-    "q1Time": "1:16.918",
-    "q2Time": null,
-    "q3Time": null,
-    "bestTime": "1:16.918"
   },
   {
     "raceId": "emilia_romagna",
