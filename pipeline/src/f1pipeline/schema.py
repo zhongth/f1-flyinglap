@@ -69,6 +69,7 @@ class MedianGapResult(BaseModel):
     driver2Id: str
     medianGap: float  # percentage gap × 1000 (e.g. 36 = 0.036%)
     medianGapFormatted: str
+    gapConsistency: float | None = None  # MAD of per-race gaps; None if <2 data points
     raceCount: int
     scope: str  # "season" | "last5"
 
