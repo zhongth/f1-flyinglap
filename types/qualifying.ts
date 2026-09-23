@@ -22,6 +22,7 @@ export interface MedianGapResult {
   driver2Id: string;
   medianGap: number; // percentage gap × 1000 (e.g. 36 = 0.036%)
   medianGapFormatted: string;
+  gapConsistency: number | null;  // MAD of per-race gaps; null if <2 data points
   raceCount: number;
   scope: "season" | "last5";
 }

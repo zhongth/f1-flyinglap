@@ -7,6 +7,7 @@ so the frontend just does JSON lookups.
 from __future__ import annotations
 
 import statistics
+from typing import Callable
 
 from .schema import (
     Driver,
@@ -50,11 +51,13 @@ def _highest_common_session(
 
     Checks Q3, then Q2, then Q1.  Returns (t1, t2) in ms or None.
     """
-    for getter in (
+    getters: tuple[Callable[[QualifyingResult], str | None], ...] = (
         lambda r: r.q3Time,
         lambda r: r.q2Time,
         lambda r: r.q1Time,
-    ):
+    )
+
+    for getter in getters:
         s1, s2 = getter(r1), getter(r2)
         if s1 and s2:
             t1 = _parse_time(s1)
@@ -109,6 +112,11 @@ def compute_teammate_gaps(
             gaps.append((t1 - t2) / ref * 100 * 1000)
 
         median_gap = round(statistics.median(gaps), 1) if gaps else 0.0
+        gap_consistency = (
+            round(statistics.median([abs(g - median_gap) for g in gaps]), 1)
+            if len(gaps) >= 2
+            else None
+        )
 
         key = f"{team.id}.{scope}"
         results[key] = MedianGapResult(
@@ -117,6 +125,7 @@ def compute_teammate_gaps(
             driver2Id=d2_id,
             medianGap=median_gap,
             medianGapFormatted=_format_gap(median_gap),
+            gapConsistency=gap_consistency,
             raceCount=len(gaps),
             scope=scope,
         )
