@@ -58,6 +58,7 @@ rules/
 
 # Python pipeline
 pipeline/cache/
+.venv
 pipeline/.venv/
 __pycache__/
 *.pyc
